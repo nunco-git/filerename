@@ -9,11 +9,11 @@
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <style>
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f8f9fa; }
-    .container { max-width: 1050px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    .container { max-width: 1080px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     h2 { border-bottom: 2px solid #007bff; padding-bottom: 10px; color: #333; margin-top: 0; }
     .rule-card { background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #007bff; }
     .rule-card h4 { margin: 0 0 10px 0; color: #007bff; }
-    .rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; align-items: center; }
+    .rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; align-items: center; }
     label { font-size: 13px; font-weight: bold; color: #495057; display: block; margin-bottom: 4px; }
     input[type="text"], select { width: 100%; padding: 6px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; font-size: 13px; }
     
@@ -21,7 +21,7 @@
       border: 2px dashed #007bff; 
       background: #e9f2ff; 
       border-radius: 8px; 
-      padding: 35px; 
+      padding: 30px; 
       text-align: center; 
       color: #007bff; 
       font-weight: bold; 
@@ -31,10 +31,15 @@
     }
     .drop-zone.dragover { background: #d0e3ff; border-color: #0056b3; transform: scale(0.99); }
 
-    .action-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 10px; }
-    .btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
+    .action-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 10px; flex-wrap: wrap; }
+    .btn-group { display: flex; gap: 8px; }
+    .btn { padding: 10px 16px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.2s; }
     .btn-run { background: #007bff; color: white; }
     .btn-run:hover { background: #0056b3; }
+    .btn-re { background: #17a2b8; color: white; }
+    .btn-re:hover { background: #117a8b; }
+    .btn-clear { background: #dc3545; color: white; }
+    .btn-clear:hover { background: #bd2130; }
     .btn-zip { background: #28a745; color: white; }
     .btn-zip:hover { background: #218838; }
     .btn:disabled { background: #ccc; cursor: not-allowed; }
@@ -49,8 +54,10 @@
     .status-success { background: #d4edda; color: #155724; }
     .status-error { background: #f8d7da; color: #721c24; }
 
-    .btn-sm { padding: 4px 8px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; background: #17a2b8; color: white; }
-    .btn-sm:hover { background: #138496; }
+    .btn-sm { padding: 4px 8px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; background: #28a745; color: white; }
+    .btn-sm:hover { background: #218838; }
+    
+    .help-text { font-size: 12px; color: #6c757d; margin-top: 4px; }
   </style>
 </head>
 <body>
@@ -58,34 +65,107 @@
 <div class="container">
   <h2>문서 정보 기반 정밀 파일명 자동 변경기</h2>
 
+  <!-- 추출 규칙 1 -->
   <div class="rule-card">
     <h4>추출 위치 1 설정</h4>
     <div class="rule-grid">
-      <div><label>기준 단어(키워드)</label><input type="text" id="key1" value="신청인"></div>
-      <div><label>추출 위치</label><select id="dir1"><option value="after" selected>기준 단어 뒤</option><option value="before">기준 단어 앞</option></select></div>
-      <div><label>중복 시 순번</label><select id="idx1"><option value="1" selected>첫 번째</option><option value="2">두 번째</option><option value="last">마지막</option></select></div>
-      <div><label>추출 범위</label><select id="range1"><option value="word" selected>다음 공백 전까지</option><option value="line">해당 줄 끝까지</option></select></div>
+      <div>
+        <label>기준 단어(키워드)</label>
+        <input type="text" id="key1" value="성명" placeholder="예: 성명, 신청인">
+      </div>
+      <div>
+        <label>탐색 방식</label>
+        <select id="dir1">
+          <option value="after" selected>기준 단어 뒤</option>
+          <option value="before">기준 단어 앞</option>
+          <option value="nextLine">기준 단어 바로 다음 줄 전체</option>
+        </select>
+      </div>
+      <div>
+        <label>중복 시 순번</label>
+        <select id="idx1">
+          <option value="1" selected>첫 번째</option>
+          <option value="2">두 번째</option>
+          <option value="last">마지막</option>
+        </select>
+      </div>
+      <div>
+        <label>추출 범위</label>
+        <select id="range1">
+          <option value="word" selected>다음 공백 전까지(1단어)</option>
+          <option value="line">해당 줄 끝까지</option>
+        </select>
+      </div>
     </div>
   </div>
 
+  <!-- 추출 규칙 2 -->
   <div class="rule-card">
     <h4>추출 위치 2 설정</h4>
     <div class="rule-grid">
-      <div><label>기준 단어(키워드)</label><input type="text" id="key2" value="기관명"></div>
-      <div><label>추출 위치</label><select id="dir2"><option value="after" selected>기준 단어 뒤</option><option value="before">기준 단어 앞</option></select></div>
-      <div><label>중복 시 순번</label><select id="idx2"><option value="1" selected>첫 번째</option><option value="2">두 번째</option><option value="last">마지막</option></select></div>
-      <div><label>추출 범위</label><select id="range2"><option value="word">다음 공백 전까지</option><option value="line" selected>해당 줄 끝까지</option></select></div>
+      <div>
+        <label>기준 단어(키워드)</label>
+        <input type="text" id="key2" value="기관명" placeholder="예: 기관명, 주소">
+      </div>
+      <div>
+        <label>탐색 방식</label>
+        <select id="dir2">
+          <option value="after" selected>기준 단어 뒤</option>
+          <option value="before">기준 단어 앞</option>
+          <option value="nextLine">기준 단어 바로 다음 줄 전체</option>
+        </select>
+      </div>
+      <div>
+        <label>중복 시 순번</label>
+        <select id="idx2">
+          <option value="1" selected>첫 번째</option>
+          <option value="2">두 번째</option>
+          <option value="last">마지막</option>
+        </select>
+      </div>
+      <div>
+        <label>추출 범위</label>
+        <select id="range2">
+          <option value="word">다음 공백 전까지(1단어)</option>
+          <option value="line" selected>해당 줄 끝까지</option>
+        </select>
+      </div>
     </div>
   </div>
 
+  <!-- 추출 규칙 3 -->
   <div class="rule-card">
     <h4>추출 위치 3 설정 (선택)</h4>
     <div class="rule-grid">
-      <div><label>기준 단어(키워드)</label><input type="text" id="key3" value="" placeholder="미사용 시 비워둠"></div>
-      <div><label>추출 위치</label><select id="dir3"><option value="after" selected>기준 단어 뒤</option><option value="before">기준 단어 앞</option></select></div>
-      <div><label>중복 시 순번</label><select id="idx3"><option value="1" selected>첫 번째</option><option value="2">두 번째</option><option value="last">마지막</option></select></div>
-      <div><label>추출 범위</label><select id="range3"><option value="word" selected>다음 공백 전까지</option><option value="line">해당 줄 끝까지</option></select></div>
+      <div>
+        <label>기준 단어(키워드)</label>
+        <input type="text" id="key3" value="" placeholder="미사용 시 비워둠">
+      </div>
+      <div>
+        <label>탐색 방식</label>
+        <select id="dir3">
+          <option value="after" selected>기준 단어 뒤</option>
+          <option value="before">기준 단어 앞</option>
+          <option value="nextLine">기준 단어 바로 다음 줄 전체</option>
+        </select>
+      </div>
+      <div>
+        <label>중복 시 순번</label>
+        <select id="idx3">
+          <option value="1" selected>첫 번째</option>
+          <option value="2">두 번째</option>
+          <option value="last">마지막</option>
+        </select>
+      </div>
+      <div>
+        <label>추출 범위</label>
+        <select id="range3">
+          <option value="word" selected>다음 공백 전까지(1단어)</option>
+          <option value="line">해당 줄 끝까지</option>
+        </select>
+      </div>
     </div>
+    <div class="help-text">※ 단어 사이에 '성 명', '성   명'처럼 띄어쓰기가 들어있어도 자동으로 인식하여 값을 가져옵니다.</div>
   </div>
 
   <div class="drop-zone" id="dropZone">
@@ -94,8 +174,10 @@
   </div>
 
   <div class="action-bar">
-    <div>
-      <button class="btn btn-run" id="btnRun" onclick="runBatchProcess()" disabled>▶ 파일명 추출 및 변경 실행</button>
+    <div class="btn-group">
+      <button class="btn btn-run" id="btnRun" onclick="runBatchProcess(false)" disabled>▶ 파일 분석 및 변경 실행</button>
+      <button class="btn btn-re" id="btnRe" onclick="runBatchProcess(true)" disabled>🔄 재실행 (현재 목록 재분석)</button>
+      <button class="btn btn-clear" id="btnClear" onclick="clearAllFiles()">🗑️ 전체 초기화</button>
     </div>
     <div>
       <button class="btn btn-zip" id="btnZip" onclick="downloadAllZip()" disabled>📦 전체 ZIP 일괄 다운로드</button>
@@ -119,7 +201,7 @@
 </div>
 
 <script>
-  // GitHub Pages 호환용 PDF.js Worker 설정
+  // Worker 글로벌 설정 (GitHub Pages 호환)
   if (window.pdfjsLib) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
   }
@@ -127,6 +209,7 @@
   const dropZone = document.getElementById('dropZone');
   const fileInput = document.getElementById('fileInput');
   const btnRun = document.getElementById('btnRun');
+  const btnRe = document.getElementById('btnRe');
   const btnZip = document.getElementById('btnZip');
   const resultTable = document.getElementById('resultTable').querySelector('tbody');
 
@@ -169,12 +252,12 @@
       if (!name.endsWith('.pdf') && !name.endsWith('.hwpx')) continue;
 
       if (!fileQueue.some(item => item.file.name === file.name)) {
-        const item = { file: file, status: 'ready', newName: '' };
+        const item = { file: file, status: 'ready', newName: '', extractedText: null };
         fileQueue.push(item);
         renderRow(item);
       }
     }
-    if (fileQueue.length > 0) btnRun.disabled = false;
+    updateButtonStates();
   }
 
   function renderRow(item) {
@@ -192,8 +275,25 @@
     `;
   }
 
-  async function runBatchProcess() {
+  // 초기화 기능
+  function clearAllFiles() {
+    fileQueue = [];
+    resultTable.innerHTML = '';
+    fileInput.value = '';
+    updateButtonStates();
+  }
+
+  function updateButtonStates() {
+    const hasFiles = fileQueue.length > 0;
+    btnRun.disabled = !hasFiles;
+    btnRe.disabled = !hasFiles;
+    btnZip.disabled = !fileQueue.some(i => i.status === 'success');
+  }
+
+  // 작업 실행 / 재실행
+  async function runBatchProcess(isReRun = false) {
     btnRun.disabled = true;
+    btnRe.disabled = true;
     btnZip.disabled = true;
 
     const rules = [
@@ -203,7 +303,8 @@
     ];
 
     for (let item of fileQueue) {
-      if (item.status === 'success') continue;
+      // 일반 실행일 때는 완료된 파일은 건너뜀, 재실행일 때는 전체 다시 실행
+      if (!isReRun && item.status === 'success') continue;
 
       const row = document.getElementById(item.rowId);
       if (!row) continue;
@@ -212,18 +313,20 @@
       statusCell.innerHTML = `<span class="status-badge status-working">분석 중...</span>`;
 
       try {
-        let fullText = "";
-        if (item.file.name.toLowerCase().endsWith('.pdf')) {
-          fullText = await extractPdfText(item.file);
-          if (fullText.trim().length < 20 && window.Tesseract) {
-            statusCell.innerHTML = `<span class="status-badge status-working">OCR 스캔 중...</span>`;
-            fullText = await extractPdfOCR(item.file);
+        // 캐싱된 텍스트가 없거나 재실행 시 텍스트 추출
+        if (!item.extractedText || isReRun) {
+          if (item.file.name.toLowerCase().endsWith('.pdf')) {
+            item.extractedText = await extractPdfText(item.file);
+            if (item.extractedText.trim().length < 20 && window.Tesseract) {
+              statusCell.innerHTML = `<span class="status-badge status-working">OCR 스캔 중...</span>`;
+              item.extractedText = await extractPdfOCR(item.file);
+            }
+          } else if (item.file.name.toLowerCase().endsWith('.hwpx')) {
+            item.extractedText = await extractHwpxText(item.file);
           }
-        } else if (item.file.name.toLowerCase().endsWith('.hwpx')) {
-          fullText = await extractHwpxText(item.file);
         }
 
-        const vals = rules.map(rule => parseTextByRule(fullText, rule));
+        const vals = rules.map(rule => parseTextByRule(item.extractedText, rule));
         row.querySelector('.val-1').innerText = vals[0] || "-";
         row.querySelector('.val-2').innerText = vals[1] || "-";
         row.querySelector('.val-3').innerText = vals[2] || "-";
@@ -252,39 +355,53 @@
       }
     }
 
-    btnRun.disabled = false;
-    btnZip.disabled = !fileQueue.some(i => i.status === 'success');
+    updateButtonStates();
   }
 
+  // 띄어쓰기 유연 탐색 및 구문 분석 엔진
   function parseTextByRule(text, rule) {
-    if (!rule.key) return "";
-    const escapedKey = rule.key.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-    const matches = [...text.matchAll(new RegExp(escapedKey, 'gi'))];
+    if (!rule.key || !text) return "";
+
+    // 키워드 글자 사이에 정규식 공백 처리 (예: "성명" -> "성\s*명")
+    const flexibleKey = rule.key.split('').map(char => {
+      return /[a-zA-Z0-9가-힣]/.test(char) ? char + '\\s*' : char;
+    }).join('').replace(/\\s\*$/, '');
+
+    const matches = [...text.matchAll(new RegExp(flexibleKey, 'gi'))];
     if (matches.length === 0) return "미확인";
 
     let targetMatch = rule.idx === "last" ? matches[matches.length - 1] : (matches[parseInt(rule.idx) - 1] || matches[0]);
     const keyPos = targetMatch.index;
-    let targetSlice = "";
+    const matchedTextLength = targetMatch[0].length;
 
-    if (rule.dir === "after") {
-      targetSlice = text.substring(keyPos + rule.key.length).replace(/^[\s:]+/, '');
+    if (rule.dir === "nextLine") {
+      // 기준 단어 기준 다음 줄 가져오기
+      const textAfter = text.substring(keyPos + matchedTextLength);
+      const lines = textAfter.split(/[\r\n]+/).map(l => l.trim()).filter(l => l.length > 0);
+      return lines.length > 0 ? cleanValue(lines[0]) : "미확인";
+    } else if (rule.dir === "after") {
+      const targetSlice = text.substring(keyPos + matchedTextLength).replace(/^[\s:]+/, '');
       if (rule.range === "word") {
         const m = targetSlice.match(/^[^\s]+/);
-        return m ? m[0].trim() : "미확인";
+        return m ? cleanValue(m[0]) : "미확인";
       } else {
         const m = targetSlice.match(/^[^\r\n]+/);
-        return m ? m[0].trim() : "미확인";
+        return m ? cleanValue(m[0]) : "미확인";
       }
-    } else {
-      targetSlice = text.substring(0, keyPos);
+    } else { // before
+      const targetSlice = text.substring(0, keyPos);
       if (rule.range === "word") {
         const words = targetSlice.trim().split(/\s+/);
-        return words.length > 0 ? words[words.length - 1].replace(/[:]+$/, '').trim() : "미확인";
+        return words.length > 0 ? cleanValue(words[words.length - 1]) : "미확인";
       } else {
         const lines = targetSlice.split(/[\r\n]+/);
-        return (lines[lines.length - 1] || "").replace(/[:]+$/, '').trim();
+        return lines.length > 0 ? cleanValue(lines[lines.length - 1]) : "미확인";
       }
     }
+  }
+
+  function cleanValue(val) {
+    return val.replace(/[:;,]+/g, '').trim();
   }
 
   async function extractPdfText(file) {
