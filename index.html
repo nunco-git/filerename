@@ -303,7 +303,6 @@
     ];
 
     for (let item of fileQueue) {
-      // 일반 실행일 때는 완료된 파일은 건너뜀, 재실행일 때는 전체 다시 실행
       if (!isReRun && item.status === 'success') continue;
 
       const row = document.getElementById(item.rowId);
@@ -313,7 +312,6 @@
       statusCell.innerHTML = `<span class="status-badge status-working">분석 중...</span>`;
 
       try {
-        // 캐싱된 텍스트가 없거나 재실행 시 텍스트 추출
         if (!item.extractedText || isReRun) {
           if (item.file.name.toLowerCase().endsWith('.pdf')) {
             item.extractedText = await extractPdfText(item.file);
@@ -333,11 +331,21 @@
 
         const ext = item.file.name.substring(item.file.name.lastIndexOf('.'));
         const cleanBaseName = item.file.name.replace(ext, '');
-        const validParts = vals.filter(v => v !== "" && v !== "미확인");
         
-        item.newName = validParts.length > 0 ? `[${validParts.join('_')}]_${cleanBaseName}${ext}` : item.file.name;
-        row.querySelector('.val-new').innerText = item.newName;
+        // 1. 값 각각의 양끝 언더바/공백 정제 및 미확인/빈값 필터링
+        const validParts = vals
+          .map(v => v ? v.trim().replace(/^[_]+|[_]+$/g, '') : "")
+          .filter(v => v !== "" && v !== "미확인");
 
+        // 2. 유효한 값만 단일 언더바(_)로 연결하여 파일명 생성
+        if (validParts.length > 0) {
+          const prefix = validParts.join('_');
+          item.newName = `[${prefix}]_${cleanBaseName}${ext}`;
+        } else {
+          item.newName = item.file.name;
+        }
+
+        row.querySelector('.val-new').innerText = item.newName;
         item.status = 'success';
 
         const btnDownload = document.createElement('button');
@@ -375,7 +383,6 @@
     const matchedTextLength = targetMatch[0].length;
 
     if (rule.dir === "nextLine") {
-      // 기준 단어 기준 다음 줄 가져오기
       const textAfter = text.substring(keyPos + matchedTextLength);
       const lines = textAfter.split(/[\r\n]+/).map(l => l.trim()).filter(l => l.length > 0);
       return lines.length > 0 ? cleanValue(lines[0]) : "미확인";
@@ -400,8 +407,14 @@
     }
   }
 
+  // 정밀 정제 함수: 마침표, 따옴표, 콜론, 불필요한 언더바 및 개행 문자 정제
   function cleanValue(val) {
-    return val.replace(/[:;,]+/g, '').trim();
+    if (!val) return "";
+    return val
+      .replace(/[\r\n\t]+/g, ' ')
+      .replace(/[:;,"'`_]+/g, '')
+      .replace(/^\s+|\s+$/g, '')
+      .trim();
   }
 
   async function extractPdfText(file) {
