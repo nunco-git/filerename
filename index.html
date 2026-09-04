@@ -1,741 +1,192 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>스마트 파일명 변경기</title>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
-<style>
-  :root{
-    --gray-bg:#eef0f3;
-    --card-bg:#ffffff;
-    --ink:#1f2430;
-    --sub:#6b7280;
-    --line:#e5e7eb;
-    --orange:#f0883e;
-    --green:#3fb37f;
-    --blue:#4a90d9;
-    --danger:#e05252;
-  }
-  *{box-sizing:border-box;}
-  body{
-    margin:0;
-    font-family:"Pretendard","Apple SD Gothic Neo","Malgun Gothic",sans-serif;
-    background:var(--gray-bg);
-    color:var(--ink);
-    padding:32px 16px 80px;
-  }
-  .wrap{max-width:960px;margin:0 auto;}
-  .card{
-    background:var(--card-bg);
-    border-radius:14px;
-    box-shadow:0 1px 3px rgba(0,0,0,0.06), 0 8px 24px rgba(0,0,0,0.04);
-    overflow:hidden;
-    margin-bottom:20px;
-  }
-  .topbar{display:flex;height:8px;}
-  .topbar span{flex:1;}
-  .topbar .o{background:var(--orange);}
-  .topbar .g{background:var(--green);}
-  .topbar .b{background:var(--blue);}
-  .card-body{padding:24px 28px;}
-  h1{font-size:20px;margin:0 0 4px;}
-  .lead{color:var(--sub);font-size:14px;margin:0 0 20px;line-height:1.6;}
-  .legend{display:flex;gap:16px;font-size:12.5px;color:var(--sub);margin-bottom:4px;flex-wrap:wrap;}
-  .legend span{display:inline-flex;align-items:center;gap:6px;}
-  .dot{width:8px;height:8px;border-radius:50%;display:inline-block;}
-  .dot.o{background:var(--orange);}
-  .dot.g{background:var(--green);}
-  .dot.b{background:var(--blue);}
+  <meta charset="UTF-8">
+  <title>문서 정보 기반 정밀 파일명 자동 변경기</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+  <style>
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f8f9fa; }
+    .container { max-width: 1050px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
+    h2 { border-bottom: 2px solid #007bff; padding-bottom: 10px; color: #333; margin-top: 0; }
+    .rule-card { background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #007bff; }
+    .rule-card h4 { margin: 0 0 10px 0; color: #007bff; }
+    .rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px; align-items: center; }
+    label { font-size: 13px; font-weight: bold; color: #495057; display: block; margin-bottom: 4px; }
+    input[type="text"], select { width: 100%; padding: 6px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; font-size: 13px; }
+    
+    .drop-zone { border: 2px dashed #007bff; background: #e9f2ff; border-radius: 8px; padding: 30px; text-align: center; color: #007bff; font-weight: bold; cursor: pointer; margin-top: 15px; }
+    .drop-zone:hover { background: #d0e3ff; }
 
-  label.field-label{display:block;font-size:13px;font-weight:600;margin-bottom:6px;color:var(--ink);}
-  .row{display:flex;gap:16px;flex-wrap:wrap;margin-bottom:16px;}
-  .row > div{flex:1;min-width:180px;}
-  input[type=text], input[type=number]{
-    width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:8px;
-    font-size:14px;background:#fafafa;
-  }
-  input[type=text]:focus, input[type=number]:focus{outline:2px solid var(--blue);outline-offset:0;background:#fff;}
-  .radio-group{display:flex;gap:14px;font-size:13.5px;padding-top:6px;flex-wrap:wrap;}
-  .radio-group label{display:flex;align-items:center;gap:6px;cursor:pointer;color:var(--ink);}
+    .action-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 20px; gap: 10px; }
+    .btn { padding: 10px 20px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 14px; transition: 0.2s; }
+    .btn-run { background: #007bff; color: white; }
+    .btn-run:hover { background: #0056b3; }
+    .btn-zip { background: #28a745; color: white; }
+    .btn-zip:hover { background: #218838; }
+    .btn:disabled { background: #ccc; cursor: not-allowed; }
 
-  .rule-card{
-    border:1px solid var(--line);border-radius:10px;padding:14px 16px 16px;
-    margin-bottom:12px;background:#fafbfc;
-  }
-  .rule-head{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;}
-  .rule-head-left{display:flex;align-items:center;gap:8px;}
-  .rule-index{
-    width:22px;height:22px;border-radius:50%;background:#eceef1;color:var(--sub);
-    font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;
-  }
-  .rule-head-title{font-size:12.5px;color:var(--sub);font-weight:600;}
-  .rule-grid{display:grid;grid-template-columns:1.6fr 1fr 1fr;gap:10px;margin-bottom:10px;}
-  .rule-grid:last-child{margin-bottom:0;}
-  .rule-grid label{display:block;font-size:11.5px;color:var(--sub);margin-bottom:4px;}
-  .rule-card select{
-    width:100%;padding:9px 10px;border:1px solid var(--line);border-radius:8px;
-    font-size:13px;background:#fff;color:var(--ink);
-  }
-  .rule-card input[type=text], .rule-card input[type=number]{background:#fff;}
-  select:focus{outline:2px solid var(--blue);outline-offset:0;}
-  @media (max-width:640px){ .rule-grid{grid-template-columns:1fr 1fr;} }
+    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
+    th, td { border: 1px solid #ddd; padding: 10px; text-align: left; font-size: 13px; }
+    th { background-color: #f2f2f2; }
+    
+    .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
+    .status-ready { background: #e2e3e5; color: #383d41; }
+    .status-working { background: #fff3cd; color: #856404; }
+    .status-success { background: #d4edda; color: #155724; }
+    .status-error { background: #f8d7da; color: #721c24; }
 
-  .dropzone{
-    border:2px dashed var(--line);
-    border-radius:10px;
-    padding:32px 16px;
-    text-align:center;
-    color:var(--sub);
-    font-size:14px;
-    cursor:pointer;
-    transition:border-color .15s, background .15s;
-    background:#fbfbfc;
-  }
-  .dropzone.drag{border-color:var(--blue);background:#f2f7fd;}
-  .dropzone strong{color:var(--ink);}
-  .btn-row{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap;}
-  button{
-    font-family:inherit;font-size:13.5px;font-weight:600;
-    border:none;border-radius:8px;padding:10px 16px;cursor:pointer;
-    transition:filter .1s, transform .05s;
-  }
-  button:active{transform:translateY(1px);}
-  .btn-primary{background:var(--ink);color:#fff;}
-  .btn-primary:hover{filter:brightness(1.15);}
-  .btn-outline{background:#fff;color:var(--ink);border:1px solid var(--line);}
-  .btn-outline:hover{background:#f5f5f5;}
-  .btn-small{padding:6px 10px;font-size:12.5px;}
-  button:disabled{opacity:.45;cursor:not-allowed;}
-  input[type=file]{display:none;}
-
-  table{width:100%;border-collapse:collapse;font-size:13.5px;}
-  th, td{text-align:left;padding:10px 8px;border-bottom:1px solid var(--line);vertical-align:middle;}
-  th{color:var(--sub);font-weight:600;font-size:12px;}
-  td.filetype{white-space:nowrap;}
-  .badge{
-    display:inline-block;padding:2px 8px;border-radius:100px;font-size:11px;font-weight:700;color:#fff;
-  }
-  .badge.hwpx{background:var(--orange);}
-  .badge.xlsx{background:var(--green);}
-  .badge.pdf{background:var(--blue);}
-  .status-ok{color:var(--green);font-size:12px;font-weight:600;}
-  .status-fail{color:var(--danger);font-size:12px;font-weight:600;}
-  td input[type=text]{padding:7px 9px;font-size:13px;}
-  .empty-state{text-align:center;color:var(--sub);font-size:13.5px;padding:24px 0;}
-  .hint{font-size:12px;color:var(--sub);margin-top:6px;}
-  .file-count{font-size:13px;color:var(--sub);margin-bottom:12px;}
-  .toolbar{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;margin-bottom:14px;}
-</style>
+    .btn-sm { padding: 4px 8px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; background: #17a2b8; color: white; }
+    .btn-sm:hover { background: #138496; }
+  </style>
 </head>
 <body>
-<div class="wrap">
 
-  <div class="card">
-    <div class="topbar"><span class="o"></span><span class="g"></span><span class="b"></span></div>
-    <div class="card-body">
-      <h1>스마트 파일명 변경기</h1>
-      <p class="lead">한글(HWPX)·엑셀·PDF 파일을 열어 내용을 읽고, 여러 위치의 텍스트를 모아 조합한 새 파일명을 만듭니다. 모든 처리는 브라우저 안에서만 이뤄지며 파일이 서버로 전송되지 않습니다.</p>
-      <div class="legend">
-        <span><span class="dot o"></span>HWPX (한글)</span>
-        <span><span class="dot g"></span>XLSX / XLS (엑셀)</span>
-        <span><span class="dot b"></span>PDF</span>
-      </div>
+<div class="container">
+  <h2>문서 정보 기반 정밀 파일명 자동 변경기</h2>
+
+  <div class="rule-card">
+    <h4>추출 위치 1 설정</h4>
+    <div class="rule-grid">
+      <div><label>기준 단어(키워드)</label><input type="text" id="key1" value="신청인"></div>
+      <div><label>추출 위치</label><select id="dir1"><option value="after" selected>기준 단어 뒤</option><option value="before">기준 단어 앞</option></select></div>
+      <div><label>중복 시 순번</label><select id="idx1"><option value="1" selected>첫 번째</option><option value="2">두 번째</option><option value="last">마지막</option></select></div>
+      <div><label>추출 범위</label><select id="range1"><option value="word" selected>다음 공백 전까지</option><option value="line">해당 줄 끝까지</option></select></div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-body">
-      <div class="toolbar" style="margin-bottom:12px;">
-        <label class="field-label" style="margin-bottom:0;">제목 결합 규칙</label>
-        <div class="btn-row" style="margin-top:0;">
-          <button class="btn-outline btn-small" id="addRuleBtn">+ 규칙 추가</button>
-        </div>
-      </div>
-      <div id="rulesContainer"></div>
-      <div class="row" style="margin-top:2px;">
-        <div style="flex:1;min-width:140px;">
-          <label class="field-label" style="font-weight:500;">구분자</label>
-          <input type="text" id="separator" value="_" placeholder="예: _ , - , 공백">
-        </div>
-        <div style="flex:1;min-width:140px;">
-          <label class="field-label" style="font-weight:500;">전체 최대 글자 수(선택)</label>
-          <input type="number" id="totalMaxLen" min="1" placeholder="예: 60">
-        </div>
-      </div>
-      <p class="hint">각 규칙은 문서 안의 "기준값"을 찾아, 그 앞이나 뒤에 있는 글자를 지정한 종료 기준까지 잘라옵니다. 예: 기준값 "공사명:" · 방향 "뒤" · 종료 기준 "다음 쉼표(,) 전까지" → "공사명: 마을회관 리모델링 공사, 담당:..." 에서 " 마을회관 리모델링 공사"를 추출. 이렇게 뽑은 값들을 순서대로 구분자로 이어 붙여 파일명을 만듭니다.</p>
+  <div class="rule-card">
+    <h4>추출 위치 2 설정</h4>
+    <div class="rule-grid">
+      <div><label>기준 단어(키워드)</label><input type="text" id="key2" value="기관명"></div>
+      <div><label>추출 위치</label><select id="dir2"><option value="after" selected>기준 단어 뒤</option><option value="before">기준 단어 앞</option></select></div>
+      <div><label>중복 시 순번</label><select id="idx2"><option value="1" selected>첫 번째</option><option value="2">두 번째</option><option value="last">마지막</option></select></div>
+      <div><label>추출 범위</label><select id="range2"><option value="word">다음 공백 전까지</option><option value="line" selected>해당 줄 끝까지</option></select></div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-body">
-      <label class="field-label">파일 업로드</label>
-      <div class="dropzone" id="dropzone">
-        <div><strong>클릭하여 파일 선택</strong> 또는 이 영역으로 드래그 앤 드롭</div>
-        <div class="hint">여러 파일 동시 선택 가능 · .hwpx / .xlsx / .xls / .pdf</div>
-      </div>
-      <div class="btn-row">
-        <button class="btn-outline" id="pickFilesBtn">파일 선택</button>
-        <button class="btn-outline" id="pickFolderBtn">폴더 전체 선택</button>
-        <input type="file" id="fileInput" multiple accept=".hwpx,.xlsx,.xls,.pdf">
-        <input type="file" id="folderInput" multiple webkitdirectory>
-      </div>
+  <div class="rule-card">
+    <h4>추출 위치 3 설정 (선택)</h4>
+    <div class="rule-grid">
+      <div><label>기준 단어(키워드)</label><input type="text" id="key3" value="" placeholder="미사용 시 비워둠"></div>
+      <div><label>추출 위치</label><select id="dir3"><option value="after" selected>기준 단어 뒤</option><option value="before">기준 단어 앞</option></select></div>
+      <div><label>중복 시 순번</label><select id="idx3"><option value="1" selected>첫 번째</option><option value="2">두 번째</option><option value="last">마지막</option></select></div>
+      <div><label>추출 범위</label><select id="range3"><option value="word" selected>다음 공백 전까지</option><option value="line">해당 줄 끝까지</option></select></div>
     </div>
   </div>
 
-  <div class="card">
-    <div class="card-body">
-      <div class="toolbar">
-        <div class="file-count" id="fileCount">업로드된 파일이 없습니다.</div>
-        <div class="btn-row" style="margin-top:0;">
-          <button class="btn-primary" id="runBtn" disabled>실행 (분석하기)</button>
-          <button class="btn-outline btn-small" id="downloadZipBtn" disabled>전체 zip 다운로드</button>
-        </div>
-      </div>
-      </div>
-      <div id="tableWrap">
-        <div class="empty-state">파일을 업로드하면 여기에 분석 결과가 표시됩니다.</div>
-      </div>
+  <div class="drop-zone" id="dropZone">
+    파일을 드래그하여 이곳에 놓거나 클릭하여 선택하세요. (PDF, HWPX)
+    <input type="file" id="fileInput" multiple accept=".pdf,.hwpx" style="display:none;">
+  </div>
+
+  <div class="action-bar">
+    <div>
+      <button class="btn btn-run" id="btnRun" onclick="runBatchProcess()" disabled>▶ 파일명 추출 및 변경 실행</button>
+    </div>
+    <div>
+      <button class="btn btn-zip" id="btnZip" onclick="downloadAllZip()" disabled>📦 전체 ZIP 일괄 다운로드</button>
     </div>
   </div>
 
+  <h3>업로드 파일 목록 및 실행 결과</h3>
+  <table id="resultTable">
+    <thead>
+      <tr>
+        <th style="width: 20%;">원본 파일명</th>
+        <th style="width: 12%;">추출값 1</th>
+        <th style="width: 12%;">추출값 2</th>
+        <th style="width: 12%;">추출값 3</th>
+        <th style="width: 24%;">변경될 파일명</th>
+        <th style="width: 20%;">상태 / 개별 다운로드</th>
+      </tr>
+    </thead>
+    <tbody></tbody>
+  </table>
 </div>
 
 <script>
-pdfjsLib.GlobalWorkerOptions.workerSrc = "https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js";
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-const state = { files: [] }; // {id, name, ext, buffer, mime, text, parts, newName, status}
-let idCounter = 0;
-let ruleIdCounter = 0;
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const btnRun = document.getElementById('btnRun');
+  const btnZip = document.getElementById('btnZip');
+  const resultTable = document.getElementById('resultTable').querySelector('tbody');
 
-function newRule(){
-  return {
-    id: ++ruleIdCounter,
-    anchor: '',
-    direction: 'after',   // 'after' | 'before'
-    stopType: 'newline',  // 'newline' | 'custom' | 'length'
-    stopValue: '',
-    occurrence: 'first',  // 'first' | 'last'
-    maxLen: ''
-  };
-}
+  let fileQueue = [];
 
-let rules = [ newRule(), newRule(), newRule() ];
-let analyzed = false;
-
-const dropzone = document.getElementById('dropzone');
-const fileInput = document.getElementById('fileInput');
-const folderInput = document.getElementById('folderInput');
-const pickFilesBtn = document.getElementById('pickFilesBtn');
-const pickFolderBtn = document.getElementById('pickFolderBtn');
-const tableWrap = document.getElementById('tableWrap');
-const fileCountEl = document.getElementById('fileCount');
-const downloadZipBtn = document.getElementById('downloadZipBtn');
-const runBtn = document.getElementById('runBtn');
-const rulesContainer = document.getElementById('rulesContainer');
-const addRuleBtn = document.getElementById('addRuleBtn');
-const separatorInput = document.getElementById('separator');
-const totalMaxLenInput = document.getElementById('totalMaxLen');
-
-const SUPPORTED = ['hwpx','xlsx','xls','pdf'];
-const MIME = {
-  hwpx: 'application/haansofthwp',
-  xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-  xls: 'application/vnd.ms-excel',
-  pdf: 'application/pdf'
-};
-
-pickFilesBtn.addEventListener('click', () => fileInput.click());
-pickFolderBtn.addEventListener('click', () => folderInput.click());
-dropzone.addEventListener('click', () => fileInput.click());
-
-fileInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
-folderInput.addEventListener('change', e => addFiles(Array.from(e.target.files)));
-
-['dragover','dragenter'].forEach(evt => dropzone.addEventListener(evt, e => {
-  e.preventDefault(); dropzone.classList.add('drag');
-}));
-['dragleave','dragend'].forEach(evt => dropzone.addEventListener(evt, e => {
-  dropzone.classList.remove('drag');
-}));
-dropzone.addEventListener('drop', e => {
-  e.preventDefault();
-  dropzone.classList.remove('drag');
-  addFiles(Array.from(e.dataTransfer.files));
-});
-
-runBtn.addEventListener('click', () => runAnalysis());
-downloadZipBtn.addEventListener('click', downloadAllZip);
-separatorInput.addEventListener('input', markStale);
-totalMaxLenInput.addEventListener('input', markStale);
-addRuleBtn.addEventListener('click', () => {
-  rules.push(newRule());
-  renderRules();
-  markStale();
-});
-
-function debounce(fn, ms){
-  let t;
-  return (...args) => { clearTimeout(t); t = setTimeout(() => fn(...args), ms); };
-}
-
-function stopValueLabel(stopType){
-  if(stopType === 'custom') return '종료 문자/문자열';
-  if(stopType === 'length') return '가져올 글자수';
-  return '해당 없음';
-}
-
-function renderRules(){
-  rulesContainer.innerHTML = rules.map((rule, i) => `
-    <div class="rule-card" data-rule-id="${rule.id}">
-      <div class="rule-head">
-        <div class="rule-head-left">
-          <span class="rule-index">${i + 1}</span>
-          <span class="rule-head-title">규칙 ${i + 1}</span>
-        </div>
-        <button class="btn-outline btn-small remove-rule-btn" data-id="${rule.id}" ${rules.length <= 1 ? 'disabled' : ''}>삭제</button>
-      </div>
-
-      <div class="rule-grid">
-        <div>
-          <label>기준값 (찾을 텍스트)</label>
-          <input type="text" class="rule-anchor" data-id="${rule.id}"
-                 placeholder="예: 공사명, 문서번호:" value="${escapeAttr(rule.anchor)}">
-        </div>
-        <div>
-          <label>추출 방향</label>
-          <select class="rule-direction" data-id="${rule.id}">
-            <option value="after" ${rule.direction === 'after' ? 'selected' : ''}>기준값 뒤 텍스트</option>
-            <option value="before" ${rule.direction === 'before' ? 'selected' : ''}>기준값 앞 텍스트</option>
-          </select>
-        </div>
-        <div>
-          <label>기준값이 여러 번 나오면</label>
-          <select class="rule-occurrence" data-id="${rule.id}">
-            <option value="first" ${rule.occurrence === 'first' ? 'selected' : ''}>첫 번째 사용</option>
-            <option value="last" ${rule.occurrence === 'last' ? 'selected' : ''}>마지막 사용</option>
-          </select>
-        </div>
-      </div>
-
-      <div class="rule-grid">
-        <div>
-          <label>추출 종료 기준</label>
-          <select class="rule-stoptype" data-id="${rule.id}">
-            <option value="newline" ${rule.stopType === 'newline' ? 'selected' : ''}>줄바꿈 전까지</option>
-            <option value="custom" ${rule.stopType === 'custom' ? 'selected' : ''}>특정 문자/문자열 전까지</option>
-            <option value="length" ${rule.stopType === 'length' ? 'selected' : ''}>지정 글자수만큼</option>
-          </select>
-        </div>
-        <div>
-          <label>${stopValueLabel(rule.stopType)}</label>
-          <input type="text" class="rule-stopvalue" data-id="${rule.id}"
-                 placeholder="${rule.stopType === 'custom' ? '예: , 또는 ) 또는 공백' : rule.stopType === 'length' ? '예: 10' : '-'}"
-                 value="${escapeAttr(rule.stopValue)}" ${rule.stopType === 'newline' ? 'disabled' : ''}>
-        </div>
-        <div>
-          <label>안전 최대 글자수 (선택)</label>
-          <input type="number" class="rule-maxlen" data-id="${rule.id}" min="1"
-                 placeholder="예: 30" value="${rule.maxLen}">
-        </div>
-      </div>
-    </div>
-  `).join('');
-
-  rulesContainer.querySelectorAll('.rule-anchor').forEach(inp => {
-    inp.addEventListener('input', debounce(() => {
-      const rule = rules.find(r => r.id === parseInt(inp.dataset.id, 10));
-      if(rule){ rule.anchor = inp.value; markStale(); }
-    }, 250));
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+  dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.style.background = '#d0e3ff'; });
+  dropZone.addEventListener('dragleave', () => { dropZone.style.background = '#e9f2ff'; });
+  dropZone.addEventListener('drop', (e) => {
+    e.preventDefault();
+    dropZone.style.background = '#e9f2ff';
+    handleFiles(e.dataTransfer.files);
   });
-  rulesContainer.querySelectorAll('.rule-direction').forEach(sel => {
-    sel.addEventListener('change', () => {
-      const rule = rules.find(r => r.id === parseInt(sel.dataset.id, 10));
-      if(rule){ rule.direction = sel.value; markStale(); }
-    });
-  });
-  rulesContainer.querySelectorAll('.rule-occurrence').forEach(sel => {
-    sel.addEventListener('change', () => {
-      const rule = rules.find(r => r.id === parseInt(sel.dataset.id, 10));
-      if(rule){ rule.occurrence = sel.value; markStale(); }
-    });
-  });
-  rulesContainer.querySelectorAll('.rule-stoptype').forEach(sel => {
-    sel.addEventListener('change', () => {
-      const rule = rules.find(r => r.id === parseInt(sel.dataset.id, 10));
-      if(rule){
-        rule.stopType = sel.value;
-        if(sel.value === 'newline') rule.stopValue = '';
-        renderRules();
-        markStale();
+
+  function handleFiles(files) {
+    for (let file of files) {
+      if (!fileQueue.some(item => item.file.name === file.name)) {
+        const item = { file: file, status: 'ready', newName: '', processedBlob: null };
+        fileQueue.push(item);
+        renderRow(item);
       }
-    });
-  });
-  rulesContainer.querySelectorAll('.rule-stopvalue').forEach(inp => {
-    inp.addEventListener('input', debounce(() => {
-      const rule = rules.find(r => r.id === parseInt(inp.dataset.id, 10));
-      if(rule){ rule.stopValue = inp.value; markStale(); }
-    }, 250));
-  });
-  rulesContainer.querySelectorAll('.rule-maxlen').forEach(inp => {
-    inp.addEventListener('input', debounce(() => {
-      const rule = rules.find(r => r.id === parseInt(inp.dataset.id, 10));
-      if(rule){ rule.maxLen = inp.value; markStale(); }
-    }, 250));
-  });
-  rulesContainer.querySelectorAll('.remove-rule-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      if(rules.length <= 1) return;
-      rules = rules.filter(r => r.id !== parseInt(btn.dataset.id, 10));
-      renderRules();
-      markStale();
-    });
-  });
-}
-
-function escapeAttr(str){
-  return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-renderRules();
-
-function extOf(name){
-  const m = name.toLowerCase().match(/\.([a-z0-9]+)$/);
-  return m ? m[1] : '';
-}
-
-async function addFiles(fileList){
-  const accepted = fileList.filter(f => SUPPORTED.includes(extOf(f.name)));
-  if(accepted.length === 0){
-    if(fileList.length > 0) alert('지원하는 형식(hwpx, xlsx, xls, pdf)의 파일이 없습니다.');
-    return;
-  }
-  for(const f of accepted){
-    const ext = extOf(f.name);
-    const buffer = await f.arrayBuffer();
-    state.files.push({
-      id: ++idCounter,
-      name: f.name,
-      ext,
-      buffer,
-      mime: MIME[ext] || 'application/octet-stream',
-      text: null,
-      parts: [],
-      newName: f.name,
-      status: 'pending'
-    });
-  }
-  fileInput.value = '';
-  folderInput.value = '';
-  markStale();
-}
-
-async function extractText(item){
-  try{
-    if(item.ext === 'hwpx'){
-      return await extractHwpxText(item.buffer);
-    } else if(item.ext === 'xlsx' || item.ext === 'xls'){
-      return extractXlsxText(item.buffer);
-    } else if(item.ext === 'pdf'){
-      return await extractPdfText(item.buffer);
     }
-  }catch(err){
-    console.error('텍스트 추출 실패:', item.name, err);
-    return '';
-  }
-  return '';
-}
-
-async function extractHwpxText(buffer){
-  const zip = await JSZip.loadAsync(buffer);
-  const sectionFiles = Object.keys(zip.files)
-    .filter(p => /^Contents\/section\d+\.xml$/i.test(p))
-    .sort();
-  const targets = sectionFiles.length ? sectionFiles :
-    Object.keys(zip.files).filter(p => /\.xml$/i.test(p) && /section/i.test(p));
-
-  const lines = [];
-  for(const path of targets){
-    const xmlStr = await zip.files[path].async('string');
-    const doc = new DOMParser().parseFromString(xmlStr, 'application/xml');
-    const paragraphs = doc.getElementsByTagNameNS('*','p');
-    for(const p of paragraphs){
-      const tNodes = p.getElementsByTagNameNS('*','t');
-      let line = '';
-      for(const t of tNodes) line += t.textContent;
-      if(line.trim().length) lines.push(line);
-    }
-  }
-  return lines.join('\n');
-}
-
-function extractXlsxText(buffer){
-  const wb = XLSX.read(buffer, { type: 'array' });
-  const lines = [];
-  wb.SheetNames.forEach(sheetName => {
-    const ws = wb.Sheets[sheetName];
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, raw: false, defval: '' });
-    rows.forEach(row => {
-      const line = row.map(c => (c === null || c === undefined) ? '' : String(c)).join('\t');
-      if(line.trim().length) lines.push(line);
-    });
-  });
-  return lines.join('\n');
-}
-
-async function extractPdfText(buffer){
-  const loadingTask = pdfjsLib.getDocument({ data: buffer.slice(0) });
-  const pdf = await loadingTask.promise;
-  const lines = [];
-  for(let i = 1; i <= pdf.numPages; i++){
-    const page = await pdf.getPage(i);
-    const content = await page.getTextContent();
-    let currentY = null, line = '';
-    for(const item of content.items){
-      const y = item.transform[5];
-      if(currentY === null || Math.abs(y - currentY) < 2){
-        line += item.str;
-      } else {
-        if(line.trim().length) lines.push(line);
-        line = item.str;
-      }
-      currentY = y;
-    }
-    if(line.trim().length) lines.push(line);
-  }
-  return lines.join('\n');
-}
-
-function sanitizeFilename(str){
-  return str.replace(/[\\/:*?"<>|]/g, '').trim();
-}
-
-function detectPart(text, rule){
-  const anchor = (rule.anchor || '').trim();
-  if(!anchor) return { value: '', ok: false, hasAnchor: false };
-
-  const idxFn = rule.occurrence === 'last' ? text.lastIndexOf.bind(text) : text.indexOf.bind(text);
-  const idx = idxFn(anchor);
-  if(idx === -1) return { value: '', ok: false, hasAnchor: true };
-
-  let raw = '';
-
-  if(rule.direction === 'after'){
-    const after = text.slice(idx + anchor.length);
-    let end;
-    if(rule.stopType === 'custom' && rule.stopValue){
-      const si = after.indexOf(rule.stopValue);
-      end = si === -1 ? after.length : si;
-    } else if(rule.stopType === 'length'){
-      const n = parseInt(rule.stopValue, 10) || 0;
-      end = n > 0 ? Math.min(n, after.length) : after.length;
-    } else { // newline (default) or custom with no value entered
-      const nl = after.search(/\r?\n/);
-      end = nl === -1 ? after.length : nl;
-    }
-    raw = after.slice(0, end);
-  } else { // direction === 'before'
-    const before = text.slice(0, idx);
-    let start;
-    if(rule.stopType === 'custom' && rule.stopValue){
-      const si = before.lastIndexOf(rule.stopValue);
-      start = si === -1 ? 0 : si + rule.stopValue.length;
-    } else if(rule.stopType === 'length'){
-      const n = parseInt(rule.stopValue, 10) || 0;
-      start = n > 0 ? Math.max(0, before.length - n) : 0;
-    } else { // newline
-      const lastNl = Math.max(before.lastIndexOf('\n'), before.lastIndexOf('\r'));
-      start = lastNl === -1 ? 0 : lastNl + 1;
-    }
-    raw = before.slice(start);
+    if (fileQueue.length > 0) btnRun.disabled = false;
   }
 
-  raw = raw.replace(/^[\s:,\-–—]+|[\s:,\-–—]+$/g, '').trim();
-  if(!raw) return { value: '', ok: false, hasAnchor: true };
-
-  const maxLen = parseInt(rule.maxLen, 10) || 0;
-  if(maxLen > 0) raw = raw.slice(0, maxLen);
-
-  const clean = sanitizeFilename(raw);
-  if(!clean) return { value: '', ok: false, hasAnchor: true };
-
-  return { value: clean, ok: true, hasAnchor: true };
-}
-
-function markStale(){
-  analyzed = false;
-  state.files.forEach(item => {
-    item.status = 'pending';
-  });
-  renderTable();
-}
-
-async function runAnalysis(){
-  if(state.files.length === 0) return;
-  runBtn.disabled = true;
-  runBtn.textContent = '분석 중...';
-
-  const activeRules = rules.filter(r => (r.anchor || '').trim().length > 0);
-  const separator = sanitizeFilename(separatorInput.value) || separatorInput.value.trim() || '_';
-  const totalMaxLen = parseInt(totalMaxLenInput.value, 10) || 0;
-
-  for(const item of state.files){
-    if(item.text === null){
-      item.text = await extractText(item);
-    }
-
-    if(activeRules.length === 0){
-      item.parts = [];
-      item.newName = item.name;
-      item.status = 'idle';
-      continue;
-    }
-
-    const parts = activeRules.map(rule => detectPart(item.text, rule));
-    item.parts = parts;
-    const matched = parts.filter(p => p.ok).map(p => p.value);
-
-    if(matched.length === 0){
-      item.newName = item.name;
-      item.status = 'fail';
-    } else {
-      let combined = matched.join(separator);
-      combined = sanitizeFilename(combined);
-      if(totalMaxLen > 0) combined = combined.slice(0, totalMaxLen);
-      item.newName = combined + '.' + item.ext;
-      item.status = matched.length === activeRules.length ? 'ok' : 'partial';
-    }
+  function renderRow(item) {
+    const row = resultTable.insertRow();
+    row.id = `row-${item.file.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+    row.innerHTML = `
+      <td>${item.file.name}</td>
+      <td class="val-1">-</td>
+      <td class="val-2">-</td>
+      <td class="val-3">-</td>
+      <td class="val-new">-</td>
+      <td class="val-status"><span class="status-badge status-ready">대기 중</span></td>
+    `;
   }
 
-  analyzed = true;
-  runBtn.textContent = '실행 (분석하기)';
-  renderTable();
-}
+  async function runBatchProcess() {
+    btnRun.disabled = true;
+    btnZip.disabled = true;
 
-function renderTable(){
-  if(state.files.length === 0){
-    tableWrap.innerHTML = '<div class="empty-state">파일을 업로드하면 여기에 분석 결과가 표시됩니다.</div>';
-    fileCountEl.textContent = '업로드된 파일이 없습니다.';
-    downloadZipBtn.disabled = true;
-    runBtn.disabled = true;
-    return;
-  }
+    const rules = [
+      { key: document.getElementById('key1').value.trim(), dir: document.getElementById('dir1').value, idx: document.getElementById('idx1').value, range: document.getElementById('range1').value },
+      { key: document.getElementById('key2').value.trim(), dir: document.getElementById('dir2').value, idx: document.getElementById('idx2').value, range: document.getElementById('range2').value },
+      { key: document.getElementById('key3').value.trim(), dir: document.getElementById('dir3').value, idx: document.getElementById('idx3').value, range: document.getElementById('range3').value }
+    ];
 
-  runBtn.disabled = false;
+    for (let item of fileQueue) {
+      if (item.status === 'success') continue; // 이미 처리된 경우 스킵
 
-  if(!analyzed){
-    fileCountEl.textContent = `총 ${state.files.length}개 파일 업로드됨 · "실행"을 눌러 감지 결과를 확인하세요`;
-  } else {
-    const okCount = state.files.filter(f => f.status === 'ok').length;
-    const partialCount = state.files.filter(f => f.status === 'partial').length;
-    const failCount = state.files.filter(f => f.status === 'fail').length;
-    fileCountEl.textContent = `총 ${state.files.length}개 중 전체매칭 ${okCount} · 부분매칭 ${partialCount} · 매칭실패 ${failCount}`;
-  }
-  downloadZipBtn.disabled = !analyzed;
+      const rowId = `row-${item.file.name.replace(/[^a-zA-Z0-9]/g, '_')}`;
+      const row = document.getElementById(rowId);
+      const statusCell = row.querySelector('.val-status');
 
-  const rows = state.files.map(item => {
-    const badgeClass = item.ext === 'xls' ? 'xlsx' : item.ext;
-    let statusHtml;
-    if(!analyzed || item.status === 'pending'){
-      statusHtml = `<span class="hint">실행 필요</span>`;
-    } else if(item.status === 'ok'){
-      statusHtml = `<span class="status-ok">전체 매칭</span>`;
-    } else if(item.status === 'partial'){
-      const total = item.parts ? item.parts.length : 0;
-      const matched = item.parts ? item.parts.filter(p => p.ok).length : 0;
-      statusHtml = `<span class="status-ok">${matched}/${total} 매칭</span>`;
-    } else if(item.status === 'fail'){
-      statusHtml = `<span class="status-fail">매칭 실패</span>`;
-    } else {
-      statusHtml = `<span class="hint">-</span>`;
-    }
-    return `
-      <tr data-id="${item.id}">
-        <td>${escapeHtml(item.name)}</td>
-        <td class="filetype"><span class="badge ${badgeClass}">${item.ext.toUpperCase()}</span></td>
-        <td>${statusHtml}</td>
-        <td><input type="text" class="newname-input" data-id="${item.id}" value="${escapeHtml(item.newName)}"></td>
-        <td><button class="btn-outline btn-small dl-btn" data-id="${item.id}" ${analyzed ? '' : 'disabled'}>다운로드</button></td>
-        <td><button class="btn-outline btn-small remove-btn" data-id="${item.id}">삭제</button></td>
-      </tr>`;
-  }).join('');
+      statusCell.innerHTML = `<span class="status-badge status-working">분석 중...</span>`;
 
-  tableWrap.innerHTML = `
-    <table>
-      <thead>
-        <tr>
-          <th>원본 파일명</th><th>형식</th><th>감지 결과</th><th>새 파일명</th><th></th><th></th>
-        </tr>
-      </thead>
-      <tbody>${rows}</tbody>
-    </table>
-  `;
+      try {
+        let fullText = "";
+        if (item.file.name.endsWith('.pdf')) {
+          fullText = await extractPdfText(item.file);
+          if (fullText.trim().length < 20) {
+            statusCell.innerHTML = `<span class="status-badge status-working">OCR 스캔 중...</span>`;
+            fullText = await extractPdfOCR(item.file);
+          }
+        } else if (item.file.name.endsWith('.hwpx')) {
+          fullText = await extractHwpxText(item.file);
+        }
 
-  tableWrap.querySelectorAll('.newname-input').forEach(inp => {
-    inp.addEventListener('input', () => {
-      const id = parseInt(inp.dataset.id, 10);
-      const item = state.files.find(f => f.id === id);
-      if(item) item.newName = inp.value;
-    });
-  });
-  tableWrap.querySelectorAll('.dl-btn').forEach(btn => {
-    btn.addEventListener('click', () => downloadSingle(parseInt(btn.dataset.id, 10)));
-  });
-  tableWrap.querySelectorAll('.remove-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const id = parseInt(btn.dataset.id, 10);
-      state.files = state.files.filter(f => f.id !== id);
-      renderTable();
-    });
-  });
-}
+        const vals = rules.map(rule => parseTextByRule(fullText, rule));
+        row.querySelector('.val-1').innerText = vals[0] || "-";
+        row.querySelector('.val-2').innerText = vals[1] || "-";
+        row.querySelector('.val-3').innerText = vals[2] || "-";
 
-function escapeHtml(str){
-  return str.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-}
-
-function downloadSingle(id){
-  const item = state.files.find(f => f.id === id);
-  if(!item) return;
-  const blob = new Blob([item.buffer], { type: item.mime });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = item.newName || item.name;
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-
-async function downloadAllZip(){
-  if(state.files.length === 0) return;
-  const zip = new JSZip();
-  const usedNames = new Set();
-  state.files.forEach(item => {
-    let name = item.newName || item.name;
-    let finalName = name;
-    let counter = 1;
-    while(usedNames.has(finalName)){
-      const dot = name.lastIndexOf('.');
-      finalName = dot === -1 ? `${name}_${counter}` : `${name.slice(0,dot)}_${counter}${name.slice(dot)}`;
-      counter++;
-    }
-    usedNames.add(finalName);
-    zip.file(finalName, item.buffer);
-  });
-  const blob = await zip.generateAsync({ type: 'blob' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = '변경된_파일들.zip';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  URL.revokeObjectURL(url);
-}
-</script>
-</body>
-</html>
+        const ext = item.file.name.substring(item.file.name.lastIndexOf('.'));
+        const cleanBaseName = item.file.name.replace(ext, '');
+        const validParts = vals.filter(v =>
