@@ -11,8 +11,12 @@
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f8f9fa; }
     .container { max-width: 1080px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     h2 { border-bottom: 2px solid #007bff; padding-bottom: 10px; color: #333; margin-top: 0; }
+    
     .rule-card { background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #007bff; }
+    .rule-card.fn-card { border-left-color: #28a745; background: #f0fdf4; }
     .rule-card h4 { margin: 0 0 10px 0; color: #007bff; }
+    .rule-card.fn-card h4 { color: #28a745; }
+    
     .rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; align-items: center; }
     label { font-size: 13px; font-weight: bold; color: #495057; display: block; margin-bottom: 4px; }
     input[type="text"], select { width: 100%; padding: 6px; border: 1px solid #ced4da; border-radius: 4px; box-sizing: border-box; font-size: 13px; }
@@ -65,9 +69,30 @@
 <div class="container">
   <h2>문서 정보 기반 정밀 파일명 자동 변경기</h2>
 
+  <!-- 원본 파일명 정리 규칙 설정 (신규 기능) -->
+  <div class="rule-card fn-card">
+    <h4>✂️ 원본 파일명 특정 위치 삭제/정리 설정</h4>
+    <div class="rule-grid">
+      <div>
+        <label>기준 단어(키워드)</label>
+        <input type="text" id="fnKey" value="" placeholder="예: 무작위 문자열, 반복 단어">
+      </div>
+      <div>
+        <label>삭제 방식</label>
+        <select id="fnMode">
+          <option value="none" selected>사용 안 함 (원본 그대로 유지)</option>
+          <option value="after">기준 단어 뒤 전체 삭제</option>
+          <option value="before">기준 단어 앞 전체 삭제</option>
+          <option value="removeKey">기준 단어만 삭제</option>
+        </select>
+      </div>
+    </div>
+    <div class="help-text">※ 인터넷에서 다운받은 긴 파일명에서 불필요한 무작위 문자열 위치를 잘라낼 때 사용하세요.</div>
+  </div>
+
   <!-- 추출 규칙 1 -->
   <div class="rule-card">
-    <h4>추출 위치 1 설정</h4>
+    <h4>문서 본문 추출 위치 1 설정</h4>
     <div class="rule-grid">
       <div>
         <label>기준 단어(키워드)</label>
@@ -101,7 +126,7 @@
 
   <!-- 추출 규칙 2 -->
   <div class="rule-card">
-    <h4>추출 위치 2 설정</h4>
+    <h4>문서 본문 추출 위치 2 설정</h4>
     <div class="rule-grid">
       <div>
         <label>기준 단어(키워드)</label>
@@ -135,7 +160,7 @@
 
   <!-- 추출 규칙 3 -->
   <div class="rule-card">
-    <h4>추출 위치 3 설정 (선택)</h4>
+    <h4>문서 본문 추출 위치 3 설정 (선택)</h4>
     <div class="rule-grid">
       <div>
         <label>기준 단어(키워드)</label>
@@ -165,7 +190,6 @@
         </select>
       </div>
     </div>
-    <div class="help-text">※ 단어 사이에 '성 명', '성   명'처럼 띄어쓰기가 들어있어도 자동으로 인식하여 값을 가져옵니다.</div>
   </div>
 
   <div class="drop-zone" id="dropZone">
@@ -275,7 +299,6 @@
     `;
   }
 
-  // 초기화 기능
   function clearAllFiles() {
     fileQueue = [];
     resultTable.innerHTML = '';
@@ -295,6 +318,9 @@
     btnRun.disabled = true;
     btnRe.disabled = true;
     btnZip.disabled = true;
+
+    const fnKey = document.getElementById('fnKey').value.trim();
+    const fnMode = document.getElementById('fnMode').value;
 
     const rules = [
       { key: document.getElementById('key1').value.trim(), dir: document.getElementById('dir1').value, idx: document.getElementById('idx1').value, range: document.getElementById('range1').value },
@@ -330,19 +356,21 @@
         row.querySelector('.val-3').innerText = vals[2] || "-";
 
         const ext = item.file.name.substring(item.file.name.lastIndexOf('.'));
-        const cleanBaseName = item.file.name.replace(ext, '');
+        const originalBaseName = item.file.name.replace(ext, '');
+
+        // 原本 파일명 정리 로직 적용
+        const cleanedBaseName = trimFileName(originalBaseName, fnKey, fnMode);
         
-        // 1. 값 각각의 양끝 언더바/공백 정제 및 미확인/빈값 필터링
+        // 본문 추출값 정제 및 조합
         const validParts = vals
           .map(v => v ? v.trim().replace(/^[_]+|[_]+$/g, '') : "")
           .filter(v => v !== "" && v !== "미확인");
 
-        // 2. 유효한 값만 단일 언더바(_)로 연결하여 파일명 생성
         if (validParts.length > 0) {
           const prefix = validParts.join('_');
-          item.newName = `[${prefix}]_${cleanBaseName}${ext}`;
+          item.newName = cleanedBaseName ? `[${prefix}]_${cleanedBaseName}${ext}` : `[${prefix}]${ext}`;
         } else {
-          item.newName = item.file.name;
+          item.newName = cleanedBaseName ? `${cleanedBaseName}${ext}` : item.file.name;
         }
 
         row.querySelector('.val-new').innerText = item.newName;
@@ -366,11 +394,31 @@
     updateButtonStates();
   }
 
-  // 띄어쓰기 유연 탐색 및 구문 분석 엔진
+  // 파일명 텍스트 자르기/정리 처리 함수
+  function trimFileName(baseName, key, mode) {
+    if (mode === 'none' || !key) return baseName;
+
+    const idx = baseName.indexOf(key);
+    if (idx === -1) return baseName; // 키워드가 없으면 원본 그대로 반환
+
+    if (mode === 'after') {
+      // 키워드 '뒤' 전체 삭제 (키워드까지는 포함)
+      return baseName.substring(0, idx + key.length).trim().replace(/^[_]+|[_]+$/g, '');
+    } else if (mode === 'before') {
+      // 키워드 '앞' 전체 삭제 (키워드부터 시작)
+      return baseName.substring(idx).trim().replace(/^[_]+|[_]+$/g, '');
+    } else if (mode === 'removeKey') {
+      // 키워드 단어만 삭제
+      return baseName.replace(key, '').trim().replace(/^[_]+|[_]+$/g, '');
+    }
+
+    return baseName;
+  }
+
+  // 본문 텍스트 추출용 유연 탐색 엔진
   function parseTextByRule(text, rule) {
     if (!rule.key || !text) return "";
 
-    // 키워드 글자 사이에 정규식 공백 처리 (예: "성명" -> "성\s*명")
     const flexibleKey = rule.key.split('').map(char => {
       return /[a-zA-Z0-9가-힣]/.test(char) ? char + '\\s*' : char;
     }).join('').replace(/\\s\*$/, '');
@@ -407,7 +455,6 @@
     }
   }
 
-  // 정밀 정제 함수: 마침표, 따옴표, 콜론, 불필요한 언더바 및 개행 문자 정제
   function cleanValue(val) {
     if (!val) return "";
     return val
