@@ -2,90 +2,96 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>문서 정보 기반 정밀 파일명 자동 변경기</title>
-  <!-- CDN 스크립트 로드 -->
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-
-  <!-- Firebase SDK (v10 모듈형) -->
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>설정 관리 및 클라우드 동기화</title>
+  <!-- Firebase App & Firestore / Auth SDK -->
   <script type="module">
-    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
-    import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-app.js";
+    import { 
+      getAuth, 
+      GoogleAuthProvider, 
+      signInWithPopup, 
+      signOut, 
+      onAuthStateChanged 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+    import { 
+      getFirestore, 
+      doc, 
+      setDoc, 
+      getDoc 
+    } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
+    // 1. Firebase Config 설정 (본인의 프로젝트 정보로 변경 필요)
     const firebaseConfig = {
-      apiKey: "AIzaSyBdkKM94UZla4vBDDyOzAu3Lr0jsRWpbfs",
-      authDomain: "filerename-bf2ac.firebaseapp.com",
-      projectId: "filerename-bf2ac",
-      storageBucket: "filerename-bf2ac.firebasestorage.app",
-      messagingSenderId: "392745077131",
-      appId: "1:392745077131:web:138d797d670c9dba32c78e",
-      measurementId: "G-TFH6PQFJPH"
+      apiKey: "YOUR_API_KEY",
+      authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+      projectId: "YOUR_PROJECT_ID",
+      storageBucket: "YOUR_PROJECT_ID.appspot.com",
+      messagingSenderId: "YOUR_SENDER_ID",
+      appId: "YOUR_APP_ID"
     };
 
+    // Firebase 초기화
     const app = initializeApp(firebaseConfig);
     const auth = getAuth(app);
     const db = getFirestore(app);
-    const provider = new GoogleAuthProvider();
 
+    // 사용자 상태 저장
     window.currentUser = null;
 
-    onAuthStateChanged(auth, async (user) => {
-      const userProfileInfo = document.getElementById('userProfileInfo');
-      
-      if (user) {
-        window.currentUser = user;
-        userProfileInfo.innerHTML = `👤 <b>${user.displayName || user.email}</b>님 로그인됨`;
-        document.getElementById('btnLogin').style.display = 'none';
-        document.getElementById('btnLogout').style.display = 'inline-block';
-        
-        await loadUserDataFromCloud();
-      } else {
-        window.currentUser = null;
-        userProfileInfo.innerHTML = `🔒 비로그인 상태 (현재 PC 브라우저에만 저장됨)`;
-        document.getElementById('btnLogin').style.display = 'inline-block';
-        document.getElementById('btnLogout').style.display = 'none';
-        
-        window.refreshPresetDropdown();
-        window.loadDefaultPresetOnStart();
-      }
-    });
-
+    // Google 로그인
     window.loginWithGoogle = async function() {
+      const provider = new GoogleAuthProvider();
       try {
         await signInWithPopup(auth, provider);
       } catch (error) {
         console.error("로그인 실패:", error);
-        alert("구글 로그인에 실패했습니다.");
+        alert("로그인 중 오류가 발생했습니다: " + error.message);
       }
     };
 
-    window.logoutGoogle = async function() {
-      await signOut(auth);
-      alert("로그아웃되었습니다.");
-      location.reload();
+    // 로그아웃
+    window.logout = async function() {
+      try {
+        await signOut(auth);
+      } catch (error) {
+        console.error("로그아웃 실패:", error);
+      }
     };
 
+    // 클라우드 저장 및 목록 자동 갱신 함수
     window.savePresetToCloud = async function(presetName, configData, isDefault = false) {
-      if (!window.currentUser) return false;
+      if (!window.currentUser) {
+        alert("로그인이 필요합니다.");
+        return false;
+      }
       const userRef = doc(db, "users", window.currentUser.uid);
       
       try {
         if (isDefault) {
           await setDoc(userRef, { defaultConfig: configData }, { merge: true });
         } else {
-          await setDoc(userRef, { presets: { [presetName]: configData } }, { merge: true });
+          // 객체 중첩 덮어쓰기 방지를 위한 merge 사용
+          await setDoc(userRef, { 
+            presets: { 
+              [presetName]: configData 
+            } 
+          }, { merge: true });
         }
+        
+        // 저장 후 클라우드 데이터를 다시 불러와 목록 즉시 자동 갱신
+        await window.loadUserDataFromCloud();
+        alert("성공적으로 저장되었습니다.");
         return true;
       } catch (err) {
         console.error("클라우드 저장 오류:", err);
-        alert("클라우드 저장 실패");
+        alert("클라우드 저장에 실패했습니다. (Firestore 보안 규칙 및 네트워크를 확인하세요)");
         return false;
       }
     };
 
-    async function loadUserDataFromCloud() {
+    // 클라우드 데이터 불러오기 함수
+    window.loadUserDataFromCloud = async function() {
       if (!window.currentUser) return;
       const userRef = doc(db, "users", window.currentUser.uid);
       try {
@@ -94,945 +100,131 @@
         if (docSnap.exists()) {
           const data = docSnap.data();
           
-          if (data.defaultConfig) {
+          if (data.defaultConfig && typeof window.applyConfigData === 'function') {
             window.applyConfigData(data.defaultConfig);
-            window.updateDefaultNoticeText(true);
           }
 
-          window.refreshPresetDropdownFromData(data.presets || {});
+          // 목록 드롭다운 갱신
+          if (typeof window.refreshPresetDropdownFromData === 'function') {
+            window.refreshPresetDropdownFromData(data.presets || {});
+          }
         } else {
-          window.refreshPresetDropdownFromData({});
+          if (typeof window.refreshPresetDropdownFromData === 'function') {
+            window.refreshPresetDropdownFromData({});
+          }
         }
       } catch(err) {
         console.error("클라우드 불러오기 오류:", err);
       }
-    }
-
-    window.deletePresetFromCloud = async function(presetName) {
-      if (!window.currentUser) return;
-      const userRef = doc(db, "users", window.currentUser.uid);
-      await updateDoc(userRef, {
-        [`presets.${presetName}`]: deleteField()
-      });
-      await loadUserDataFromCloud();
     };
-  </script>
 
-  <style>
-    * { box-sizing: border-box; }
-    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f8f9fa; }
-    .container { max-width: 1400px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
-    
-    /* 상단 좌우 배치 그리드 */
-    .top-header-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
-    
-    /* 중앙 영역 배치 그리드 */
-    .middle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+    // 인증 상태 감지
+    onAuthStateChanged(auth, (user) => {
+      const loginBtn = document.getElementById('loginBtn');
+      const logoutBtn = document.getElementById('logoutBtn');
+      const userInfo = document.getElementById('userInfo');
 
-    .card-box { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
-    
-    .notice-card { background: #e0f2fe; border-left: 5px solid #0284c7; }
-    .preset-card { background: #eef2ff; border: 1px solid #c7d2fe; }
-    .fn-card { border-left: 4px solid #28a745; background: #f0fdf4; }
-    .rule-card { background: #f8fafc; border: 1px solid #cbd5e1; margin-bottom: 10px; }
-
-    h2 { border-bottom: 2px solid #007bff; padding-bottom: 10px; color: #333; margin-top: 0; font-size: 1.3rem; }
-    h4 { margin: 0 0 10px 0; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between; }
-    
-    .preset-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .preset-controls input[type="text"], .preset-controls select { flex: 1; min-width: 150px; }
-
-    /* 추출위치 가로 한 줄 배치 스타일 */
-    .horizontal-rule-card {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      padding: 10px 15px;
-    }
-    .horizontal-rule-card h4 {
-      margin: 0;
-      white-space: nowrap;
-      min-width: 140px;
-      color: #007bff;
-    }
-    .rule-grid-inline {
-      display: flex;
-      flex: 1;
-      gap: 10px;
-      align-items: center;
-    }
-    .inline-item {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      flex: 1;
-    }
-    .inline-item label {
-      font-size: 12px;
-      font-weight: bold;
-      color: #475569;
-      white-space: nowrap;
-      margin-bottom: 0;
-    }
-
-    input[type="text"], select { width: 100%; padding: 6px 8px; border: 1px solid #ced4da; border-radius: 4px; font-size: 13px; }
-    
-    .drop-zone { 
-      border: 2px dashed #007bff; 
-      background: #eff6ff; 
-      border-radius: 8px; 
-      padding: 20px; 
-      text-align: center; 
-      color: #1d4ed8; 
-      font-weight: bold; 
-      cursor: pointer; 
-      height: 100%;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      transition: all 0.2s ease;
-    }
-    .drop-zone.dragover { background: #dbeafe; border-color: #1e40af; }
-
-    .action-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; gap: 10px; flex-wrap: wrap; }
-    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
-    .btn { padding: 8px 14px; border: none; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 13px; transition: 0.2s; white-space: nowrap; }
-    
-    .btn-google { background: #4285f4; color: white; display: inline-flex; align-items: center; gap: 6px; }
-    .btn-google:hover { background: #3367d6; }
-    .btn-logout { background: #6c757d; color: white; }
-    
-    .btn-indigo { background: #6366f1; color: white; }
-    .btn-dark { background: #374151; color: white; }
-    .btn-purple { background: #8b5cf6; color: white; }
-    .btn-outline-danger { background: transparent; color: #dc3545; border: 1px solid #dc3545; }
-
-    .btn-run { background: #007bff; color: white; }
-    .btn-re { background: #17a2b8; color: white; }
-    .btn-sel-re { background: #e0a800; color: white; }
-    .btn-clear { background: #dc3545; color: white; }
-    .btn-zip { background: #28a745; color: white; }
-    .btn:disabled { background: #ccc !important; border-color: #ccc !important; color: #666 !important; cursor: not-allowed; }
-
-    /* 테이블 스타일 및 행 드래그 관련 스타일 */
-    table { width: 100%; border-collapse: collapse; margin-top: 15px; }
-    th, td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; font-size: 13px; }
-    th { background-color: #f1f5f9; }
-    
-    tr.draggable-row { cursor: grab; }
-    tr.draggable-row:active { cursor: grabbing; }
-    tr.dragging { opacity: 0.4; background-color: #e2e8f0; }
-    .drag-handle { cursor: grab; font-weight: bold; color: #94a3b8; user-select: none; }
-
-    .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
-    .status-ready { background: #e2e3e5; color: #383d41; }
-    .status-working { background: #fff3cd; color: #856404; }
-    .status-success { background: #d4edda; color: #155724; }
-    .status-error { background: #f8d7da; color: #721c24; }
-
-    .btn-sm { padding: 4px 8px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; background: #28a745; color: white; }
-    .default-tag { font-size: 11px; background: #28a745; color: white; padding: 2px 6px; border-radius: 10px; margin-left: 6px; }
-
-    @media (max-width: 992px) {
-      .top-header-grid, .middle-grid { grid-template-columns: 1fr; }
-      .horizontal-rule-card { flex-direction: column; align-items: flex-start; }
-      .rule-grid-inline { flex-wrap: wrap; width: 100%; }
-    }
-  </style>
-</head>
-<body>
-
-<div class="container">
-
-  <!-- 1. 상단 영역: 제목/로그인 (좌) vs 설정 저장/프로필 (우) -->
-  <div class="top-header-grid">
-    <div class="card-box notice-card">
-      <h2>📑 파일명 자동 변경기</h2>
-      <div class="notice-text">
-        💡 구글 로그인 시 설정 프로필이 클라우드에 안전하게 저장되어 언제 어디서나 동일한 설정을 사용할 수 있습니다.
-      </div>
-      <div id="loginStatusDiv" style="margin-top: 10px;">
-        <span id="userProfileInfo" style="font-size: 13px; margin-right: 8px;"></span>
-        <button class="btn btn-google" id="btnLogin" onclick="window.loginWithGoogle()">
-          <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#fff" d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.761H12.545z"/></svg>
-          구글 계정 로그인
-        </button>
-        <button class="btn btn-logout" id="btnLogout" onclick="window.logoutGoogle()" style="display:none;">로그아웃</button>
-      </div>
-    </div>
-
-    <div class="card-box preset-card">
-      <h4>
-        <span>⚙️ 설정 저장 및 프로필 관리</span>
-        <span id="defaultNotice" style="font-size: 12px; font-weight: normal; color: #4b5563;"></span>
-      </h4>
-      <div class="preset-controls">
-        <input type="text" id="presetNameInput" placeholder="새 설정 이름 입력 (예: 여비 신청서)">
-        <button class="btn btn-indigo" onclick="saveCurrentPreset()">💾 저장</button>
-        <button class="btn btn-dark" onclick="setAsDefaultPreset()">⭐ 기본값 등록</button>
-      </div>
-      <div class="preset-controls" style="margin-top: 8px;">
-        <select id="presetSelect">
-          <option value="">-- 저장된 설정 프로필 선택 --</option>
-        </select>
-        <button class="btn btn-purple" onclick="loadSelectedPreset(false)">📂 불러오기</button>
-        <button class="btn btn-purple" onclick="loadSelectedPreset(true)">⚡ 불러오기+실행</button>
-        <button class="btn btn-outline-danger" onclick="deleteSelectedPreset()">🗑️ 삭제</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- 2. 중앙 영역: 원본파일명 정리 및 새로운 이름 구성 (좌) vs 드래그 앤 드롭 (우) -->
-  <div class="middle-grid">
-    <div class="card-box fn-card">
-      <h4 style="color: #28a745;">✂️ 원본 파일명 정리 및 새로운 이름 구성</h4>
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <label style="font-size:12px; font-weight:bold; white-space:nowrap; width:100px;">정리 기준단어:</label>
-          <input type="text" id="fnKey" value="" placeholder="예: 무작위 문자열, 반복 단어">
-        </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <label style="font-size:12px; font-weight:bold; white-space:nowrap; width:100px;">삭제 방식:</label>
-          <select id="fnMode">
-            <option value="none" selected>사용 안 함 (원본 유지)</option>
-            <option value="removeAll">🔥 원본 전체 삭제 (확장자만 유지)</option>
-            <option value="after">기준 단어 뒤 전체 삭제</option>
-            <option value="before">기준 단어 앞 전체 삭제</option>
-            <option value="removeKey">기준 단어만 삭제</option>
-          </select>
-        </div>
-        <hr style="border:0; border-top:1px dashed #cbd5e1; margin:4px 0;">
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <label style="font-size:12px; font-weight:bold; white-space:nowrap; width:100px;">추가 공통단어:</label>
-          <input type="text" id="commonWord" value="" placeholder="예: [부여군청], 2026년">
-        </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <label style="font-size:12px; font-weight:bold; white-space:nowrap; width:100px;">공통단어 위치:</label>
-          <select id="commonPos">
-            <option value="prefix" selected>추출값 맨 앞 (접두어)</option>
-            <option value="suffix">추출값 맨 뒤 (접미어)</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <!-- 우측 드래그 앤 드롭 영역 -->
-    <div class="drop-zone" id="dropZone">
-      <div style="font-size: 2rem; margin-bottom: 6px;">📂</div>
-      <div>파일을 마우스로 끌어다 넣거나, 이곳을 클릭하세요.</div>
-      <div style="font-size: 11px; color: #64748b; margin-top: 4px;">(PDF, HWPX 파일 지원)</div>
-      <input type="file" id="fileInput" multiple accept=".pdf,.hwpx" style="display:none;">
-    </div>
-  </div>
-
-  <!-- 3. 추출 위치 설정 -->
-  <div class="card-box rule-card horizontal-rule-card">
-    <h4>📍 추출 위치 1 설정</h4>
-    <div class="rule-grid-inline">
-      <div class="inline-item">
-        <label>기준단어:</label>
-        <input type="text" id="key1" value="성명" placeholder="예: 성명">
-      </div>
-      <div class="inline-item">
-        <label>탐색방식:</label>
-        <select id="dir1">
-          <option value="after" selected>기준 단어 뒤</option>
-          <option value="before">기준 단어 앞</option>
-          <option value="nextLine">다음 줄 전체</option>
-        </select>
-      </div>
-      <div class="inline-item">
-        <label>순번:</label>
-        <select id="idx1">
-          <option value="1" selected>첫 번째</option>
-          <option value="2">두 번째</option>
-          <option value="last">마지막</option>
-        </select>
-      </div>
-      <div class="inline-item">
-        <label>범위:</label>
-        <select id="range1">
-          <option value="word" selected>1단어(공백전까지)</option>
-          <option value="line">해당 줄 끝까지</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <div class="card-box rule-card horizontal-rule-card">
-    <h4>📍 추출 위치 2 설정</h4>
-    <div class="rule-grid-inline">
-      <div class="inline-item">
-        <label>기준단어:</label>
-        <input type="text" id="key2" value="기관명" placeholder="예: 기관명">
-      </div>
-      <div class="inline-item">
-        <label>탐색방식:</label>
-        <select id="dir2">
-          <option value="after" selected>기준 단어 뒤</option>
-          <option value="before">기준 단어 앞</option>
-          <option value="nextLine">다음 줄 전체</option>
-        </select>
-      </div>
-      <div class="inline-item">
-        <label>순번:</label>
-        <select id="idx2">
-          <option value="1" selected>첫 번째</option>
-          <option value="2">두 번째</option>
-          <option value="last">마지막</option>
-        </select>
-      </div>
-      <div class="inline-item">
-        <label>범위:</label>
-        <select id="range2">
-          <option value="word">1단어(공백전까지)</option>
-          <option value="line" selected>해당 줄 끝까지</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <div class="card-box rule-card horizontal-rule-card">
-    <h4>📍 추출 위치 3 설정</h4>
-    <div class="rule-grid-inline">
-      <div class="inline-item">
-        <label>기준단어:</label>
-        <input type="text" id="key3" value="" placeholder="미사용 시 비워둠">
-      </div>
-      <div class="inline-item">
-        <label>탐색방식:</label>
-        <select id="dir3">
-          <option value="after" selected>기준 단어 뒤</option>
-          <option value="before">기준 단어 앞</option>
-          <option value="nextLine">다음 줄 전체</option>
-        </select>
-      </div>
-      <div class="inline-item">
-        <label>순번:</label>
-        <select id="idx3">
-          <option value="1" selected>첫 번째</option>
-          <option value="2">두 번째</option>
-          <option value="last">마지막</option>
-        </select>
-      </div>
-      <div class="inline-item">
-        <label>범위:</label>
-        <select id="range3">
-          <option value="word" selected>1단어(공백전까지)</option>
-          <option value="line">해당 줄 끝까지</option>
-        </select>
-      </div>
-    </div>
-  </div>
-
-  <!-- 실행 버튼 영역 -->
-  <div class="action-bar">
-    <div class="btn-group">
-      <button class="btn btn-run" id="btnRun" onclick="runBatchProcess('all')" disabled>▶ 전체 분석 및 실행</button>
-      <button class="btn btn-sel-re" id="btnSelRe" onclick="runBatchProcess('selected')" disabled>🎯 선택한 파일만 재실행</button>
-      <button class="btn btn-re" id="btnRe" onclick="runBatchProcess('reAll')" disabled>🔄 전체 재실행</button>
-      <button class="btn btn-outline-danger" id="btnDeleteSelected" onclick="deleteSelectedFiles()" disabled>🗑️ 선택 파일 삭제</button>
-      <button class="btn btn-clear" id="btnClear" onclick="clearAllFiles()">💥 전체 초기화</button>
-    </div>
-    <div>
-      <button class="btn btn-zip" id="btnZip" onclick="downloadAllZip()" disabled>📦 전체 ZIP 일괄 다운로드</button>
-    </div>
-  </div>
-
-  <h3 style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-    <span>업로드 파일 목록 및 실행 결과</span>
-    <span style="font-size: 12px; font-weight: normal; color: #64748b;">💡 마우스로 행을 끌어서 순서를 변경할 수 있습니다.</span>
-  </h3>
-  
-  <table id="resultTable">
-    <thead>
-      <tr>
-        <th style="width: 3%; text-align: center;">이동</th>
-        <th style="width: 3%; text-align: center;"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"></th>
-        <th style="width: 18%;">원본 파일명</th>
-        <th style="width: 11%;">추출값 1</th>
-        <th style="width: 11%;">추출값 2</th>
-        <th style="width: 11%;">추출값 3</th>
-        <th style="width: 23%;">변경될 파일명</th>
-        <th style="width: 20%;">상태 / 개별 다운로드</th>
-      </tr>
-    </thead>
-    <tbody id="tableBody"></tbody>
-  </table>
-</div>
-
-<script>
-  if (window.pdfjsLib) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-  }
-
-  const dropZone = document.getElementById('dropZone');
-  const fileInput = document.getElementById('fileInput');
-  const btnRun = document.getElementById('btnRun');
-  const btnRe = document.getElementById('btnRe');
-  const btnSelRe = document.getElementById('btnSelRe');
-  const btnDeleteSelected = document.getElementById('btnDeleteSelected');
-  const btnZip = document.getElementById('btnZip');
-  const tableBody = document.getElementById('tableBody');
-
-  let fileQueue = [];
-  let draggedRowIndex = null;
-
-  const STORAGE_KEY_PRESETS = 'doc_renamer_presets';
-  const STORAGE_KEY_DEFAULT = 'doc_renamer_default_preset';
-
-  window.getCurrentConfigData = function() {
-    return {
-      commonWord: document.getElementById('commonWord').value,
-      commonPos: document.getElementById('commonPos').value,
-      fnKey: document.getElementById('fnKey').value,
-      fnMode: document.getElementById('fnMode').value,
-      rules: [
-        { key: document.getElementById('key1').value, dir: document.getElementById('dir1').value, idx: document.getElementById('idx1').value, range: document.getElementById('range1').value },
-        { key: document.getElementById('key2').value, dir: document.getElementById('dir2').value, idx: document.getElementById('idx2').value, range: document.getElementById('range2').value },
-        { key: document.getElementById('key3').value, dir: document.getElementById('dir3').value, idx: document.getElementById('idx3').value, range: document.getElementById('range3').value }
-      ]
-    };
-  };
-
-  window.applyConfigData = function(data) {
-    if (!data) return;
-    if (data.commonWord !== undefined) document.getElementById('commonWord').value = data.commonWord;
-    if (data.commonPos !== undefined) document.getElementById('commonPos').value = data.commonPos;
-    if (data.fnKey !== undefined) document.getElementById('fnKey').value = data.fnKey;
-    if (data.fnMode !== undefined) document.getElementById('fnMode').value = data.fnMode;
-
-    if (data.rules && data.rules.length >= 3) {
-      document.getElementById('key1').value = data.rules[0].key || '';
-      document.getElementById('dir1').value = data.rules[0].dir || 'after';
-      document.getElementById('idx1').value = data.rules[0].idx || '1';
-      document.getElementById('range1').value = data.rules[0].range || 'word';
-
-      document.getElementById('key2').value = data.rules[1].key || '';
-      document.getElementById('dir2').value = data.rules[1].dir || 'after';
-      document.getElementById('idx2').value = data.rules[1].idx || '1';
-      document.getElementById('range2').value = data.rules[1].range || 'line';
-
-      document.getElementById('key3').value = data.rules[2].key || '';
-      document.getElementById('dir3').value = data.rules[2].dir || 'after';
-      document.getElementById('idx3').value = data.rules[2].idx || '1';
-      document.getElementById('range3').value = data.rules[2].range || 'word';
-    }
-  };
-
-  function getLocalSavedPresets() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY_PRESETS) || '{}');
-  }
-
-  window.saveCurrentPreset = async function() {
-    const nameInput = document.getElementById('presetNameInput');
-    const name = nameInput.value.trim();
-    if (!name) {
-      alert('설정 프로필 이름을 입력해주세요.');
-      return;
-    }
-
-    const configData = window.getCurrentConfigData();
-
-    if (window.currentUser && window.savePresetToCloud) {
-      const ok = await window.savePresetToCloud(name, configData, false);
-      if (ok !== false) {
-        alert(`'${name}' 프로필이 클라우드 계정에 저장되었습니다.`);
-      }
-    } else {
-      const presets = getLocalSavedPresets();
-      presets[name] = configData;
-      localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(presets));
-      alert(`'${name}' 프로필이 이 컴퓨터(로컬)에 저장되었습니다.`);
-      window.refreshPresetDropdown(name);
-    }
-
-    nameInput.value = '';
-  };
-
-  window.setAsDefaultPreset = async function() {
-    const currentData = window.getCurrentConfigData();
-    if (window.currentUser && window.savePresetToCloud) {
-      const ok = await window.savePresetToCloud(null, currentData, true);
-      if (ok !== false) {
-        alert('현재 설정이 클라우드 [기본값]으로 등록되었습니다.');
-      }
-    } else {
-      localStorage.setItem(STORAGE_KEY_DEFAULT, JSON.stringify(currentData));
-      alert('현재 설정이 이 컴퓨터의 [기본값]으로 등록되었습니다.');
-    }
-    window.updateDefaultNoticeText(true);
-  };
-
-  window.loadDefaultPresetOnStart = function() {
-    if (window.currentUser) return;
-    const defaultDataStr = localStorage.getItem(STORAGE_KEY_DEFAULT);
-    if (defaultDataStr) {
-      try {
-        window.applyConfigData(JSON.parse(defaultDataStr));
-        window.updateDefaultNoticeText(true);
-      } catch (e) { console.error(e); }
-    }
-  };
-
-  window.updateDefaultNoticeText = function(isLoaded = false) {
-    const notice = document.getElementById('defaultNotice');
-    notice.innerHTML = `<span class="default-tag">⭐ 기본 설정 적용 중</span>`;
-  };
-
-  window.refreshPresetDropdown = function(selectedName = '') {
-    const presets = getLocalSavedPresets();
-    window.refreshPresetDropdownFromData(presets, selectedName);
-  };
-
-  window.refreshPresetDropdownFromData = function(presetsObj, selectedName = '') {
-    const select = document.getElementById('presetSelect');
-    select.innerHTML = '<option value="">-- 저장된 설정 프로필 선택 --</option>';
-    
-    for (let name in presetsObj) {
-      const opt = document.createElement('option');
-      opt.value = name;
-      opt.innerText = name;
-      if (name === selectedName) opt.selected = true;
-      select.appendChild(opt);
-    }
-    window.cachedPresets = presetsObj;
-  };
-
-  window.loadSelectedPreset = function(autoRun = false) {
-    const select = document.getElementById('presetSelect');
-    const name = select.value;
-    if (!name) {
-      alert('불러올 프로필을 목록에서 선택해주세요.');
-      return;
-    }
-
-    const presets = window.cachedPresets || getLocalSavedPresets();
-    if (presets[name]) {
-      window.applyConfigData(presets[name]);
-      if (autoRun && fileQueue.length > 0) {
-        runBatchProcess('reAll');
-      } else if (!autoRun) {
-        alert(`'${name}' 설정을 불러왔습니다.`);
-      }
-    }
-  };
-
-  window.deleteSelectedPreset = async function() {
-    const select = document.getElementById('presetSelect');
-    const name = select.value;
-    if (!name) {
-      alert('삭제할 프로필을 목록에서 선택해주세요.');
-      return;
-    }
-
-    if (confirm(`'${name}' 설정 프로필을 정말 삭제하시겠습니까?`)) {
-      if (window.currentUser && window.deletePresetFromCloud) {
-        await window.deletePresetFromCloud(name);
+      if (user) {
+        window.currentUser = user;
+        if(loginBtn) loginBtn.style.display = 'none';
+        if(logoutBtn) logoutBtn.style.display = 'inline-block';
+        if(userInfo) userInfo.textContent = `${user.displayName || user.email}님 환영합니다.`;
+        
+        // 로그인 성공 시 사용자 클라우드 저장 데이터 자동 로드
+        window.loadUserDataFromCloud();
       } else {
-        const presets = getLocalSavedPresets();
-        delete presets[name];
-        localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(presets));
-        window.refreshPresetDropdown();
-      }
-      alert('삭제되었습니다.');
-    }
-  };
-
-  // --- Drag & Drop 및 파일 처리 ---
-  dropZone.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) handleFiles(e.target.files);
-  });
-
-  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    dropZone.addEventListener(eventName, preventDefaults, false);
-    document.body.addEventListener(eventName, preventDefaults, false);
-  });
-
-  function preventDefaults(e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  ['dragenter', 'dragover'].forEach(eventName => {
-    dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
-  });
-
-  ['dragleave', 'drop'].forEach(eventName => {
-    dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
-  });
-
-  dropZone.addEventListener('drop', (e) => {
-    const dt = e.dataTransfer;
-    const files = dt.files;
-    if (files && files.length > 0) {
-      handleFiles(files);
-    }
-  }, false);
-
-  function handleFiles(files) {
-    for (let file of files) {
-      const name = file.name.toLowerCase();
-      if (!name.endsWith('.pdf') && !name.endsWith('.hwpx')) continue;
-
-      if (!fileQueue.some(item => item.file.name === file.name)) {
-        const item = { 
-          id: 'item_' + Math.random().toString(36).substr(2, 9),
-          file: file, 
-          status: 'ready', 
-          newName: '', 
-          extractedText: null,
-          selected: false
-        };
-        fileQueue.push(item);
-      }
-    }
-    renderTable();
-    updateButtonStates();
-  }
-
-  // --- 테이블 렌더링 및 드래그 앤 드롭 순서 변경 ---
-  function renderTable() {
-    tableBody.innerHTML = '';
-    
-    fileQueue.forEach((item, index) => {
-      const row = document.createElement('tr');
-      row.className = 'draggable-row';
-      row.draggable = true;
-      row.dataset.index = index;
-
-      row.innerHTML = `
-        <td style="text-align: center;"><span class="drag-handle">☰</span></td>
-        <td style="text-align: center;">
-          <input type="checkbox" class="row-checkbox" ${item.selected ? 'checked' : ''} onchange="toggleItemSelect(${index}, this.checked)">
-        </td>
-        <td>${item.file.name}</td>
-        <td class="val-1">${item.vals ? item.vals[0] : '-'}</td>
-        <td class="val-2">${item.vals ? item.vals[1] : '-'}</td>
-        <td class="val-3">${item.vals ? item.vals[2] : '-'}</td>
-        <td class="val-new">${item.newName || '-'}</td>
-        <td class="val-status">${getStatusBadgeHtml(item)}</td>
-      `;
-
-      // 드래그 앤 드롭 이벤트
-      row.addEventListener('dragstart', (e) => {
-        draggedRowIndex = index;
-        row.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-      });
-
-      row.addEventListener('dragend', () => {
-        row.classList.remove('dragging');
-        draggedRowIndex = null;
-      });
-
-      row.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-      });
-
-      row.addEventListener('drop', (e) => {
-        e.preventDefault();
-        if (draggedRowIndex !== null && draggedRowIndex !== index) {
-          const movedItem = fileQueue.splice(draggedRowIndex, 1)[0];
-          fileQueue.splice(index, 0, movedItem);
-          renderTable();
+        window.currentUser = null;
+        if(loginBtn) loginBtn.style.display = 'inline-block';
+        if(logoutBtn) logoutBtn.style.display = 'none';
+        if(userInfo) userInfo.textContent = '로그인이 필요합니다.';
+        if (typeof window.refreshPresetDropdownFromData === 'function') {
+          window.refreshPresetDropdownFromData({});
         }
-      });
-
-      tableBody.appendChild(row);
+      }
     });
 
-    updateSelectAllCheckboxState();
-    updateButtonStates();
-  }
+    // 화면 컨트롤용 UI 가상 핸들러 (실제 프로젝트 환경에 맞게 커스텀 가능)
+    window.refreshPresetDropdownFromData = function(presets) {
+      const select = document.getElementById('presetSelect');
+      if (!select) return;
+      select.innerHTML = '<option value="">-- 저장된 설정 선택 --</option>';
+      
+      Object.keys(presets).forEach(name => {
+        const option = document.createElement('option');
+        option.value = name;
+        option.textContent = name;
+        select.appendChild(option);
+      });
+      window.loadedPresets = presets;
+    };
 
-  function getStatusBadgeHtml(item) {
-    if (item.status === 'ready') return `<span class="status-badge status-ready">대기 중</span>`;
-    if (item.status === 'working') return `<span class="status-badge status-working">분석 중...</span>`;
-    if (item.status === 'ocr') return `<span class="status-badge status-working">OCR 스캔 중...</span>`;
-    if (item.status === 'error') return `<span class="status-badge status-error">실패</span>`;
-    if (item.status === 'success') {
-      return `<span class="status-badge status-success">완료</span> <button class="btn-sm" onclick="triggerDownloadByIndex(${fileQueue.indexOf(item)})">다운로드</button>`;
-    }
-    return '';
-  }
+    window.applyConfigData = function(config) {
+      console.log("기본 설정 적용됨:", config);
+    };
+  </script>
+</head>
+<body>
+  <h2>클라우드 설정 동기화 시스템</h2>
+  
+  <!-- 로그인 / 사용자 정보 영역 -->
+  <div id="authSection" style="margin-bottom: 20px;">
+    <button id="loginBtn" onclick="loginWithGoogle()">Google 로그인</button>
+    <button id="logoutBtn" onclick="logout()" style="display:none;">로그아웃</button>
+    <span id="userInfo" style="margin-left: 10px;">상태 확인 중...</span>
+  </div>
 
-  function toggleItemSelect(index, isChecked) {
-    fileQueue[index].selected = isChecked;
-    updateSelectAllCheckboxState();
-    updateButtonStates();
-  }
+  <hr>
 
-  function toggleSelectAll(masterCheckbox) {
-    const isChecked = masterCheckbox.checked;
-    fileQueue.forEach(item => item.selected = isChecked);
-    renderTable();
-  }
+  <!-- 설정 저장 및 불러오기 UI 영역 -->
+  <div id="presetSection" style="margin-top: 20px;">
+    <h3>설정 저장 / 불러오기</h3>
+    
+    <div>
+      <label for="presetNameInput">설정 이름: </label>
+      <input type="text" id="presetNameInput" placeholder="예: 작업용 설정 1">
+      <button onclick="handleSaveClick()">클라우드에 저장</button>
+    </div>
 
-  function updateSelectAllCheckboxState() {
-    const selectAll = document.getElementById('selectAllCheckbox');
-    if (fileQueue.length === 0) {
-      selectAll.checked = false;
-    } else {
-      selectAll.checked = fileQueue.every(i => i.selected);
-    }
-  }
+    <div style="margin-top: 15px;">
+      <label for="presetSelect">저장된 목록: </label>
+      <select id="presetSelect" onchange="handleSelectChange(this)">
+        <option value="">-- 저장된 설정 선택 --</option>
+      </select>
+    </div>
+  </div>
 
-  function deleteSelectedFiles() {
-    const selectedCount = fileQueue.filter(i => i.selected).length;
-    if (selectedCount === 0) return;
-
-    if (confirm(`선택한 ${selectedCount}개 파일을 목록에서 삭제하시겠습니까?`)) {
-      fileQueue = fileQueue.filter(i => !i.selected);
-      renderTable();
-    }
-  }
-
-  function clearAllFiles() {
-    fileQueue = [];
-    renderTable();
-    fileInput.value = '';
-  }
-
-  function updateButtonStates() {
-    const hasFiles = fileQueue.length > 0;
-    const hasSelected = fileQueue.some(i => i.selected);
-
-    btnRun.disabled = !hasFiles;
-    btnRe.disabled = !hasFiles;
-    btnSelRe.disabled = !hasSelected;
-    btnDeleteSelected.disabled = !hasSelected;
-    btnZip.disabled = !fileQueue.some(i => i.status === 'success');
-  }
-
-  // --- 메인 분석 및 파일명 변경 실행 로직 ---
-  async function runBatchProcess(mode = 'all') {
-    btnRun.disabled = true;
-    btnRe.disabled = true;
-    btnSelRe.disabled = true;
-    btnZip.disabled = true;
-
-    const commonWord = document.getElementById('commonWord').value.trim();
-    const commonPos = document.getElementById('commonPos').value;
-
-    const fnKey = document.getElementById('fnKey').value.trim();
-    const fnMode = document.getElementById('fnMode').value;
-
-    const rules = [
-      { key: document.getElementById('key1').value.trim(), dir: document.getElementById('dir1').value, idx: document.getElementById('idx1').value, range: document.getElementById('range1').value },
-      { key: document.getElementById('key2').value.trim(), dir: document.getElementById('dir2').value, idx: document.getElementById('idx2').value, range: document.getElementById('range2').value },
-      { key: document.getElementById('key3').value.trim(), dir: document.getElementById('dir3').value, idx: document.getElementById('idx3').value, range: document.getElementById('range3').value }
-    ];
-
-    for (let item of fileQueue) {
-      // 실행 조건 필터링
-      if (mode === 'all' && item.status === 'success') continue;
-      if (mode === 'selected' && !item.selected) continue;
-
-      item.status = 'working';
-      renderTable();
-
-      try {
-        if (!item.extractedText || mode === 'reAll' || mode === 'selected') {
-          if (item.file.name.toLowerCase().endsWith('.pdf')) {
-            item.extractedText = await extractPdfText(item.file);
-            if (item.extractedText.trim().length < 20 && window.Tesseract) {
-              item.status = 'ocr';
-              renderTable();
-              item.extractedText = await extractPdfOCR(item.file);
-            }
-          } else if (item.file.name.toLowerCase().endsWith('.hwpx')) {
-            item.extractedText = await extractHwpxText(item.file);
-          }
-        }
-
-        const vals = rules.map(rule => parseTextByRule(item.extractedText, rule));
-        item.vals = vals;
-
-        const ext = item.file.name.substring(item.file.name.lastIndexOf('.'));
-        const originalBaseName = item.file.name.replace(ext, '');
-
-        const cleanedBaseName = trimFileName(originalBaseName, fnKey, fnMode);
-        
-        let validParts = vals
-          .map(v => v ? v.trim().replace(/^[_]+|[_]+$/g, '') : "")
-          .filter(v => v !== "" && v !== "미확인");
-
-        if (commonWord !== "") {
-          const cleanCommon = commonWord.replace(/^[_]+|[_]+$/g, '');
-          if (commonPos === "prefix") {
-            validParts.unshift(cleanCommon);
-          } else {
-            validParts.push(cleanCommon);
-          }
-        }
-
-        if (validParts.length > 0) {
-          const prefix = validParts.join('_');
-          if (cleanedBaseName) {
-            item.newName = `[${prefix}]_${cleanedBaseName}${ext}`;
-          } else {
-            item.newName = `[${prefix}]${ext}`;
-          }
-        } else {
-          item.newName = cleanedBaseName ? `${cleanedBaseName}${ext}` : item.file.name;
-        }
-
-        item.status = 'success';
-
-      } catch (err) {
-        console.error(err);
-        item.status = 'error';
+  <script>
+    // 버튼 클릭 이벤트 핸들러
+    async function handleSaveClick() {
+      const nameInput = document.getElementById('presetNameInput');
+      const name = nameInput.value.trim();
+      
+      if (!name) {
+        alert("설정 이름을 입력하세요.");
+        return;
       }
-      renderTable();
-    }
 
-    updateButtonStates();
-  }
+      // 저장할 임의 데이터 예시 (프로젝트의 실제 설정 데이터 객체로 교체)
+      const sampleConfigData = {
+        theme: "dark",
+        fontSize: 14,
+        updatedAt: new Date().toISOString()
+      };
 
-  function trimFileName(baseName, key, mode) {
-    if (mode === 'none') return baseName;
-    if (mode === 'removeAll') return "";
-
-    if (!key) return baseName;
-
-    const idx = baseName.indexOf(key);
-    if (idx === -1) return baseName;
-
-    if (mode === 'after') {
-      return baseName.substring(0, idx + key.length).trim().replace(/^[_]+|[_]+$/g, '');
-    } else if (mode === 'before') {
-      return baseName.substring(idx).trim().replace(/^[_]+|[_]+$/g, '');
-    } else if (mode === 'removeKey') {
-      return baseName.replace(key, '').trim().replace(/^[_]+|[_]+$/g, '');
-    }
-
-    return baseName;
-  }
-
-  function parseTextByRule(text, rule) {
-    if (!rule.key || !text) return "";
-
-    const flexibleKey = rule.key.split('').map(char => {
-      return /[a-zA-Z0-9가-힣]/.test(char) ? char + '\\s*' : char;
-    }).join('').replace(/\\s\*$/, '');
-
-    const matches = [...text.matchAll(new RegExp(flexibleKey, 'gi'))];
-    if (matches.length === 0) return "미확인";
-
-    let targetMatch = rule.idx === "last" ? matches[matches.length - 1] : (matches[parseInt(rule.idx) - 1] || matches[0]);
-    const keyPos = targetMatch.index;
-    const matchedTextLength = targetMatch[0].length;
-
-    if (rule.dir === "nextLine") {
-      const textAfter = text.substring(keyPos + matchedTextLength);
-      const lines = textAfter.split(/[\r\n]+/).map(l => l.trim()).filter(l => l.length > 0);
-      return lines.length > 0 ? cleanValue(lines[0]) : "미확인";
-    } else if (rule.dir === "after") {
-      const targetSlice = text.substring(keyPos + matchedTextLength).replace(/^[\s:]+/, '');
-      if (rule.range === "word") {
-        const m = targetSlice.match(/^[^\s]+/);
-        return m ? cleanValue(m[0]) : "미확인";
-      } else {
-        const m = targetSlice.match(/^[^\r\n]+/);
-        return m ? cleanValue(m[0]) : "미확인";
-      }
-    } else {
-      const targetSlice = text.substring(0, keyPos);
-      if (rule.range === "word") {
-        const words = targetSlice.trim().split(/\s+/);
-        return words.length > 0 ? cleanValue(words[words.length - 1]) : "미확인";
-      } else {
-        const lines = targetSlice.split(/[\r\n]+/);
-        return lines.length > 0 ? cleanValue(lines[lines.length - 1]) : "미확인";
+      const success = await window.savePresetToCloud(name, sampleConfigData, false);
+      if (success) {
+        nameInput.value = '';
       }
     }
-  }
 
-  function cleanValue(val) {
-    if (!val) return "";
-    return val
-      .replace(/[\r\n\t]+/g, ' ')
-      .replace(/[:;,"'`_]+/g, '')
-      .replace(/^\s+|\s+$/g, '')
-      .trim();
-  }
-
-  async function extractPdfText(file) {
-    if (!window.pdfjsLib) return "";
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let fullText = "";
-    for (let i = 1; i <= pdf.numPages; i++) {
-      const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      fullText += textContent.items.map(item => item.str).join(" ") + "\n";
-    }
-    return fullText;
-  }
-
-  async function extractPdfOCR(file) {
-    if (!window.pdfjsLib || !window.Tesseract) return "";
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 1.5 });
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
-    await page.render({ canvasContext: context, viewport: viewport }).promise;
-
-    const worker = await Tesseract.createWorker('kor+eng');
-    const ret = await worker.recognize(canvas);
-    await worker.terminate();
-    return ret.data.text;
-  }
-
-  async function extractHwpxText(file) {
-    if (!window.JSZip) return "";
-    const zip = await JSZip.loadAsync(file);
-    let fullText = "";
-    for (let filename of Object.keys(zip.files)) {
-      if (filename.startsWith("Contents/section") && filename.endsWith(".xml")) {
-        const xmlText = await zip.files[filename].async("string");
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-        fullText += xmlDoc.textContent + "\n";
+    // 목록 선택 변경 시 이벤트
+    function handleSelectChange(select) {
+      const selectedName = select.value;
+      if (selectedName && window.loadedPresets && window.loadedPresets[selectedName]) {
+        const config = window.loadedPresets[selectedName];
+        alert(`'${selectedName}' 설정을 불러왔습니다:\n` + JSON.stringify(config, null, 2));
       }
     }
-    return fullText;
-  }
-
-  function triggerDownloadByIndex(index) {
-    const item = fileQueue[index];
-    if (!item) return;
-    const url = URL.createObjectURL(item.file);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = item.newName;
-    a.click();
-  }
-
-  async function downloadAllZip() {
-    if (!window.JSZip) return;
-    const zip = new JSZip();
-    const successItems = fileQueue.filter(i => i.status === 'success');
-
-    for (let item of successItems) {
-      zip.file(item.newName, item.file);
-    }
-
-    const content = await zip.generateAsync({ type: "blob" });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(content);
-    a.download = "파일명_변경_완료_목록.zip";
-    a.click();
-  }
-</script>
-
+  </script>
 </body>
 </html>
