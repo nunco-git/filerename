@@ -154,7 +154,7 @@
       color: #334155;
     }
 
-    .app-container { max-width: 1500px; margin: 0 auto; }
+    .app-container { max-width: 1900px; margin: 0 auto; }
     .main-content {
       background: white;
       border: 1px solid #e2e8f0;
@@ -220,7 +220,8 @@
     .preset-card { background: #eff6ff; border: 1px solid #bfdbfe; }
     .fn-card { background: linear-gradient(180deg, #f0fdf4 0%, #ecfdf5 100%); border: 1px solid #bbf7d0; }
     .fn-card h4 { color: #15803d; }
-    .rule-card { background: #fafafa; border: 1px solid #e2e8f0; margin-bottom: 10px; }
+    .fn-row-inline { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+    .rule-card { background: #fafafa; border: 1px solid #e2e8f0; }
 
     h2 { color: #0f172a; margin-top: 0; font-size: 1.3rem; }
     h4 { margin: 0 0 10px 0; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between; color: #334155; }
@@ -233,31 +234,33 @@
     .preset-btn-group-top { display: flex; gap: 8px; }
     .preset-btn-group-bottom { display: flex; gap: 8px; }
 
-    /* 추출위치 가로 한 줄 배치 스타일 */
-    .horizontal-rule-card {
-      display: flex;
-      align-items: center;
-      gap: 15px;
-      padding: 10px 15px;
+    /* 추출위치 카드: 2개씩 그리드 배치 */
+    .rule-cards-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-bottom: 15px;
     }
-    .horizontal-rule-card h4 {
-      margin: 0;
-      white-space: nowrap;
-      min-width: 140px;
+    .rule-card h4 {
+      margin: 0 0 10px 0;
       color: #2563eb;
+      font-size: 0.92rem;
     }
-    .rule-grid-inline {
+    .rule-fields-grid {
       display: flex;
-      flex: 1;
-      gap: 10px;
       align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
     }
     .inline-item {
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
       flex: 1;
+      min-width: 0;
     }
+    .inline-item input, .inline-item select { min-width: 0; }
     .inline-item label {
       font-size: 12px;
       font-weight: bold;
@@ -281,6 +284,7 @@
     .btn-indigo { background: #2563eb; color: white; }
     .btn-dark { background: #334155; color: white; }
     .btn-outline-danger { background: transparent; color: #ef4444; border: 1px solid #ef4444; }
+    .btn-outline-indigo { background: transparent; color: #2563eb; border: 1px solid #2563eb; }
 
     .btn-run { background: #10b981; color: white; }
     .btn-re { background: #0ea5e9; color: white; }
@@ -314,8 +318,8 @@
       .top-section { flex-direction: column; }
       .top-col-title, .top-col-guide, .top-col-drop { flex-basis: auto; }
       .middle-grid { grid-template-columns: 1fr; }
-      .horizontal-rule-card { flex-direction: column; align-items: flex-start; }
-      .rule-grid-inline { flex-wrap: wrap; width: 100%; }
+      .fn-row-inline { flex-direction: column; align-items: stretch; }
+      .rule-cards-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -379,6 +383,7 @@
           <option value="">-- 저장된 설정 프로필 선택 --</option>
         </select>
         <div class="preset-btn-group-bottom">
+          <button class="btn btn-outline-indigo" onclick="updateSelectedPreset()">✏️ 수정</button>
           <button class="btn btn-outline-danger" onclick="deleteSelectedPreset()">🗑️ 삭제</button>
         </div>
       </div>
@@ -386,133 +391,172 @@
 
     <div class="card-box fn-card">
       <h4>✂️ 원본 파일명 정리 및 새로운 이름 구성</h4>
-      <div style="display: flex; flex-direction: column; gap: 8px;">
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <label style="font-size:12px; font-weight:bold; white-space:nowrap; width:100px;">정리 기준단어:</label>
-          <input type="text" id="fnKey" value="" placeholder="예: 무작위 문자열, 반복 단어">
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <div class="fn-row-inline">
+          <div class="inline-item">
+            <label>정리 기준단어:</label>
+            <input type="text" id="fnKey" value="" placeholder="예: 무작위 문자열, 반복 단어">
+          </div>
+          <div class="inline-item">
+            <label>삭제 방식:</label>
+            <select id="fnMode">
+              <option value="none" selected>사용 안 함 (원본 유지)</option>
+              <option value="removeAll">🔥 원본 전체 삭제 (확장자만 유지)</option>
+              <option value="after">기준 단어 뒤 전체 삭제</option>
+              <option value="before">기준 단어 앞 전체 삭제</option>
+              <option value="removeKey">기준 단어만 삭제</option>
+            </select>
+          </div>
         </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <label style="font-size:12px; font-weight:bold; white-space:nowrap; width:100px;">삭제 방식:</label>
-          <select id="fnMode">
-            <option value="none" selected>사용 안 함 (원본 유지)</option>
-            <option value="removeAll">🔥 원본 전체 삭제 (확장자만 유지)</option>
-            <option value="after">기준 단어 뒤 전체 삭제</option>
-            <option value="before">기준 단어 앞 전체 삭제</option>
-            <option value="removeKey">기준 단어만 삭제</option>
+        <hr style="border:0; border-top:1px dashed #cbd5e1; margin:0;">
+        <div class="fn-row-inline">
+          <div class="inline-item">
+            <label>추가 공통단어:</label>
+            <input type="text" id="commonWord" value="" placeholder="예: [부여군청], 2026년">
+          </div>
+          <div class="inline-item">
+            <label>공통단어 위치:</label>
+            <select id="commonPos">
+              <option value="prefix" selected>추출값 맨 앞 (접두어)</option>
+              <option value="suffix">추출값 맨 뒤 (접미어)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 2. 추출 위치 설정 (2개씩 배치, 총 4개) -->
+  <div class="rule-cards-grid">
+    <div class="card-box rule-card">
+      <h4>📍 추출 위치 1</h4>
+      <div class="rule-fields-grid">
+        <div class="inline-item">
+          <label>기준단어:</label>
+          <input type="text" id="key1" value="성명" placeholder="예: 성명">
+        </div>
+        <div class="inline-item">
+          <label>탐색방식:</label>
+          <select id="dir1">
+            <option value="after" selected>기준 단어 뒤</option>
+            <option value="before">기준 단어 앞</option>
+            <option value="nextLine">다음 줄 전체</option>
           </select>
         </div>
-        <hr style="border:0; border-top:1px dashed #cbd5e1; margin:4px 0;">
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <label style="font-size:12px; font-weight:bold; white-space:nowrap; width:100px;">추가 공통단어:</label>
-          <input type="text" id="commonWord" value="" placeholder="예: [부여군청], 2026년">
+        <div class="inline-item">
+          <label>순번:</label>
+          <select id="idx1">
+            <option value="1" selected>첫 번째</option>
+            <option value="2">두 번째</option>
+            <option value="last">마지막</option>
+          </select>
         </div>
-        <div style="display: flex; gap: 8px; align-items: center;">
-          <label style="font-size:12px; font-weight:bold; white-space:nowrap; width:100px;">공통단어 위치:</label>
-          <select id="commonPos">
-            <option value="prefix" selected>추출값 맨 앞 (접두어)</option>
-            <option value="suffix">추출값 맨 뒤 (접미어)</option>
+        <div class="inline-item">
+          <label>범위:</label>
+          <select id="range1">
+            <option value="word" selected>1단어(공백전까지)</option>
+            <option value="line">해당 줄 끝까지</option>
           </select>
         </div>
       </div>
     </div>
-  </div>
 
-  <!-- 2. 추출 위치 설정 -->
-  <div class="card-box rule-card horizontal-rule-card">
-    <h4>📍 추출 위치 1 설정</h4>
-    <div class="rule-grid-inline">
-      <div class="inline-item">
-        <label>기준단어:</label>
-        <input type="text" id="key1" value="성명" placeholder="예: 성명">
-      </div>
-      <div class="inline-item">
-        <label>탐색방식:</label>
-        <select id="dir1">
-          <option value="after" selected>기준 단어 뒤</option>
-          <option value="before">기준 단어 앞</option>
-          <option value="nextLine">다음 줄 전체</option>
-        </select>
-      </div>
-      <div class="inline-item">
-        <label>순번:</label>
-        <select id="idx1">
-          <option value="1" selected>첫 번째</option>
-          <option value="2">두 번째</option>
-          <option value="last">마지막</option>
-        </select>
-      </div>
-      <div class="inline-item">
-        <label>범위:</label>
-        <select id="range1">
-          <option value="word" selected>1단어(공백전까지)</option>
-          <option value="line">해당 줄 끝까지</option>
-        </select>
+    <div class="card-box rule-card">
+      <h4>📍 추출 위치 2</h4>
+      <div class="rule-fields-grid">
+        <div class="inline-item">
+          <label>기준단어:</label>
+          <input type="text" id="key2" value="기관명" placeholder="예: 기관명">
+        </div>
+        <div class="inline-item">
+          <label>탐색방식:</label>
+          <select id="dir2">
+            <option value="after" selected>기준 단어 뒤</option>
+            <option value="before">기준 단어 앞</option>
+            <option value="nextLine">다음 줄 전체</option>
+          </select>
+        </div>
+        <div class="inline-item">
+          <label>순번:</label>
+          <select id="idx2">
+            <option value="1" selected>첫 번째</option>
+            <option value="2">두 번째</option>
+            <option value="last">마지막</option>
+          </select>
+        </div>
+        <div class="inline-item">
+          <label>범위:</label>
+          <select id="range2">
+            <option value="word">1단어(공백전까지)</option>
+            <option value="line" selected>해당 줄 끝까지</option>
+          </select>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="card-box rule-card horizontal-rule-card">
-    <h4>📍 추출 위치 2 설정</h4>
-    <div class="rule-grid-inline">
-      <div class="inline-item">
-        <label>기준단어:</label>
-        <input type="text" id="key2" value="기관명" placeholder="예: 기관명">
-      </div>
-      <div class="inline-item">
-        <label>탐색방식:</label>
-        <select id="dir2">
-          <option value="after" selected>기준 단어 뒤</option>
-          <option value="before">기준 단어 앞</option>
-          <option value="nextLine">다음 줄 전체</option>
-        </select>
-      </div>
-      <div class="inline-item">
-        <label>순번:</label>
-        <select id="idx2">
-          <option value="1" selected>첫 번째</option>
-          <option value="2">두 번째</option>
-          <option value="last">마지막</option>
-        </select>
-      </div>
-      <div class="inline-item">
-        <label>범위:</label>
-        <select id="range2">
-          <option value="word">1단어(공백전까지)</option>
-          <option value="line" selected>해당 줄 끝까지</option>
-        </select>
+    <div class="card-box rule-card">
+      <h4>📍 추출 위치 3</h4>
+      <div class="rule-fields-grid">
+        <div class="inline-item">
+          <label>기준단어:</label>
+          <input type="text" id="key3" value="" placeholder="미사용 시 비워둠">
+        </div>
+        <div class="inline-item">
+          <label>탐색방식:</label>
+          <select id="dir3">
+            <option value="after" selected>기준 단어 뒤</option>
+            <option value="before">기준 단어 앞</option>
+            <option value="nextLine">다음 줄 전체</option>
+          </select>
+        </div>
+        <div class="inline-item">
+          <label>순번:</label>
+          <select id="idx3">
+            <option value="1" selected>첫 번째</option>
+            <option value="2">두 번째</option>
+            <option value="last">마지막</option>
+          </select>
+        </div>
+        <div class="inline-item">
+          <label>범위:</label>
+          <select id="range3">
+            <option value="word" selected>1단어(공백전까지)</option>
+            <option value="line">해당 줄 끝까지</option>
+          </select>
+        </div>
       </div>
     </div>
-  </div>
 
-  <div class="card-box rule-card horizontal-rule-card">
-    <h4>📍 추출 위치 3 설정</h4>
-    <div class="rule-grid-inline">
-      <div class="inline-item">
-        <label>기준단어:</label>
-        <input type="text" id="key3" value="" placeholder="미사용 시 비워둠">
-      </div>
-      <div class="inline-item">
-        <label>탐색방식:</label>
-        <select id="dir3">
-          <option value="after" selected>기준 단어 뒤</option>
-          <option value="before">기준 단어 앞</option>
-          <option value="nextLine">다음 줄 전체</option>
-        </select>
-      </div>
-      <div class="inline-item">
-        <label>순번:</label>
-        <select id="idx3">
-          <option value="1" selected>첫 번째</option>
-          <option value="2">두 번째</option>
-          <option value="last">마지막</option>
-        </select>
-      </div>
-      <div class="inline-item">
-        <label>범위:</label>
-        <select id="range3">
-          <option value="word" selected>1단어(공백전까지)</option>
-          <option value="line">해당 줄 끝까지</option>
-        </select>
+    <div class="card-box rule-card">
+      <h4>📍 추출 위치 4</h4>
+      <div class="rule-fields-grid">
+        <div class="inline-item">
+          <label>기준단어:</label>
+          <input type="text" id="key4" value="" placeholder="미사용 시 비워둠">
+        </div>
+        <div class="inline-item">
+          <label>탐색방식:</label>
+          <select id="dir4">
+            <option value="after" selected>기준 단어 뒤</option>
+            <option value="before">기준 단어 앞</option>
+            <option value="nextLine">다음 줄 전체</option>
+          </select>
+        </div>
+        <div class="inline-item">
+          <label>순번:</label>
+          <select id="idx4">
+            <option value="1" selected>첫 번째</option>
+            <option value="2">두 번째</option>
+            <option value="last">마지막</option>
+          </select>
+        </div>
+        <div class="inline-item">
+          <label>범위:</label>
+          <select id="range4">
+            <option value="word" selected>1단어(공백전까지)</option>
+            <option value="line">해당 줄 끝까지</option>
+          </select>
+        </div>
       </div>
     </div>
   </div>
@@ -542,11 +586,12 @@
         <tr>
           <th style="width: 3%; text-align: center;">이동</th>
           <th style="width: 3%; text-align: center;"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"></th>
-          <th style="width: 18%;">원본 파일명</th>
-          <th style="width: 11%;">추출값 1</th>
-          <th style="width: 11%;">추출값 2</th>
-          <th style="width: 11%;">추출값 3</th>
-          <th style="width: 23%;">변경될 파일명</th>
+          <th style="width: 16%;">원본 파일명</th>
+          <th style="width: 9%;">추출값 1</th>
+          <th style="width: 9%;">추출값 2</th>
+          <th style="width: 9%;">추출값 3</th>
+          <th style="width: 9%;">추출값 4</th>
+          <th style="width: 22%;">변경될 파일명</th>
           <th style="width: 20%;">상태 / 개별 다운로드</th>
         </tr>
       </thead>
@@ -583,11 +628,12 @@
       commonPos: document.getElementById('commonPos').value,
       fnKey: document.getElementById('fnKey').value,
       fnMode: document.getElementById('fnMode').value,
-      rules: [
-        { key: document.getElementById('key1').value, dir: document.getElementById('dir1').value, idx: document.getElementById('idx1').value, range: document.getElementById('range1').value },
-        { key: document.getElementById('key2').value, dir: document.getElementById('dir2').value, idx: document.getElementById('idx2').value, range: document.getElementById('range2').value },
-        { key: document.getElementById('key3').value, dir: document.getElementById('dir3').value, idx: document.getElementById('idx3').value, range: document.getElementById('range3').value }
-      ]
+      rules: [1, 2, 3, 4].map(n => ({
+        key: document.getElementById(`key${n}`).value,
+        dir: document.getElementById(`dir${n}`).value,
+        idx: document.getElementById(`idx${n}`).value,
+        range: document.getElementById(`range${n}`).value
+      }))
     };
   };
 
@@ -598,26 +644,41 @@
     if (data.fnKey !== undefined) document.getElementById('fnKey').value = data.fnKey;
     if (data.fnMode !== undefined) document.getElementById('fnMode').value = data.fnMode;
 
-    if (data.rules && data.rules.length >= 3) {
-      document.getElementById('key1').value = data.rules[0].key || '';
-      document.getElementById('dir1').value = data.rules[0].dir || 'after';
-      document.getElementById('idx1').value = data.rules[0].idx || '1';
-      document.getElementById('range1').value = data.rules[0].range || 'word';
-
-      document.getElementById('key2').value = data.rules[1].key || '';
-      document.getElementById('dir2').value = data.rules[1].dir || 'after';
-      document.getElementById('idx2').value = data.rules[1].idx || '1';
-      document.getElementById('range2').value = data.rules[1].range || 'line';
-
-      document.getElementById('key3').value = data.rules[2].key || '';
-      document.getElementById('dir3').value = data.rules[2].dir || 'after';
-      document.getElementById('idx3').value = data.rules[2].idx || '1';
-      document.getElementById('range3').value = data.rules[2].range || 'word';
+    if (data.rules && data.rules.length) {
+      // 이전 버전(추출 위치 3개)에서 저장된 프로필도 그대로 불러올 수 있도록
+      // 없는 규칙은 기본값으로 채움
+      const defaults = [
+        { dir: 'after', idx: '1', range: 'word' },
+        { dir: 'after', idx: '1', range: 'line' },
+        { dir: 'after', idx: '1', range: 'word' },
+        { dir: 'after', idx: '1', range: 'word' }
+      ];
+      for (let i = 0; i < 4; i++) {
+        const r = data.rules[i];
+        const d = defaults[i];
+        document.getElementById(`key${i + 1}`).value = r ? (r.key || '') : '';
+        document.getElementById(`dir${i + 1}`).value = r ? (r.dir || d.dir) : d.dir;
+        document.getElementById(`idx${i + 1}`).value = r ? (r.idx || d.idx) : d.idx;
+        document.getElementById(`range${i + 1}`).value = r ? (r.range || d.range) : d.range;
+      }
     }
   };
 
+
   function getLocalSavedPresets() {
     return JSON.parse(localStorage.getItem(STORAGE_KEY_PRESETS) || '{}');
+  }
+
+  async function savePresetByName(name, configData) {
+    if (window.currentUser && window.savePresetToCloud) {
+      return await window.savePresetToCloud(name, configData, false);
+    } else {
+      const presets = getLocalSavedPresets();
+      presets[name] = configData;
+      localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(presets));
+      window.refreshPresetDropdown(name);
+      return true;
+    }
   }
 
   window.saveCurrentPreset = async function() {
@@ -629,21 +690,29 @@
     }
 
     const configData = window.getCurrentConfigData();
-
-    if (window.currentUser && window.savePresetToCloud) {
-      const ok = await window.savePresetToCloud(name, configData, false);
-      if (ok !== false) {
-        alert(`'${name}' 프로필이 클라우드 계정에 저장되었습니다.`);
-      }
-    } else {
-      const presets = getLocalSavedPresets();
-      presets[name] = configData;
-      localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(presets));
-      alert(`'${name}' 프로필이 이 컴퓨터(로컬)에 저장되었습니다.`);
-      window.refreshPresetDropdown(name);
+    const ok = await savePresetByName(name, configData);
+    if (ok !== false) {
+      alert(`'${name}' 프로필이 저장되었습니다.`);
     }
 
     nameInput.value = '';
+  };
+
+  // 드롭다운에서 선택한 기존 프로필을 현재 설정 내용으로 덮어써서 수정
+  window.updateSelectedPreset = async function() {
+    const select = document.getElementById('presetSelect');
+    const name = select.value;
+    if (!name) {
+      alert('수정할 프로필을 목록에서 먼저 선택해주세요.');
+      return;
+    }
+    if (!confirm(`'${name}' 프로필을 현재 화면의 설정 내용으로 덮어쓸까요?`)) return;
+
+    const configData = window.getCurrentConfigData();
+    const ok = await savePresetByName(name, configData);
+    if (ok !== false) {
+      alert(`'${name}' 프로필이 수정되었습니다.`);
+    }
   };
 
   window.setAsDefaultPreset = async function() {
@@ -704,6 +773,7 @@
     const presets = window.cachedPresets || getLocalSavedPresets();
     if (presets[name]) {
       window.applyConfigData(presets[name]);
+      document.getElementById('presetNameInput').value = name;
     }
   };
 
@@ -800,6 +870,7 @@
         <td class="val-1">${item.vals ? item.vals[0] : '-'}</td>
         <td class="val-2">${item.vals ? item.vals[1] : '-'}</td>
         <td class="val-3">${item.vals ? item.vals[2] : '-'}</td>
+        <td class="val-4">${item.vals ? item.vals[3] : '-'}</td>
         <td class="val-new">${item.newName || '-'}</td>
         <td class="val-status">${getStatusBadgeHtml(item)}</td>
       `;
@@ -908,11 +979,12 @@
     const fnKey = document.getElementById('fnKey').value.trim();
     const fnMode = document.getElementById('fnMode').value;
 
-    const rules = [
-      { key: document.getElementById('key1').value.trim(), dir: document.getElementById('dir1').value, idx: document.getElementById('idx1').value, range: document.getElementById('range1').value },
-      { key: document.getElementById('key2').value.trim(), dir: document.getElementById('dir2').value, idx: document.getElementById('idx2').value, range: document.getElementById('range2').value },
-      { key: document.getElementById('key3').value.trim(), dir: document.getElementById('dir3').value, idx: document.getElementById('idx3').value, range: document.getElementById('range3').value }
-    ];
+    const rules = [1, 2, 3, 4].map(n => ({
+      key: document.getElementById(`key${n}`).value.trim(),
+      dir: document.getElementById(`dir${n}`).value,
+      idx: document.getElementById(`idx${n}`).value,
+      range: document.getElementById(`range${n}`).value
+    }));
 
     for (let item of fileQueue) {
       if (mode === 'all' && item.status === 'success') continue;
