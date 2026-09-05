@@ -2,11 +2,12 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <title>문서 정보 기반 정밀 파일명 자동 변경기</title>
+  <title>스마트 파일명 관리자</title>
   <!-- CDN 스크립트 로드 -->
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 
   <!-- Firebase SDK (v10 모듈형) -->
   <script type="module">
@@ -168,14 +169,24 @@
 
     .top-col-title {
       flex: 0 0 22%;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
       text-align: center;
       background: linear-gradient(160deg, #fff7ed 0%, #ffedd5 100%);
-      border: 1px solid #fed7aa; border-radius: 12px; padding: 16px 10px;
+      border: 1px solid #fed7aa; border-radius: 12px; padding: 18px 12px;
       box-shadow: 0 1px 3px rgba(194,65,12,0.06);
     }
-    .title-icon { font-size: 1.9rem; line-height: 1; filter: drop-shadow(0 1px 1px rgba(194,65,12,0.15)); }
-    .title-main { margin: 0; color: #9a3412; font-size: 1.1rem; font-weight: 800; line-height: 1.35; letter-spacing: -0.3px; }
+    .title-icon {
+      font-size: 2.2rem; line-height: 1;
+      filter: drop-shadow(0 2px 2px rgba(194,65,12,0.18));
+    }
+    .title-main {
+      margin: 0; color: #9a3412; font-size: 1.3rem; font-weight: 800;
+      line-height: 1.3; letter-spacing: -0.4px;
+    }
+    .title-badge {
+      background: #dcfce7; color: #166534; font-size: 0.75rem;
+      padding: 4px 10px; border-radius: 100px; font-weight: 700;
+    }
 
     .top-col-guide { flex: 1 1 46%; display: flex; min-width: 0; }
     .login-banner {
@@ -314,6 +325,66 @@
     .btn-sm { padding: 4px 8px; font-size: 12px; border: none; border-radius: 6px; cursor: pointer; background: #16a34a; color: white; }
     .default-tag { font-size: 11px; background: #16a34a; color: white; padding: 2px 8px; border-radius: 100px; margin-left: 6px; }
 
+    /* 파일 목록 -> 엑셀 변환기 */
+    .excel-card {
+      margin-top: 24px;
+      background: linear-gradient(180deg, #faf5ff 0%, #f5f3ff 100%);
+      border: 1px solid #ddd6fe;
+    }
+    .excel-card h4 { color: #6d28d9; font-size: 1rem; margin-bottom: 12px; }
+    .excel-help {
+      background: white; border: 1px solid #e9d5ff; border-radius: 10px;
+      padding: 12px 16px; margin-bottom: 12px; font-size: 12.5px; color: #4c1d95; line-height: 1.65;
+    }
+    .excel-help strong { color: #6d28d9; font-size: 13px; display: block; margin-bottom: 6px; }
+    .excel-help code {
+      background: #f3e8ff; color: #6d28d9; padding: 1px 6px; border-radius: 4px; font-size: 12px;
+    }
+
+    .excel-options { display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; color: #4c1d95; font-weight: 600; }
+    .excel-options label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .excel-options input[type="checkbox"] { width: auto; }
+
+    /* 가로 3분할: 안내/옵션(좌) · 붙여넣기(가운데) · 결과(우) */
+    .excel-layout { display: flex; gap: 14px; align-items: stretch; }
+    .excel-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+    .excel-col-info { flex: 0 0 26%; }
+    .excel-col-paste { flex: 1 1 32%; }
+    .excel-col-result { flex: 1 1 42%; }
+
+    .excel-pane-title {
+      display: flex; align-items: center; justify-content: space-between;
+      font-size: 12.5px; font-weight: 700; color: #6d28d9; margin-bottom: 6px;
+    }
+    .excel-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn-sm-outline {
+      background: white; color: #6d28d9; border: 1px solid #c4b5fd;
+      padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 700; cursor: pointer;
+    }
+    .btn-sm-outline:hover { background: #f5f3ff; }
+
+    #excelPasteArea {
+      width: 100%; flex: 1; min-height: 140px; resize: vertical;
+      border: 1px solid #ddd6fe; border-radius: 8px; padding: 10px 12px;
+      font-size: 13px; font-family: inherit; line-height: 1.6; background: white; overflow: hidden;
+    }
+    #excelPasteArea:focus { outline: 2px solid #a78bfa; outline-offset: 0; }
+
+    .excel-table-wrapper {
+      border: 1px solid #ddd6fe; border-radius: 8px; background: white;
+      flex: 1; min-height: 140px; overflow: auto;
+    }
+    .excel-table-wrapper table { width: 100%; border-collapse: collapse; }
+    .excel-table-wrapper th { background: #f5f3ff; color: #6d28d9; padding: 8px 10px; font-size: 12px; border-bottom: 1px solid #e9d5ff; white-space: nowrap; }
+    .excel-table-wrapper td { padding: 6px 10px; font-size: 13px; border-bottom: 1px solid #f3f0ff; }
+    .excel-table-wrapper tr:last-child td { border-bottom: none; }
+    .excel-empty { text-align: center; color: #a78bfa; padding: 30px 10px !important; font-size: 12.5px; }
+
+    @media (max-width: 1100px) {
+      .excel-layout { flex-direction: column; }
+      .excel-col-info, .excel-col-paste, .excel-col-result { flex-basis: auto; }
+    }
+
     @media (max-width: 992px) {
       .top-section { flex-direction: column; }
       .top-col-title, .top-col-guide, .top-col-drop { flex-basis: auto; }
@@ -331,8 +402,9 @@
   <!-- 0. 상단 3분할: 제목(주황) / 클라우드 안내+로그인(초록) / 파일 업로드(파랑) -->
   <div class="top-section">
     <div class="top-col-title">
-      <div class="title-icon">📑</div>
-      <h2 class="title-main">문서 정보 기반<br>정밀 파일명 자동 변경기</h2>
+      <div class="title-icon">🗂️</div>
+      <h2 class="title-main">스마트 파일명 관리자</h2>
+      <span class="title-badge">🔒 브라우저에서 안전하게 처리</span>
     </div>
 
     <div class="top-col-guide">
@@ -494,6 +566,7 @@
       </div>
     </div>
 
+    <div id="extraRulesWrap" style="display:none;">
     <div class="card-box rule-card">
       <h4>📍 추출 위치 3</h4>
       <div class="rule-fields-grid">
@@ -559,7 +632,13 @@
         </div>
       </div>
     </div>
+    </div><!-- /extraRulesWrap -->
   </div>
+
+  <div class="btn-row" style="margin-bottom: 15px;">
+    <button class="btn btn-outline-indigo" id="btnToggleExtraRules" onclick="toggleExtraRules()">➕ 추출 위치 추가 (3, 4)</button>
+  </div>
+
 
   <!-- 실행 버튼 영역 -->
   <div class="action-bar">
@@ -597,6 +676,50 @@
       </thead>
       <tbody id="tableBody"></tbody>
     </table>
+  </div>
+
+  <!-- 4. 파일 목록 -> 엑셀 변환기 -->
+  <div class="card-box excel-card">
+    <h4>📋 파일 목록 → 엑셀 리스트 변환기</h4>
+
+    <div class="excel-layout">
+      <div class="excel-col excel-col-info">
+        <div class="excel-help">
+          <strong>💡 파일 목록 복사 방법</strong>
+          탐색기에서 복사할 파일 선택(<code>Ctrl+A</code>) → 복사(<code>Ctrl+Shift+C</code>)<br>
+          <span style="font-size:11.5px; color:#7c3aed;">(안되는 경우 Shift 누른 채 마우스 오른쪽 클릭 → "경로로 복사" 선택)</span><br>
+          → 가운데 칸에 붙여넣기(<code>Ctrl+V</code>)
+        </div>
+        <div class="excel-options">
+          <label><input type="checkbox" id="optExtractName" checked> 전체 경로에서 파일명만 추출</label>
+          <label><input type="checkbox" id="optSplitExt" checked> 확장자 별도 열로 분리</label>
+        </div>
+      </div>
+
+      <div class="excel-col excel-col-paste">
+        <div class="excel-pane-title">① 여기에 붙여넣기 (Ctrl+V)</div>
+        <textarea id="excelPasteArea" placeholder="탐색기에서 복사한 파일 목록을 여기에 붙여넣으세요..."></textarea>
+      </div>
+
+      <div class="excel-col excel-col-result">
+        <div class="excel-pane-title">
+          <span>② 결과 (자동 변환됨)</span>
+          <span class="excel-actions">
+            <button class="btn-sm-outline" id="btnCopyExcel">📋 파일명만 복사</button>
+            <button class="btn-sm-outline" id="btnDownloadExcel">⬇️ xlsx</button>
+            <button class="btn-sm-outline" id="btnClearExcel">🗑️ 초기화</button>
+          </span>
+        </div>
+        <div class="excel-table-wrapper">
+          <table id="excelResultTable">
+            <thead><tr id="excelResultHead"></tr></thead>
+            <tbody id="excelResultBody">
+              <tr><td class="excel-empty" colspan="3">왼쪽 안내를 참고해 가운데 칸에 파일 목록을 붙여넣으면 여기에 표시됩니다.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
   </div>
 
   </div><!-- /main-content -->
@@ -661,7 +784,25 @@
         document.getElementById(`idx${i + 1}`).value = r ? (r.idx || d.idx) : d.idx;
         document.getElementById(`range${i + 1}`).value = r ? (r.range || d.range) : d.range;
       }
+
+      // 불러온 프로필에 추출 위치 3·4 값이 있으면 자동으로 펼쳐서 보여줌
+      const hasExtra = (data.rules[2] && data.rules[2].key) || (data.rules[3] && data.rules[3].key);
+      if (hasExtra && window.setExtraRulesVisible) window.setExtraRulesVisible(true);
     }
+  };
+
+  window.setExtraRulesVisible = function(visible) {
+    const wrap = document.getElementById('extraRulesWrap');
+    const btn = document.getElementById('btnToggleExtraRules');
+    if (!wrap || !btn) return;
+    wrap.style.display = visible ? 'contents' : 'none';
+    btn.textContent = visible ? '➖ 추출 위치 3, 4 숨기기' : '➕ 추출 위치 추가 (3, 4)';
+  };
+
+  window.toggleExtraRules = function() {
+    const wrap = document.getElementById('extraRulesWrap');
+    const isHidden = !wrap || wrap.style.display === 'none' || wrap.style.display === '';
+    window.setExtraRulesVisible(isHidden);
   };
 
 
@@ -1206,6 +1347,147 @@
     a.remove();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   }
+
+  // --- 파일 목록 -> 엑셀 변환기 ---
+  const excelPasteArea = document.getElementById('excelPasteArea');
+  const optExtractName = document.getElementById('optExtractName');
+  const optSplitExt = document.getElementById('optSplitExt');
+  const excelResultHead = document.getElementById('excelResultHead');
+  const excelResultBody = document.getElementById('excelResultBody');
+  const btnCopyExcel = document.getElementById('btnCopyExcel');
+  const btnDownloadExcel = document.getElementById('btnDownloadExcel');
+  const btnClearExcel = document.getElementById('btnClearExcel');
+
+  let excelHeaders = [];
+  let excelRows = [];
+
+  function autoGrowTextarea(el) {
+    el.style.height = 'auto';
+    el.style.height = el.scrollHeight + 'px';
+  }
+
+  function extractFileNameFromPath(raw) {
+    let s = raw.trim();
+    s = s.replace(/^"+|"+$/g, ''); // "경로로 복사"는 양쪽에 큰따옴표가 붙어서 나옴
+    const parts = s.split(/[\\/]/);
+    return parts[parts.length - 1] || s;
+  }
+
+  function splitNameExt(filename) {
+    const idx = filename.lastIndexOf('.');
+    if (idx <= 0) return { base: filename, ext: '' };
+    return { base: filename.slice(0, idx), ext: filename.slice(idx + 1) };
+  }
+
+  function escapeHtmlExcel(str) {
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function updateExcelResult() {
+    const raw = excelPasteArea.value;
+    const lines = raw.replace(/\r/g, '').split('\n').filter(l => l.trim().length > 0);
+
+    if (lines.length === 0) {
+      excelHeaders = [];
+      excelRows = [];
+      renderExcelTable();
+      return;
+    }
+
+    const hasTabs = lines.some(l => l.includes('\t'));
+
+    if (hasTabs) {
+      // 이미 여러 열로 구분된 데이터(예: 엑셀에서 복사)는 그대로 표로 변환
+      const parsed = lines.map(l => l.split('\t'));
+      const maxCols = Math.max(...parsed.map(r => r.length));
+      excelHeaders = ['No.', ...Array.from({ length: maxCols }, (_, i) => `열${i + 1}`)];
+      excelRows = parsed.map((r, i) => [String(i + 1), ...r, ...Array(maxCols - r.length).fill('')]);
+    } else {
+      const extract = optExtractName.checked;
+      const splitExt = optSplitExt.checked;
+
+      if (extract && splitExt) {
+        excelHeaders = ['No.', '파일명', '확장자'];
+        excelRows = lines.map((line, i) => {
+          const name = extractFileNameFromPath(line);
+          const { base, ext } = splitNameExt(name);
+          return [String(i + 1), base, ext];
+        });
+      } else if (extract && !splitExt) {
+        excelHeaders = ['No.', '파일명'];
+        excelRows = lines.map((line, i) => [String(i + 1), extractFileNameFromPath(line)]);
+      } else {
+        excelHeaders = ['No.', '원본 텍스트'];
+        excelRows = lines.map((line, i) => [String(i + 1), line.trim()]);
+      }
+    }
+
+    renderExcelTable();
+  }
+
+  function renderExcelTable() {
+    if (excelRows.length === 0) {
+      excelResultHead.innerHTML = '';
+      excelResultBody.innerHTML = `<tr><td class="excel-empty" colspan="3">왼쪽에 파일 목록을 붙여넣으면 여기에 표시됩니다.</td></tr>`;
+      return;
+    }
+    excelResultHead.innerHTML = excelHeaders.map(h => `<th>${escapeHtmlExcel(h)}</th>`).join('');
+    excelResultBody.innerHTML = excelRows.map(row =>
+      `<tr>${row.map(c => `<td>${escapeHtmlExcel(c)}</td>`).join('')}</tr>`
+    ).join('');
+  }
+
+  excelPasteArea.addEventListener('input', () => {
+    autoGrowTextarea(excelPasteArea);
+    updateExcelResult();
+  });
+  excelPasteArea.addEventListener('paste', () => {
+    setTimeout(() => {
+      autoGrowTextarea(excelPasteArea);
+      updateExcelResult();
+    }, 0);
+  });
+  optExtractName.addEventListener('change', updateExcelResult);
+  optSplitExt.addEventListener('change', updateExcelResult);
+
+  btnClearExcel.addEventListener('click', () => {
+    excelPasteArea.value = '';
+    autoGrowTextarea(excelPasteArea);
+    updateExcelResult();
+  });
+
+  function getFileNamesOnly() {
+    const raw = excelPasteArea.value;
+    const lines = raw.replace(/\r/g, '').split('\n').filter(l => l.trim().length > 0);
+    return lines.map(line => {
+      const firstCell = line.split('\t')[0]; // 탭으로 구분된 데이터라도 첫 열만 사용
+      const name = extractFileNameFromPath(firstCell);
+      const { base } = splitNameExt(name);
+      return base;
+    });
+  }
+
+  btnCopyExcel.addEventListener('click', async () => {
+    const names = getFileNamesOnly();
+    if (names.length === 0) { alert('복사할 데이터가 없습니다.'); return; }
+    const text = names.join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      alert(`파일명 ${names.length}개(확장자 제외)가 복사되었습니다. 원하는 곳에 Ctrl+V로 붙여넣으세요.`);
+    } catch (e) {
+      console.error(e);
+      alert('클립보드 복사에 실패했습니다. 표를 마우스로 드래그해서 직접 복사해주세요.');
+    }
+  });
+
+  btnDownloadExcel.addEventListener('click', () => {
+    if (excelRows.length === 0) { alert('다운로드할 데이터가 없습니다.'); return; }
+    if (!window.XLSX) { alert('엑셀 변환 라이브러리를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.'); return; }
+    const ws = XLSX.utils.aoa_to_sheet([excelHeaders, ...excelRows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '파일목록');
+    XLSX.writeFile(wb, '파일목록.xlsx');
+  });
 </script>
 
 </body>
