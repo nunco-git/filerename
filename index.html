@@ -123,10 +123,10 @@
     body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; margin: 20px; background-color: #f8f9fa; }
     .container { max-width: 1400px; margin: 0 auto; background: white; padding: 25px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }
     
-    /* 💡 상단 좌우 배치 그리드 */
+    /* 상단 좌우 배치 그리드 */
     .top-header-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
     
-    /* 💡 중앙 영역 배치 그리드 (파일명 정리 vs 드래그앤드롭) */
+    /* 중앙 영역 배치 그리드 */
     .middle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
 
     .card-box { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 15px; box-shadow: 0 2px 4px rgba(0,0,0,0.02); }
@@ -142,7 +142,7 @@
     .preset-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
     .preset-controls input[type="text"], .preset-controls select { flex: 1; min-width: 150px; }
 
-    /* 💡 문서본문 추출위치 가로 한 줄 배치 스타일 */
+    /* 추출위치 가로 한 줄 배치 스타일 */
     .horizontal-rule-card {
       display: flex;
       align-items: center;
@@ -177,7 +177,6 @@
 
     input[type="text"], select { width: 100%; padding: 6px 8px; border: 1px solid #ced4da; border-radius: 4px; font-size: 13px; }
     
-    /* 💡 드래그 앤 드롭 우측 배치용 높이 맞춤 */
     .drop-zone { 
       border: 2px dashed #007bff; 
       background: #eff6ff; 
@@ -211,14 +210,21 @@
 
     .btn-run { background: #007bff; color: white; }
     .btn-re { background: #17a2b8; color: white; }
+    .btn-sel-re { background: #e0a800; color: white; }
     .btn-clear { background: #dc3545; color: white; }
     .btn-zip { background: #28a745; color: white; }
     .btn:disabled { background: #ccc !important; border-color: #ccc !important; color: #666 !important; cursor: not-allowed; }
 
+    /* 테이블 스타일 및 행 드래그 관련 스타일 */
     table { width: 100%; border-collapse: collapse; margin-top: 15px; }
     th, td { border: 1px solid #ddd; padding: 8px 10px; text-align: left; font-size: 13px; }
     th { background-color: #f1f5f9; }
     
+    tr.draggable-row { cursor: grab; }
+    tr.draggable-row:active { cursor: grabbing; }
+    tr.dragging { opacity: 0.4; background-color: #e2e8f0; }
+    .drag-handle { cursor: grab; font-weight: bold; color: #94a3b8; user-select: none; }
+
     .status-badge { display: inline-block; padding: 4px 8px; border-radius: 4px; font-size: 12px; font-weight: bold; }
     .status-ready { background: #e2e3e5; color: #383d41; }
     .status-working { background: #fff3cd; color: #856404; }
@@ -226,7 +232,6 @@
     .status-error { background: #f8d7da; color: #721c24; }
 
     .btn-sm { padding: 4px 8px; font-size: 12px; border: none; border-radius: 4px; cursor: pointer; background: #28a745; color: white; }
-    .help-text { font-size: 12px; color: #6c757d; margin-top: 4px; }
     .default-tag { font-size: 11px; background: #28a745; color: white; padding: 2px 6px; border-radius: 10px; margin-left: 6px; }
 
     @media (max-width: 992px) {
@@ -321,7 +326,7 @@
     </div>
   </div>
 
-  <!-- 3. 추출 위치 설정 (제목 옆 가로 한 줄 배치) -->
+  <!-- 3. 추출 위치 설정 -->
   <div class="card-box rule-card horizontal-rule-card">
     <h4>📍 추출 위치 1 설정</h4>
     <div class="rule-grid-inline">
@@ -424,28 +429,36 @@
   <!-- 실행 버튼 영역 -->
   <div class="action-bar">
     <div class="btn-group">
-      <button class="btn btn-run" id="btnRun" onclick="runBatchProcess(false)" disabled>▶ 파일 분석 및 변경 실행</button>
-      <button class="btn btn-re" id="btnRe" onclick="runBatchProcess(true)" disabled>🔄 재실행 (현재 목록 재분석)</button>
-      <button class="btn btn-clear" id="btnClear" onclick="clearAllFiles()">🗑️ 전체 초기화</button>
+      <button class="btn btn-run" id="btnRun" onclick="runBatchProcess('all')" disabled>▶ 전체 분석 및 실행</button>
+      <button class="btn btn-sel-re" id="btnSelRe" onclick="runBatchProcess('selected')" disabled>🎯 선택한 파일만 재실행</button>
+      <button class="btn btn-re" id="btnRe" onclick="runBatchProcess('reAll')" disabled>🔄 전체 재실행</button>
+      <button class="btn btn-outline-danger" id="btnDeleteSelected" onclick="deleteSelectedFiles()" disabled>🗑️ 선택 파일 삭제</button>
+      <button class="btn btn-clear" id="btnClear" onclick="clearAllFiles()">💥 전체 초기화</button>
     </div>
     <div>
       <button class="btn btn-zip" id="btnZip" onclick="downloadAllZip()" disabled>📦 전체 ZIP 일괄 다운로드</button>
     </div>
   </div>
 
-  <h3>업로드 파일 목록 및 실행 결과</h3>
+  <h3 style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+    <span>업로드 파일 목록 및 실행 결과</span>
+    <span style="font-size: 12px; font-weight: normal; color: #64748b;">💡 마우스로 행을 끌어서 순서를 변경할 수 있습니다.</span>
+  </h3>
+  
   <table id="resultTable">
     <thead>
       <tr>
-        <th style="width: 20%;">원본 파일명</th>
-        <th style="width: 12%;">추출값 1</th>
-        <th style="width: 12%;">추출값 2</th>
-        <th style="width: 12%;">추출값 3</th>
-        <th style="width: 24%;">변경될 파일명</th>
+        <th style="width: 3%; text-align: center;">이동</th>
+        <th style="width: 3%; text-align: center;"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"></th>
+        <th style="width: 18%;">원본 파일명</th>
+        <th style="width: 11%;">추출값 1</th>
+        <th style="width: 11%;">추출값 2</th>
+        <th style="width: 11%;">추출값 3</th>
+        <th style="width: 23%;">변경될 파일명</th>
         <th style="width: 20%;">상태 / 개별 다운로드</th>
       </tr>
     </thead>
-    <tbody></tbody>
+    <tbody id="tableBody"></tbody>
   </table>
 </div>
 
@@ -458,10 +471,13 @@
   const fileInput = document.getElementById('fileInput');
   const btnRun = document.getElementById('btnRun');
   const btnRe = document.getElementById('btnRe');
+  const btnSelRe = document.getElementById('btnSelRe');
+  const btnDeleteSelected = document.getElementById('btnDeleteSelected');
   const btnZip = document.getElementById('btnZip');
-  const resultTable = document.getElementById('resultTable').querySelector('tbody');
+  const tableBody = document.getElementById('tableBody');
 
   let fileQueue = [];
+  let draggedRowIndex = null;
 
   const STORAGE_KEY_PRESETS = 'doc_renamer_presets';
   const STORAGE_KEY_DEFAULT = 'doc_renamer_default_preset';
@@ -596,7 +612,7 @@
     if (presets[name]) {
       window.applyConfigData(presets[name]);
       if (autoRun && fileQueue.length > 0) {
-        runBatchProcess(true);
+        runBatchProcess('reAll');
       } else if (!autoRun) {
         alert(`'${name}' 설정을 불러왔습니다.`);
       }
@@ -662,47 +678,141 @@
       if (!name.endsWith('.pdf') && !name.endsWith('.hwpx')) continue;
 
       if (!fileQueue.some(item => item.file.name === file.name)) {
-        const item = { file: file, status: 'ready', newName: '', extractedText: null };
+        const item = { 
+          id: 'item_' + Math.random().toString(36).substr(2, 9),
+          file: file, 
+          status: 'ready', 
+          newName: '', 
+          extractedText: null,
+          selected: false
+        };
         fileQueue.push(item);
-        renderRow(item);
       }
     }
+    renderTable();
     updateButtonStates();
   }
 
-  function renderRow(item) {
-    const row = resultTable.insertRow();
-    const safeId = 'row_' + Math.random().toString(36).substr(2, 9);
-    item.rowId = safeId;
-    row.id = safeId;
-    row.innerHTML = `
-      <td>${item.file.name}</td>
-      <td class="val-1">-</td>
-      <td class="val-2">-</td>
-      <td class="val-3">-</td>
-      <td class="val-new">-</td>
-      <td class="val-status"><span class="status-badge status-ready">대기 중</span></td>
-    `;
+  // --- 테이블 렌더링 및 드래그 앤 드롭 순서 변경 ---
+  function renderTable() {
+    tableBody.innerHTML = '';
+    
+    fileQueue.forEach((item, index) => {
+      const row = document.createElement('tr');
+      row.className = 'draggable-row';
+      row.draggable = true;
+      row.dataset.index = index;
+
+      row.innerHTML = `
+        <td style="text-align: center;"><span class="drag-handle">☰</span></td>
+        <td style="text-align: center;">
+          <input type="checkbox" class="row-checkbox" ${item.selected ? 'checked' : ''} onchange="toggleItemSelect(${index}, this.checked)">
+        </td>
+        <td>${item.file.name}</td>
+        <td class="val-1">${item.vals ? item.vals[0] : '-'}</td>
+        <td class="val-2">${item.vals ? item.vals[1] : '-'}</td>
+        <td class="val-3">${item.vals ? item.vals[2] : '-'}</td>
+        <td class="val-new">${item.newName || '-'}</td>
+        <td class="val-status">${getStatusBadgeHtml(item)}</td>
+      `;
+
+      // 드래그 앤 드롭 이벤트
+      row.addEventListener('dragstart', (e) => {
+        draggedRowIndex = index;
+        row.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      row.addEventListener('dragend', () => {
+        row.classList.remove('dragging');
+        draggedRowIndex = null;
+      });
+
+      row.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+      });
+
+      row.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (draggedRowIndex !== null && draggedRowIndex !== index) {
+          const movedItem = fileQueue.splice(draggedRowIndex, 1)[0];
+          fileQueue.splice(index, 0, movedItem);
+          renderTable();
+        }
+      });
+
+      tableBody.appendChild(row);
+    });
+
+    updateSelectAllCheckboxState();
+    updateButtonStates();
+  }
+
+  function getStatusBadgeHtml(item) {
+    if (item.status === 'ready') return `<span class="status-badge status-ready">대기 중</span>`;
+    if (item.status === 'working') return `<span class="status-badge status-working">분석 중...</span>`;
+    if (item.status === 'ocr') return `<span class="status-badge status-working">OCR 스캔 중...</span>`;
+    if (item.status === 'error') return `<span class="status-badge status-error">실패</span>`;
+    if (item.status === 'success') {
+      return `<span class="status-badge status-success">완료</span> <button class="btn-sm" onclick="triggerDownloadByIndex(${fileQueue.indexOf(item)})">다운로드</button>`;
+    }
+    return '';
+  }
+
+  function toggleItemSelect(index, isChecked) {
+    fileQueue[index].selected = isChecked;
+    updateSelectAllCheckboxState();
+    updateButtonStates();
+  }
+
+  function toggleSelectAll(masterCheckbox) {
+    const isChecked = masterCheckbox.checked;
+    fileQueue.forEach(item => item.selected = isChecked);
+    renderTable();
+  }
+
+  function updateSelectAllCheckboxState() {
+    const selectAll = document.getElementById('selectAllCheckbox');
+    if (fileQueue.length === 0) {
+      selectAll.checked = false;
+    } else {
+      selectAll.checked = fileQueue.every(i => i.selected);
+    }
+  }
+
+  function deleteSelectedFiles() {
+    const selectedCount = fileQueue.filter(i => i.selected).length;
+    if (selectedCount === 0) return;
+
+    if (confirm(`선택한 ${selectedCount}개 파일을 목록에서 삭제하시겠습니까?`)) {
+      fileQueue = fileQueue.filter(i => !i.selected);
+      renderTable();
+    }
   }
 
   function clearAllFiles() {
     fileQueue = [];
-    resultTable.innerHTML = '';
+    renderTable();
     fileInput.value = '';
-    updateButtonStates();
   }
 
   function updateButtonStates() {
     const hasFiles = fileQueue.length > 0;
+    const hasSelected = fileQueue.some(i => i.selected);
+
     btnRun.disabled = !hasFiles;
     btnRe.disabled = !hasFiles;
+    btnSelRe.disabled = !hasSelected;
+    btnDeleteSelected.disabled = !hasSelected;
     btnZip.disabled = !fileQueue.some(i => i.status === 'success');
   }
 
   // --- 메인 분석 및 파일명 변경 실행 로직 ---
-  async function runBatchProcess(isReRun = false) {
+  async function runBatchProcess(mode = 'all') {
     btnRun.disabled = true;
     btnRe.disabled = true;
+    btnSelRe.disabled = true;
     btnZip.disabled = true;
 
     const commonWord = document.getElementById('commonWord').value.trim();
@@ -718,20 +828,20 @@
     ];
 
     for (let item of fileQueue) {
-      if (!isReRun && item.status === 'success') continue;
+      // 실행 조건 필터링
+      if (mode === 'all' && item.status === 'success') continue;
+      if (mode === 'selected' && !item.selected) continue;
 
-      const row = document.getElementById(item.rowId);
-      if (!row) continue;
-      const statusCell = row.querySelector('.val-status');
-
-      statusCell.innerHTML = `<span class="status-badge status-working">분석 중...</span>`;
+      item.status = 'working';
+      renderTable();
 
       try {
-        if (!item.extractedText || isReRun) {
+        if (!item.extractedText || mode === 'reAll' || mode === 'selected') {
           if (item.file.name.toLowerCase().endsWith('.pdf')) {
             item.extractedText = await extractPdfText(item.file);
             if (item.extractedText.trim().length < 20 && window.Tesseract) {
-              statusCell.innerHTML = `<span class="status-badge status-working">OCR 스캔 중...</span>`;
+              item.status = 'ocr';
+              renderTable();
               item.extractedText = await extractPdfOCR(item.file);
             }
           } else if (item.file.name.toLowerCase().endsWith('.hwpx')) {
@@ -740,9 +850,7 @@
         }
 
         const vals = rules.map(rule => parseTextByRule(item.extractedText, rule));
-        row.querySelector('.val-1').innerText = vals[0] || "-";
-        row.querySelector('.val-2').innerText = vals[1] || "-";
-        row.querySelector('.val-3').innerText = vals[2] || "-";
+        item.vals = vals;
 
         const ext = item.file.name.substring(item.file.name.lastIndexOf('.'));
         const originalBaseName = item.file.name.replace(ext, '');
@@ -773,22 +881,13 @@
           item.newName = cleanedBaseName ? `${cleanedBaseName}${ext}` : item.file.name;
         }
 
-        row.querySelector('.val-new').innerText = item.newName;
         item.status = 'success';
-
-        const btnDownload = document.createElement('button');
-        btnDownload.className = 'btn-sm';
-        btnDownload.innerText = '다운로드';
-        btnDownload.onclick = () => triggerDownload(item.file, item.newName);
-
-        statusCell.innerHTML = `<span class="status-badge status-success">완료</span> `;
-        statusCell.appendChild(btnDownload);
 
       } catch (err) {
         console.error(err);
         item.status = 'error';
-        statusCell.innerHTML = `<span class="status-badge status-error">실패</span>`;
       }
+      renderTable();
     }
 
     updateButtonStates();
@@ -908,11 +1007,13 @@
     return fullText;
   }
 
-  function triggerDownload(file, newName) {
-    const url = URL.createObjectURL(file);
+  function triggerDownloadByIndex(index) {
+    const item = fileQueue[index];
+    if (!item) return;
+    const url = URL.createObjectURL(item.file);
     const a = document.createElement('a');
     a.href = url;
-    a.download = newName;
+    a.download = item.newName;
     a.click();
   }
 
