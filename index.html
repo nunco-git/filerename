@@ -46,7 +46,7 @@
         document.getElementById('btnLogin').style.display = 'none';
         document.getElementById('btnLogout').style.display = 'inline-block';
         
-        // Firestore 실시간 데이터 수신 (새로고침 없이 자동 반영)
+        // Firestore 실시간 데이터 수신
         const userRef = doc(db, "users", user.uid);
         unsubscribeFirestore = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
@@ -164,8 +164,13 @@
     h2 { border-bottom: 2px solid #007bff; padding-bottom: 10px; color: #333; margin-top: 0; font-size: 1.3rem; }
     h4 { margin: 0 0 10px 0; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between; }
     
-    .preset-controls { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
-    .preset-controls input[type="text"], .preset-controls select { flex: 1; min-width: 150px; }
+    /* 동일한 정렬 비율을 보장하는 프로필 컨트롤 컨트롤 레이아웃 */
+    .preset-controls { display: flex; gap: 8px; align-items: center; }
+    .preset-controls input[type="text"], .preset-controls select { flex: 1; width: 100%; }
+
+    /* 두 줄 간의 우측 버튼 영역 넓이 동일화 */
+    .preset-btn-group-top { display: flex; gap: 8px; }
+    .preset-btn-group-bottom { display: flex; gap: 8px; }
 
     /* 추출위치 가로 한 줄 배치 스타일 */
     .horizontal-rule-card {
@@ -230,7 +235,6 @@
     
     .btn-indigo { background: #6366f1; color: white; }
     .btn-dark { background: #374151; color: white; }
-    .btn-purple { background: #8b5cf6; color: white; }
     .btn-outline-danger { background: transparent; color: #dc3545; border: 1px solid #dc3545; }
 
     .btn-run { background: #007bff; color: white; }
@@ -292,18 +296,22 @@
         <span>⚙️ 설정 저장 및 프로필 관리</span>
         <span id="defaultNotice" style="font-size: 12px; font-weight: normal; color: #4b5563;"></span>
       </h4>
+      <!-- 윗줄: 입력 창 + 저장/기본값 버튼 -->
       <div class="preset-controls">
         <input type="text" id="presetNameInput" placeholder="새 설정 이름 입력 (예: 여비 신청서)">
-        <button class="btn btn-indigo" onclick="saveCurrentPreset()">💾 저장</button>
-        <button class="btn btn-dark" onclick="setAsDefaultPreset()">⭐ 기본값 등록</button>
+        <div class="preset-btn-group-top">
+          <button class="btn btn-indigo" onclick="saveCurrentPreset()">💾 저장</button>
+          <button class="btn btn-dark" onclick="setAsDefaultPreset()">⭐ 기본값 등록</button>
+        </div>
       </div>
+      <!-- 아랫줄: 프로필 선택 드롭다운 (위의 입력창과 크기 동일) + 삭제 버튼 -->
       <div class="preset-controls" style="margin-top: 8px;">
-        <select id="presetSelect">
+        <select id="presetSelect" onchange="loadSelectedPreset()">
           <option value="">-- 저장된 설정 프로필 선택 --</option>
         </select>
-        <button class="btn btn-purple" onclick="loadSelectedPreset(false)">📂 불러오기</button>
-        <button class="btn btn-purple" onclick="loadSelectedPreset(true)">⚡ 불러오기+실행</button>
-        <button class="btn btn-outline-danger" onclick="deleteSelectedPreset()">🗑️ 삭제</button>
+        <div class="preset-btn-group-bottom">
+          <button class="btn btn-outline-danger" onclick="deleteSelectedPreset()">🗑️ 삭제</button>
+        </div>
       </div>
     </div>
   </div>
@@ -625,22 +633,15 @@
     window.cachedPresets = presetsObj;
   };
 
-  window.loadSelectedPreset = function(autoRun = false) {
+  // 프로필 선택 시 즉시 화면 반영
+  window.loadSelectedPreset = function() {
     const select = document.getElementById('presetSelect');
     const name = select.value;
-    if (!name) {
-      alert('불러올 프로필을 목록에서 선택해주세요.');
-      return;
-    }
+    if (!name) return;
 
     const presets = window.cachedPresets || getLocalSavedPresets();
     if (presets[name]) {
       window.applyConfigData(presets[name]);
-      if (autoRun && fileQueue.length > 0) {
-        runBatchProcess('reAll');
-      } else if (!autoRun) {
-        alert(`'${name}' 설정을 불러왔습니다.`);
-      }
     }
   };
 
@@ -741,7 +742,6 @@
         <td class="val-status">${getStatusBadgeHtml(item)}</td>
       `;
 
-      // 드래그 앤 드롭 이벤트
       row.addEventListener('dragstart', (e) => {
         draggedRowIndex = index;
         row.classList.add('dragging');
