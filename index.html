@@ -12,7 +12,7 @@
   <script type="module">
     import { initializeApp } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-app.js";
     import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-auth.js";
-    import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteField } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
+    import { getFirestore, doc, setDoc, getDoc, updateDoc, deleteField, onSnapshot } from "https://www.gstatic.com/firebasejs/10.9.0/firebase-firestore.js";
 
     const firebaseConfig = {
       apiKey: "AIzaSyBdkKM94UZla4vBDDyOzAu3Lr0jsRWpbfs",
@@ -30,17 +30,41 @@
     const provider = new GoogleAuthProvider();
 
     window.currentUser = null;
+    let unsubscribeFirestore = null;
 
     onAuthStateChanged(auth, async (user) => {
       const userProfileInfo = document.getElementById('userProfileInfo');
       
+      if (unsubscribeFirestore) {
+        unsubscribeFirestore();
+        unsubscribeFirestore = null;
+      }
+
       if (user) {
         window.currentUser = user;
         userProfileInfo.innerHTML = `👤 <b>${user.displayName || user.email}</b>님 로그인됨`;
         document.getElementById('btnLogin').style.display = 'none';
         document.getElementById('btnLogout').style.display = 'inline-block';
         
-        await loadUserDataFromCloud();
+        // Firestore 실시간 데이터 수신 (새로고침 없이 자동 반영)
+        const userRef = doc(db, "users", user.uid);
+        unsubscribeFirestore = onSnapshot(userRef, (docSnap) => {
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            
+            if (data.defaultConfig) {
+              window.applyConfigData(data.defaultConfig);
+              window.updateDefaultNoticeText(true);
+            }
+
+            window.refreshPresetDropdownFromData(data.presets || {});
+          } else {
+            window.refreshPresetDropdownFromData({});
+          }
+        }, (err) => {
+          console.error("실시간 수신 오류:", err);
+        });
+
       } else {
         window.currentUser = null;
         userProfileInfo.innerHTML = `🔒 비로그인 상태 (현재 PC 브라우저에만 저장됨)`;
@@ -77,6 +101,7 @@
         } else {
           await setDoc(userRef, { presets: { [presetName]: configData } }, { merge: true });
         }
+        await loadUserDataFromCloud();
         return true;
       } catch (err) {
         console.error("클라우드 저장 오류:", err);
@@ -828,7 +853,6 @@
     ];
 
     for (let item of fileQueue) {
-      // 실행 조건 필터링
       if (mode === 'all' && item.status === 'success') continue;
       if (mode === 'selected' && !item.selected) continue;
 
