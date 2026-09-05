@@ -14,8 +14,11 @@
     
     .rule-card { background: #f1f5f9; padding: 15px; border-radius: 8px; margin-bottom: 15px; border-left: 4px solid #007bff; }
     .rule-card.fn-card { border-left-color: #28a745; background: #f0fdf4; }
+    .rule-card.common-card { border-left-color: #ffc107; background: #fffde7; }
+    
     .rule-card h4 { margin: 0 0 10px 0; color: #007bff; }
     .rule-card.fn-card h4 { color: #28a745; }
+    .rule-card.common-card h4 { color: #d39e00; }
     
     .rule-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 10px; align-items: center; }
     label { font-size: 13px; font-weight: bold; color: #495057; display: block; margin-bottom: 4px; }
@@ -69,7 +72,26 @@
 <div class="container">
   <h2>문서 정보 기반 정밀 파일명 자동 변경기</h2>
 
-  <!-- 원본 파일명 정리 규칙 설정 (신규 기능) -->
+  <!-- 공통 단어 추가 설정 (신규 기능) -->
+  <div class="rule-card common-card">
+    <h4>🏷️ 공통 단어 추가 설정 (선택)</h4>
+    <div class="rule-grid">
+      <div>
+        <label>추가할 공통 단어</label>
+        <input type="text" id="commonWord" value="" placeholder="예: [부여군청], 2026년">
+      </div>
+      <div>
+        <label>붙일 위치</label>
+        <select id="commonPos">
+          <option value="prefix" selected>추출값 맨 앞</option>
+          <option value="suffix">추출값 맨 뒤</option>
+        </select>
+      </div>
+    </div>
+    <div class="help-text">※ 모든 파일명에 고정으로 삽입하고 싶은 사업명, 기관명, 연도 등을 입력하세요.</div>
+  </div>
+
+  <!-- 원본 파일명 정리 및 전체 삭제 옵션 -->
   <div class="rule-card fn-card">
     <h4>✂️ 원본 파일명 특정 위치 삭제/정리 설정</h4>
     <div class="rule-grid">
@@ -81,13 +103,14 @@
         <label>삭제 방식</label>
         <select id="fnMode">
           <option value="none" selected>사용 안 함 (원본 그대로 유지)</option>
+          <option value="removeAll">🔥 원본 파일명 전체 삭제 (확장자만 유지)</option>
           <option value="after">기준 단어 뒤 전체 삭제</option>
           <option value="before">기준 단어 앞 전체 삭제</option>
           <option value="removeKey">기준 단어만 삭제</option>
         </select>
       </div>
     </div>
-    <div class="help-text">※ 인터넷에서 다운받은 긴 파일명에서 불필요한 무작위 문자열 위치를 잘라낼 때 사용하세요.</div>
+    <div class="help-text">※ '전체 삭제' 선택 시 원본 난수 이름을 깔끔히 지우고 공통단어 및 추출값으로만 파일명을 만듭니다.</div>
   </div>
 
   <!-- 추출 규칙 1 -->
@@ -225,7 +248,6 @@
 </div>
 
 <script>
-  // Worker 글로벌 설정 (GitHub Pages 호환)
   if (window.pdfjsLib) {
     pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
   }
@@ -313,11 +335,13 @@
     btnZip.disabled = !fileQueue.some(i => i.status === 'success');
   }
 
-  // 작업 실행 / 재실행
   async function runBatchProcess(isReRun = false) {
     btnRun.disabled = true;
     btnRe.disabled = true;
     btnZip.disabled = true;
+
+    const commonWord = document.getElementById('commonWord').value.trim();
+    const commonPos = document.getElementById('commonPos').value;
 
     const fnKey = document.getElementById('fnKey').value.trim();
     const fnMode = document.getElementById('fnMode').value;
@@ -358,17 +382,31 @@
         const ext = item.file.name.substring(item.file.name.lastIndexOf('.'));
         const originalBaseName = item.file.name.replace(ext, '');
 
-        // 原本 파일명 정리 로직 적용
+        // 원본 파일명 정리/자르기/전체삭제 로직 적용
         const cleanedBaseName = trimFileName(originalBaseName, fnKey, fnMode);
         
         // 본문 추출값 정제 및 조합
-        const validParts = vals
+        let validParts = vals
           .map(v => v ? v.trim().replace(/^[_]+|[_]+$/g, '') : "")
           .filter(v => v !== "" && v !== "미확인");
 
+        // 공통 단어 결합 처리
+        if (commonWord !== "") {
+          const cleanCommon = commonWord.replace(/^[_]+|[_]+$/g, '');
+          if (commonPos === "prefix") {
+            validParts.unshift(cleanCommon);
+          } else {
+            validParts.push(cleanCommon);
+          }
+        }
+
         if (validParts.length > 0) {
           const prefix = validParts.join('_');
-          item.newName = cleanedBaseName ? `[${prefix}]_${cleanedBaseName}${ext}` : `[${prefix}]${ext}`;
+          if (cleanedBaseName) {
+            item.newName = `[${prefix}]_${cleanedBaseName}${ext}`;
+          } else {
+            item.newName = `[${prefix}]${ext}`;
+          }
         } else {
           item.newName = cleanedBaseName ? `${cleanedBaseName}${ext}` : item.file.name;
         }
@@ -394,28 +432,26 @@
     updateButtonStates();
   }
 
-  // 파일명 텍스트 자르기/정리 처리 함수
   function trimFileName(baseName, key, mode) {
-    if (mode === 'none' || !key) return baseName;
+    if (mode === 'none') return baseName;
+    if (mode === 'removeAll') return "";
+
+    if (!key) return baseName;
 
     const idx = baseName.indexOf(key);
-    if (idx === -1) return baseName; // 키워드가 없으면 원본 그대로 반환
+    if (idx === -1) return baseName;
 
     if (mode === 'after') {
-      // 키워드 '뒤' 전체 삭제 (키워드까지는 포함)
       return baseName.substring(0, idx + key.length).trim().replace(/^[_]+|[_]+$/g, '');
     } else if (mode === 'before') {
-      // 키워드 '앞' 전체 삭제 (키워드부터 시작)
       return baseName.substring(idx).trim().replace(/^[_]+|[_]+$/g, '');
     } else if (mode === 'removeKey') {
-      // 키워드 단어만 삭제
       return baseName.replace(key, '').trim().replace(/^[_]+|[_]+$/g, '');
     }
 
     return baseName;
   }
 
-  // 본문 텍스트 추출용 유연 탐색 엔진
   function parseTextByRule(text, rule) {
     if (!rule.key || !text) return "";
 
