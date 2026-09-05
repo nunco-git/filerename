@@ -330,8 +330,27 @@
       margin-top: 24px;
       background: linear-gradient(180deg, #faf5ff 0%, #f5f3ff 100%);
       border: 1px solid #ddd6fe;
+      display: flex;
+      flex-direction: column;
     }
-    .excel-card h4 { color: #6d28d9; font-size: 1rem; margin-bottom: 12px; }
+    .excel-card.expanded { height: 88vh; }
+    .excel-card-header { display: flex; align-items: center; gap: 14px; }
+    .excel-header-col { min-width: 0; }
+    .excel-header-info { flex: 0 0 26%; display: flex; align-items: center; gap: 12px; }
+    .excel-header-paste { flex: 1 1 32%; font-size: 12.5px; font-weight: 700; color: #6d28d9; }
+    .excel-header-result {
+      flex: 1 1 42%; display: flex; align-items: center; justify-content: space-between;
+      font-size: 12.5px; font-weight: 700; color: #6d28d9; flex-wrap: wrap; gap: 8px;
+    }
+    .excel-card h4 { color: #6d28d9; font-size: 1rem; margin: 0; white-space: nowrap; }
+    .excel-body {
+      display: none;
+      flex-direction: column;
+      margin-top: 14px;
+      flex: 1;
+      min-height: 0;
+    }
+    .excel-body.open { display: flex; }
     .excel-help {
       background: white; border: 1px solid #e9d5ff; border-radius: 10px;
       padding: 12px 16px; margin-bottom: 12px; font-size: 12.5px; color: #4c1d95; line-height: 1.65;
@@ -345,17 +364,13 @@
     .excel-options label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
     .excel-options input[type="checkbox"] { width: auto; }
 
-    /* 가로 3분할: 안내/옵션(좌) · 붙여넣기(가운데) · 결과(우) */
-    .excel-layout { display: flex; gap: 14px; align-items: stretch; }
-    .excel-col { flex: 1; min-width: 0; display: flex; flex-direction: column; }
-    .excel-col-info { flex: 0 0 26%; }
+    /* 가로 3분할: 안내/옵션(좌) · 붙여넣기(가운데) · 결과(우) - 열렸을 때 카드 높이의 대부분을 차지 */
+    .excel-layout { display: flex; gap: 14px; align-items: stretch; flex: 1; min-height: 0; }
+    .excel-col { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+    .excel-col-info { flex: 0 0 26%; overflow-y: auto; }
     .excel-col-paste { flex: 1 1 32%; }
     .excel-col-result { flex: 1 1 42%; }
 
-    .excel-pane-title {
-      display: flex; align-items: center; justify-content: space-between;
-      font-size: 12.5px; font-weight: 700; color: #6d28d9; margin-bottom: 6px;
-    }
     .excel-actions { display: flex; gap: 6px; flex-wrap: wrap; }
     .btn-sm-outline {
       background: white; color: #6d28d9; border: 1px solid #c4b5fd;
@@ -364,15 +379,15 @@
     .btn-sm-outline:hover { background: #f5f3ff; }
 
     #excelPasteArea {
-      width: 100%; flex: 1; min-height: 140px; resize: vertical;
+      width: 100%; flex: 1; min-height: 0; resize: vertical;
       border: 1px solid #ddd6fe; border-radius: 8px; padding: 10px 12px;
-      font-size: 13px; font-family: inherit; line-height: 1.6; background: white; overflow: hidden;
+      font-size: 13px; font-family: inherit; line-height: 1.6; background: white; overflow: auto;
     }
     #excelPasteArea:focus { outline: 2px solid #a78bfa; outline-offset: 0; }
 
     .excel-table-wrapper {
       border: 1px solid #ddd6fe; border-radius: 8px; background: white;
-      flex: 1; min-height: 140px; overflow: auto;
+      flex: 1; min-height: 0; overflow: auto;
     }
     .excel-table-wrapper table { width: 100%; border-collapse: collapse; }
     .excel-table-wrapper th { background: #f5f3ff; color: #6d28d9; padding: 8px 10px; font-size: 12px; border-bottom: 1px solid #e9d5ff; white-space: nowrap; }
@@ -383,6 +398,8 @@
     @media (max-width: 1100px) {
       .excel-layout { flex-direction: column; }
       .excel-col-info, .excel-col-paste, .excel-col-result { flex-basis: auto; }
+      .excel-card-header { flex-direction: column; align-items: stretch; }
+      .excel-header-info, .excel-header-paste, .excel-header-result { flex-basis: auto; }
     }
 
     @media (max-width: 992px) {
@@ -679,9 +696,24 @@
   </div>
 
   <!-- 4. 파일 목록 -> 엑셀 변환기 -->
-  <div class="card-box excel-card">
-    <h4>📋 파일 목록 → 엑셀 리스트 변환기</h4>
+  <div class="card-box excel-card" id="excelCard">
+    <div class="excel-card-header">
+      <div class="excel-header-col excel-header-info">
+        <h4>📋 파일 목록 → 엑셀 리스트 변환기</h4>
+        <button class="btn-sm-outline" id="btnToggleExcelCard" onclick="toggleExcelCard()">열기 ▾</button>
+      </div>
+      <div class="excel-header-col excel-header-paste">① 여기에 붙여넣기</div>
+      <div class="excel-header-col excel-header-result">
+        <span>② 결과 (자동 변환됨)</span>
+        <span class="excel-actions">
+          <button class="btn-sm-outline" id="btnCopyExcel">📋 파일명만 복사</button>
+          <button class="btn-sm-outline" id="btnDownloadExcel">⬇️ xlsx</button>
+          <button class="btn-sm-outline" id="btnClearExcel">🗑️ 초기화</button>
+        </span>
+      </div>
+    </div>
 
+    <div class="excel-body" id="excelBody">
     <div class="excel-layout">
       <div class="excel-col excel-col-info">
         <div class="excel-help">
@@ -697,19 +729,10 @@
       </div>
 
       <div class="excel-col excel-col-paste">
-        <div class="excel-pane-title">① 여기에 붙여넣기 (Ctrl+V)</div>
         <textarea id="excelPasteArea" placeholder="탐색기에서 복사한 파일 목록을 여기에 붙여넣으세요..."></textarea>
       </div>
 
       <div class="excel-col excel-col-result">
-        <div class="excel-pane-title">
-          <span>② 결과 (자동 변환됨)</span>
-          <span class="excel-actions">
-            <button class="btn-sm-outline" id="btnCopyExcel">📋 파일명만 복사</button>
-            <button class="btn-sm-outline" id="btnDownloadExcel">⬇️ xlsx</button>
-            <button class="btn-sm-outline" id="btnClearExcel">🗑️ 초기화</button>
-          </span>
-        </div>
         <div class="excel-table-wrapper">
           <table id="excelResultTable">
             <thead><tr id="excelResultHead"></tr></thead>
@@ -720,6 +743,7 @@
         </div>
       </div>
     </div>
+    </div><!-- /excelBody -->
   </div>
 
   </div><!-- /main-content -->
@@ -1361,10 +1385,15 @@
   let excelHeaders = [];
   let excelRows = [];
 
-  function autoGrowTextarea(el) {
-    el.style.height = 'auto';
-    el.style.height = el.scrollHeight + 'px';
-  }
+  window.toggleExcelCard = function() {
+    const card = document.getElementById('excelCard');
+    const body = document.getElementById('excelBody');
+    const btn = document.getElementById('btnToggleExcelCard');
+    const opening = !body.classList.contains('open');
+    body.classList.toggle('open', opening);
+    card.classList.toggle('expanded', opening);
+    btn.textContent = opening ? '접기 ▴' : '열기 ▾';
+  };
 
   function extractFileNameFromPath(raw) {
     let s = raw.trim();
@@ -1438,12 +1467,10 @@
   }
 
   excelPasteArea.addEventListener('input', () => {
-    autoGrowTextarea(excelPasteArea);
     updateExcelResult();
   });
   excelPasteArea.addEventListener('paste', () => {
     setTimeout(() => {
-      autoGrowTextarea(excelPasteArea);
       updateExcelResult();
     }, 0);
   });
@@ -1452,7 +1479,6 @@
 
   btnClearExcel.addEventListener('click', () => {
     excelPasteArea.value = '';
-    autoGrowTextarea(excelPasteArea);
     updateExcelResult();
   });
 
