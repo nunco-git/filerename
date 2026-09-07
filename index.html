@@ -3,11 +3,11 @@
 <head>
   <meta charset="UTF-8">
   <title>스마트 파일명 관리자</title>
-  <!-- 제목/본문에 쓰이는 Pretendard 폰트를 실제로 불러온다 -->
+  <!-- Pretendard 웹폰트 -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
-  <!-- 제목 전용 폰트: Jua (둥글고 귀여운 스타일) -->
+  <!-- 제목 전용 폰트: Jua -->
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
-  <!-- CDN 스크립트 로드 -->
+  <!-- 외부 라이브러리 CDN -->
   <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
@@ -47,9 +47,11 @@
 
       if (user) {
         window.currentUser = user;
-        userProfileInfo.innerHTML = `👤 <b>${user.displayName || user.email}</b>님 로그인됨`;
-        document.getElementById('btnLogin').style.display = 'none';
-        document.getElementById('btnLogout').style.display = 'inline-block';
+        if (userProfileInfo) userProfileInfo.innerHTML = `👤 <b>${user.displayName || user.email}</b>님 로그인됨`;
+        const btnLogin = document.getElementById('btnLogin');
+        const btnLogout = document.getElementById('btnLogout');
+        if (btnLogin) btnLogin.style.display = 'none';
+        if (btnLogout) btnLogout.style.display = 'inline-block';
         
         // Firestore 실시간 데이터 수신
         const userRef = doc(db, "users", user.uid);
@@ -72,9 +74,11 @@
 
       } else {
         window.currentUser = null;
-        userProfileInfo.innerHTML = `🔒 비로그인 상태 (현재 PC 브라우저에만 저장됨)`;
-        document.getElementById('btnLogin').style.display = 'inline-block';
-        document.getElementById('btnLogout').style.display = 'none';
+        if (userProfileInfo) userProfileInfo.innerHTML = `🔒 비로그인 상태 (현재 PC 브라우저에만 저장됨)`;
+        const btnLogin = document.getElementById('btnLogin');
+        const btnLogout = document.getElementById('btnLogout');
+        if (btnLogin) btnLogin.style.display = 'inline-block';
+        if (btnLogout) btnLogout.style.display = 'none';
         
         window.refreshPresetDropdown();
         window.loadDefaultPresetOnStart();
@@ -141,9 +145,6 @@
     window.deletePresetFromCloud = async function(presetName) {
       if (!window.currentUser) return;
       const userRef = doc(db, "users", window.currentUser.uid);
-      // 주의: 문자열 "presets.이름" 형태는 Firestore가 마침표(.)를 경로 구분자로 해석해
-      // 프로필 이름에 마침표가 들어가면 엉뚱한 위치를 지우는 버그가 있었음.
-      // FieldPath에 이름을 별도 세그먼트로 넘기면 마침표가 있어도 그대로 하나의 키로 처리됨.
       await updateDoc(userRef, new FieldPath('presets', presetName), deleteField());
       await loadUserDataFromCloud();
     };
@@ -152,7 +153,6 @@
   <style>
     * { box-sizing: border-box; }
 
-    /* 클릭 가능한 요소는 전부 부드럽게 반응하도록 기본 트랜지션을 깔아준다 (.btn은 자체 hover/active 효과가 이미 있어 제외) */
     .btn-sm, .btn-sm-outline, .top-col-title, .login-banner, .card-box, .drop-zone {
       transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease,
                   box-shadow 0.18s ease, transform 0.12s ease, filter 0.15s ease;
@@ -181,67 +181,64 @@
       box-shadow: 0 6px 20px rgba(0,0,0,0.05);
     }
 
-    /* 상단 3분할: 제목(주황) / 클라우드 안내(초록) / 업로드(파랑) - 한글병합기와 동일한 톤 */
-    .top-section { display: flex; gap: 14px; margin-bottom: 20px; align-items: stretch; }
-
+    /* 상단 영역 분할 */
+    .top-section { flex: 0 0 20%; min-height: 150px; display: flex; align-items: stretch; gap: 14px; margin-bottom: 20px; }
+    
     .top-col-title {
-      flex: 0 0 22%;
-      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+      flex: 0 0 22%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px;
       text-align: center;
       background: linear-gradient(160deg, #fff7ed 0%, #ffedd5 100%);
-      border: 1px solid #fed7aa; border-radius: 12px; padding: 18px 12px;
+      border: 1px solid #fed7aa; border-radius: 12px; padding: 14px 10px;
       box-shadow: 0 1px 3px rgba(194,65,12,0.06);
     }
     .top-col-title:hover { border-color: #fdba74; box-shadow: 0 6px 16px rgba(194,65,12,0.12); transform: translateY(-1px); }
-    .title-icon {
-      font-size: 2.2rem; line-height: 1;
-      filter: drop-shadow(0 2px 2px rgba(194,65,12,0.18));
-    }
-    .title-main {
-      margin: 0; color: #9a3412; font-size: 1.8rem; font-weight: 400;
-      font-family: 'Jua', 'Pretendard Variable', sans-serif;
-      line-height: 1.25; letter-spacing: -0.1px;
-    }
-    .title-badge {
-      background: #dcfce7; color: #166534; font-size: 0.75rem;
-      padding: 4px 10px; border-radius: 100px; font-weight: 700;
-    }
+    .title-icon { font-size: 2rem; line-height: 1; filter: drop-shadow(0 1px 1px rgba(194,65,12,0.15)); }
+    .title-main { margin: 0; color: #9a3412; font-size: 1.8rem; font-weight: 400; font-family: 'Jua', 'Pretendard Variable', sans-serif; line-height: 1.25; letter-spacing: -0.1px; display: block; }
+    .title-security-badge { background: #dcfce7; color: #166534; font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; font-weight: 600; }
 
     .top-col-guide { flex: 1 1 46%; display: flex; min-width: 0; }
-    .login-banner {
-      width: 100%;
+    .top-col-guide .security-banner { width: 100%; margin-bottom: 0; }
+    
+    .top-col-drop { flex: 0 0 32%; display: flex; }
+    .top-col-drop .drop-zone { flex: 1; margin-bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
+    .drop-zone .drop-icon { display: block; font-size: 30px; margin-bottom: 8px; }
+    .drop-zone strong { display: block; font-size: 16px; font-weight: 700; line-height: 1.55; color: #1e3a8a; letter-spacing: -0.2px; }
+
+    .security-banner {
       background: linear-gradient(180deg, #f0fdf4 0%, #ecfdf5 100%);
       border: 1px solid #bbf7d0;
       border-radius: 14px;
       padding: 16px 18px;
-      display: flex; flex-direction: column; gap: 8px; justify-content: center;
-      box-shadow: 0 1px 3px rgba(16,24,40,0.04);
+      color: #166534;
+      font-size: 0.9rem;
+      font-weight: 700;
+      line-height: 1.55;
+      margin-bottom: 18px;
+      box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04), 0 1px 2px rgba(16, 24, 40, 0.03);
     }
-    .login-banner:hover { border-color: #86efac; box-shadow: 0 6px 16px rgba(22,163,74,0.12); transform: translateY(-1px); }
-    .login-banner-title { font-size: 0.95rem; color: #15803d; font-weight: 800; }
-    .login-banner .notice-text { font-size: 0.8rem; color: #166534; line-height: 1.55; font-weight: 600; }
-    #loginStatusDiv { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; margin-top: 2px; }
-    #userProfileInfo { font-size: 12.5px; color: #166534; font-weight: 700; }
+    .security-banner:hover { border-color: #86efac; box-shadow: 0 6px 16px rgba(22,163,74,0.12); transform: translateY(-1px); }
+    .security-banner-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 10px; }
+    .security-banner strong { font-size: 1rem; color: #15803d; letter-spacing: -0.2px; }
 
-    .top-col-drop { flex: 0 0 32%; display: flex; }
-    .drop-zone {
-      flex: 1;
-      border: 2px dashed #3b82f6;
-      background-color: #eff6ff;
-      border-radius: 12px;
-      padding: 16px;
-      text-align: center;
-      cursor: pointer;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      transition: background-color 0.2s, border-color 0.2s;
+    .security-features { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+    .security-features li {
+      display: flex; align-items: center; gap: 10px;
+      background: rgba(255, 255, 255, 0.55);
+      border: 1px solid rgba(187, 247, 208, 0.7);
+      border-radius: 10px;
+      padding: 8px 12px;
+      font-size: 0.83rem;
     }
+    .security-features .feat-icon {
+      flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
+      background: #16a34a; color: white; display: flex; align-items: center; justify-content: center;
+      font-size: 13px; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);
+    }
+    .security-features strong { display: inline; font-size: 0.83rem; margin: 0; color: #14532d; }
+    .security-features .feat-desc { color: #15803d; font-weight: 700; }
+
+    .drop-zone { border: 2px dashed #3b82f6; border-radius: 12px; padding: 22px; text-align: center; background-color: #eff6ff; cursor: pointer; margin-bottom: 20px; font-size: 0.95rem; transition: background-color 0.2s, border-color 0.2s; }
     .drop-zone:hover, .drop-zone.dragover { background-color: #dbeafe; border-color: #1d4ed8; }
-    .drop-icon { font-size: 1.7rem; margin-bottom: 6px; }
-    .drop-zone strong { display: block; font-size: 0.9rem; font-weight: 700; color: #1e3a8a; line-height: 1.5; }
-    .drop-sub { font-size: 11px; color: #64748b; margin-top: 4px; }
 
     /* 중앙 영역 배치 그리드 */
     .middle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
@@ -258,15 +255,12 @@
     h2 { color: #0f172a; margin-top: 0; font-size: 1.3rem; }
     h4 { margin: 0 0 10px 0; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between; color: #334155; }
 
-    /* 동일한 정렬 비율을 보장하는 프로필 컨트롤 레이아웃 */
     .preset-controls { display: flex; gap: 8px; align-items: center; }
     .preset-controls input[type="text"], .preset-controls select { flex: 1; width: 100%; }
 
-    /* 두 줄 간의 우측 버튼 영역 넓이 동일화 */
     .preset-btn-group-top { display: flex; gap: 8px; }
     .preset-btn-group-bottom { display: flex; gap: 8px; }
 
-    /* 추출위치 카드: 2개씩 그리드 배치 */
     .rule-cards-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
@@ -310,8 +304,8 @@
     .btn:hover { filter: brightness(1.08); }
     .btn:active { transform: translateY(1px); }
 
-    .btn-google { background: #4285f4; color: white; display: inline-flex; align-items: center; gap: 6px; }
-    .btn-logout { background: #6b7280; color: white; }
+    .btn-google { background: #4285f4; color: white; display: inline-flex; align-items: center; gap: 6px; padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; border: none; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
+    .btn-logout { background: #6b7280; color: white; padding: 5px 12px; border-radius: 20px; font-size: 0.78rem; border: none; cursor: pointer; white-space: nowrap; flex-shrink: 0; }
 
     .btn-indigo { background: #2563eb; color: white; }
     .btn-dark { background: #334155; color: white; }
@@ -325,7 +319,6 @@
     .btn-zip { background: #16a34a; color: white; }
     .btn:disabled { background: #cbd5e1 !important; border-color: #cbd5e1 !important; color: #64748b !important; cursor: not-allowed; filter: none; }
 
-    /* 테이블 스타일 및 행 드래그 관련 스타일 */
     .file-table-wrapper { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px; }
     table { width: 100%; border-collapse: collapse; }
     th, td { border-bottom: 1px solid #f1f5f9; padding: 8px 10px; text-align: left; font-size: 13px; }
@@ -346,89 +339,10 @@
     .btn-sm { padding: 4px 8px; font-size: 12px; border: none; border-radius: 6px; cursor: pointer; background: #16a34a; color: white; }
     .default-tag { font-size: 11px; background: #16a34a; color: white; padding: 2px 8px; border-radius: 100px; margin-left: 6px; }
 
-    /* 파일 목록 -> 엑셀 변환기 */
-    .excel-card {
-      margin-top: 24px;
-      background: linear-gradient(180deg, #faf5ff 0%, #f5f3ff 100%);
-      border: 1px solid #ddd6fe;
-      display: flex;
-      flex-direction: column;
-    }
-    .excel-card.expanded { height: 88vh; }
-    .excel-card-header { display: flex; align-items: center; gap: 14px; }
-    .excel-header-col { min-width: 0; }
-    .excel-header-info { flex: 0 0 26%; display: flex; align-items: center; gap: 12px; }
-    .excel-header-paste { flex: 1 1 32%; font-size: 12.5px; font-weight: 700; color: #6d28d9; }
-    .excel-header-result {
-      flex: 1 1 42%; display: flex; align-items: center; justify-content: space-between;
-      font-size: 12.5px; font-weight: 700; color: #6d28d9; flex-wrap: wrap; gap: 8px;
-    }
-    .excel-card h4 { color: #6d28d9; font-size: 1rem; margin: 0; white-space: nowrap; }
-    .excel-body {
-      display: none;
-      flex-direction: column;
-      margin-top: 14px;
-      flex: 1;
-      min-height: 0;
-    }
-    .excel-body.open { display: flex; }
-    .excel-help {
-      background: white; border: 1px solid #e9d5ff; border-radius: 10px;
-      padding: 12px 16px; margin-bottom: 12px; font-size: 12.5px; color: #4c1d95; line-height: 1.65;
-    }
-    .excel-help strong { color: #6d28d9; font-size: 13px; display: block; margin-bottom: 6px; }
-    .excel-help code {
-      background: #f3e8ff; color: #6d28d9; padding: 1px 6px; border-radius: 4px; font-size: 12px;
-    }
-
-    .excel-options { display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; color: #4c1d95; font-weight: 600; }
-    .excel-options label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
-    .excel-options input[type="checkbox"] { width: auto; }
-
-    /* 가로 3분할: 안내/옵션(좌) · 붙여넣기(가운데) · 결과(우) - 열렸을 때 카드 높이의 대부분을 차지 */
-    .excel-layout { display: flex; gap: 14px; align-items: stretch; flex: 1; min-height: 0; }
-    .excel-col { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
-    .excel-col-info { flex: 0 0 26%; overflow-y: auto; }
-    .excel-col-paste { flex: 1 1 32%; }
-    .excel-col-result { flex: 1 1 42%; }
-
-    .excel-actions { display: flex; gap: 6px; flex-wrap: wrap; }
-    .btn-sm-outline {
-      background: white; color: #6d28d9; border: 1px solid #c4b5fd;
-      padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 700; cursor: pointer;
-    }
-    .btn-sm-outline:hover { background: #f5f3ff; }
-
-    #excelPasteArea {
-      width: 100%; flex: 1; min-height: 0; resize: vertical;
-      border: 1px solid #ddd6fe; border-radius: 8px; padding: 10px 12px;
-      font-size: 13px; font-family: inherit; line-height: 1.6; background: white; overflow: auto;
-    }
-    #excelPasteArea:focus { outline: 2px solid #a78bfa; outline-offset: 0; }
-
-    .excel-table-wrapper {
-      border: 1px solid #ddd6fe; border-radius: 8px; background: white;
-      flex: 1; min-height: 0; overflow: auto;
-    }
-    .excel-table-wrapper table { width: 100%; border-collapse: collapse; }
-    .excel-table-wrapper th { background: #f5f3ff; color: #6d28d9; padding: 8px 10px; font-size: 12px; border-bottom: 1px solid #e9d5ff; white-space: nowrap; }
-    .excel-table-wrapper td { padding: 6px 10px; font-size: 13px; border-bottom: 1px solid #f3f0ff; }
-    .excel-table-wrapper tr:last-child td { border-bottom: none; }
-    .excel-empty { text-align: center; color: #a78bfa; padding: 30px 10px !important; font-size: 12.5px; }
-
-    @media (max-width: 1100px) {
-      .excel-layout { flex-direction: column; }
-      .excel-col-info, .excel-col-paste, .excel-col-result { flex-basis: auto; }
-      .excel-card-header { flex-direction: column; align-items: stretch; }
-      .excel-header-info, .excel-header-paste, .excel-header-result { flex-basis: auto; }
-    }
-
-    @media (max-width: 992px) {
-      .top-section { flex-direction: column; }
-      .top-col-title, .top-col-guide, .top-col-drop { flex-basis: auto; }
-      .middle-grid { grid-template-columns: 1fr; }
-      .fn-row-inline { flex-direction: column; align-items: stretch; }
-      .rule-cards-grid { grid-template-columns: 1fr; }
+    @media (max-width: 1180px) {
+      .top-section { flex-direction: column; flex-basis: auto; height: auto; }
+      .top-col-title, .top-col-guide, .top-col-drop { flex-basis: auto; width: 100%; }
+      .middle-grid, .rule-cards-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -436,1105 +350,553 @@
 
 <div class="app-container">
   <div class="main-content">
-
-  <!-- 0. 상단 3분할: 제목(주황) / 클라우드 안내+로그인(초록) / 파일 업로드(파랑) -->
-  <div class="top-section">
-    <div class="top-col-title">
-      <div class="title-icon">🗂️</div>
-      <h2 class="title-main">스마트 파일명 관리자</h2>
-      <span class="title-badge">🔒 브라우저에서 안전하게 처리</span>
-    </div>
-
-    <div class="top-col-guide">
-      <div class="login-banner">
-        <div class="login-banner-title">☁️ 클라우드 설정 저장</div>
-        <div class="notice-text">
-          구글 로그인 시 설정 프로필이 계정에 안전하게 저장되어 언제 어디서나 동일한 설정을 사용할 수 있습니다.
-        </div>
-        <div id="loginStatusDiv">
-          <span id="userProfileInfo"></span>
-          <button class="btn btn-google" id="btnLogin" onclick="window.loginWithGoogle()">
-            <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#fff" d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.761H12.545z"/></svg>
-            구글 계정 로그인
-          </button>
-          <button class="btn btn-logout" id="btnLogout" onclick="window.logoutGoogle()" style="display:none;">로그아웃</button>
-        </div>
+    
+    <!-- 상단 3분할 영역 -->
+    <div class="top-section">
+      <div class="top-col-title">
+        <div class="title-icon">🏷️</div>
+        <h2 class="title-main">스마트 파일명<br>관리자</h2>
+        <span class="title-security-badge">🔒 100% 메모리 보안 처리</span>
       </div>
-    </div>
 
-    <div class="top-col-drop">
-      <div class="drop-zone" id="dropZone">
-        <div class="drop-icon">📂</div>
-        <strong>파일을 마우스로 끌어다 놓거나<br>클릭하여 선택하세요</strong>
-        <div class="drop-sub">PDF, HWPX 파일 지원</div>
-        <input type="file" id="fileInput" multiple accept=".pdf,.hwpx" style="display:none;">
-      </div>
-    </div>
-  </div>
-
-  <!-- 1. 중앙 영역: 설정 저장/프로필 (좌) vs 원본파일명 정리 (우) -->
-  <div class="middle-grid">
-    <div class="card-box preset-card">
-      <h4>
-        <span>⚙️ 설정 저장 및 프로필 관리</span>
-        <span id="defaultNotice" style="font-size: 12px; font-weight: normal; color: #4b5563;"></span>
-      </h4>
-      <!-- 윗줄: 입력 창 + 저장/기본값 버튼 -->
-      <div class="preset-controls">
-        <input type="text" id="presetNameInput" placeholder="새 설정 이름 입력 (예: 여비 신청서)">
-        <div class="preset-btn-group-top">
-          <button class="btn btn-indigo" onclick="saveCurrentPreset()">💾 저장</button>
-          <button class="btn btn-dark" onclick="setAsDefaultPreset()">⭐ 기본값 등록</button>
-        </div>
-      </div>
-      <!-- 아랫줄: 프로필 선택 드롭다운 (위의 입력창과 크기 동일) + 삭제 버튼 -->
-      <div class="preset-controls" style="margin-top: 8px;">
-        <select id="presetSelect" onchange="loadSelectedPreset()">
-          <option value="">-- 저장된 설정 프로필 선택 --</option>
-        </select>
-        <div class="preset-btn-group-bottom">
-          <button class="btn btn-outline-indigo" onclick="updateSelectedPreset()">✏️ 수정</button>
-          <button class="btn btn-outline-danger" onclick="deleteSelectedPreset()">🗑️ 삭제</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="card-box fn-card">
-      <h4>✂️ 원본 파일명 정리 및 새로운 이름 구성</h4>
-      <div style="display: flex; flex-direction: column; gap: 10px;">
-        <div class="fn-row-inline">
-          <div class="inline-item">
-            <label>정리 기준단어:</label>
-            <input type="text" id="fnKey" value="" placeholder="예: 무작위 문자열, 반복 단어">
+      <div class="top-col-guide">
+        <div class="security-banner">
+          <div class="security-banner-header">
+            <strong>🔒 개인정보 및 문서 보안 100% 보장</strong>
+            <div id="loginStatusDiv">
+              <button class="btn-google" id="btnLogin" onclick="loginWithGoogle()">Google 로그인</button>
+              <button class="btn-logout" id="btnLogout" onclick="logoutGoogle()" style="display:none;">로그아웃</button>
+            </div>
           </div>
-          <div class="inline-item">
-            <label>삭제 방식:</label>
-            <select id="fnMode">
-              <option value="none" selected>사용 안 함 (원본 유지)</option>
-              <option value="removeAll">🔥 원본 전체 삭제 (확장자만 유지)</option>
-              <option value="after">기준 단어 뒤 전체 삭제</option>
-              <option value="before">기준 단어 앞 전체 삭제</option>
-              <option value="removeKey">기준 단어만 삭제</option>
+          <ul class="security-features">
+            <li><span class="feat-icon">🌐</span><span><strong>파일내용안 단어로 파일 이름 자동설정</strong></span></li>
+            <li><span class="feat-icon">📐</span><span><strong>파일 안 여러 위치의 단어로 설정 가능</strong></span></li>
+            <li><span class="feat-icon">📎</span><span><strong>구글 로그인시 설정 저장 가능</strong></span></li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="top-col-drop">
+        <div class="drop-zone" id="drop-zone">
+          <span class="drop-icon">📁</span>
+          <strong>클릭하거나 파일들을<br>이곳으로 끌어다 놓으세요</strong>
+          <input type="file" id="file-input" multiple style="display:none;">
+        </div>
+      </div>
+    </div>
+
+    <!-- 중앙 설정 영역 -->
+    <div class="middle-grid">
+      <!-- 프로필(프리셋) 관리 -->
+      <div class="card-box preset-card">
+        <h4>
+          <span>⚙️ 프로필 설정 <span id="defaultNoticeText" style="font-weight:normal; font-size:12px; color:#166534;"></span></span>
+        </h4>
+        <div style="display:flex; flex-direction:column; gap:8px;">
+          <div class="preset-controls">
+            <input type="text" id="presetNameInput" placeholder="새 프로필 이름 입력">
+            <div class="preset-btn-group-top">
+              <button class="btn btn-indigo" onclick="saveCurrentAsPreset()">프로필 저장</button>
+              <button class="btn btn-dark" onclick="saveAsDefaultPreset()">기본값 등록</button>
+            </div>
+          </div>
+          <div class="preset-controls">
+            <select id="presetSelect" onchange="loadSelectedPreset()">
+              <option value="">-- 프로필 선택 --</option>
             </select>
+            <div class="preset-btn-group-bottom">
+              <button class="btn btn-outline-indigo" onclick="loadSelectedPreset()">불러오기</button>
+              <button class="btn btn-outline-danger" onclick="deleteSelectedPreset()">삭제</button>
+            </div>
           </div>
         </div>
-        <hr style="border:0; border-top:1px dashed #cbd5e1; margin:0;">
+      </div>
+
+      <!-- 기능 설정 (날짜/정렬) -->
+      <div class="card-box fn-card">
+        <h4>⚡ 파일명 처리 및 치환 옵션</h4>
         <div class="fn-row-inline">
-          <div class="inline-item">
-            <label>추가 공통단어:</label>
-            <input type="text" id="commonWord" value="" placeholder="예: [부여군청], 2026년">
-          </div>
-          <div class="inline-item">
-            <label>공통단어 위치:</label>
-            <select id="commonPos">
-              <option value="prefix" selected>추출값 맨 앞 (접두어)</option>
-              <option value="suffix">추출값 맨 뒤 (접미어)</option>
-            </select>
-          </div>
+          <label style="font-size:13px; font-weight:bold; cursor:pointer;">
+            <input type="checkbox" id="chkAutoDate" checked> 날짜 자동 6자리(YYMMDD) 변환
+          </label>
+          <label style="font-size:13px; font-weight:bold; cursor:pointer;">
+            <input type="checkbox" id="chkRemoveSpaces"> 공백 제거
+          </label>
+        </div>
+        <div style="margin-top:10px; display:flex; gap:10px; align-items:center;">
+          <span style="font-size:12px; font-weight:bold; color:#475569;">텍스트 치환:</span>
+          <input type="text" id="txtReplaceFrom" placeholder="찾을 단어" style="width:120px;">
+          <span>➔</span>
+          <input type="text" id="txtReplaceTo" placeholder="바꿀 단어" style="width:120px;">
         </div>
       </div>
     </div>
+
+    <!-- 추출 위치 설정 (1~4번 규칙) -->
+    <div class="rule-cards-grid">
+      <div class="card-box rule-card">
+        <h4>단어 1 추출 위치</h4>
+        <div class="rule-fields-grid">
+          <div class="inline-item"><label>앞단어</label><input type="text" id="prefix1"></div>
+          <div class="inline-item"><label>뒷단어</label><input type="text" id="suffix1"></div>
+          <div class="inline-item"><label>글자수</label><input type="text" id="length1" placeholder="예: 4"></div>
+        </div>
+      </div>
+
+      <div class="card-box rule-card">
+        <h4>단어 2 추출 위치</h4>
+        <div class="rule-fields-grid">
+          <div class="inline-item"><label>앞단어</label><input type="text" id="prefix2"></div>
+          <div class="inline-item"><label>뒷단어</label><input type="text" id="suffix2"></div>
+          <div class="inline-item"><label>글자수</label><input type="text" id="length2" placeholder="예: ALL"></div>
+        </div>
+      </div>
+
+      <div class="card-box rule-card">
+        <h4>단어 3 추출 위치</h4>
+        <div class="rule-fields-grid">
+          <div class="inline-item"><label>앞단어</label><input type="text" id="prefix3"></div>
+          <div class="inline-item"><label>뒷단어</label><input type="text" id="suffix3"></div>
+          <div class="inline-item"><label>글자수</label><input type="text" id="length3"></div>
+        </div>
+      </div>
+
+      <div class="card-box rule-card">
+        <h4>단어 4 추출 위치</h4>
+        <div class="rule-fields-grid">
+          <div class="inline-item"><label>앞단어</label><input type="text" id="prefix4"></div>
+          <div class="inline-item"><label>뒷단어</label><input type="text" id="suffix4"></div>
+          <div class="inline-item"><label>글자수</label><input type="text" id="length4"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 파일 조합 규칙 / 구분자 -->
+    <div class="card-box" style="margin-bottom:15px; background:#f8fafc;">
+      <div style="display:flex; gap:15px; align-items:center; flex-wrap:wrap;">
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label style="font-size:13px; font-weight:bold; color:#334155;">파일명 조합 순서:</label>
+          <input type="text" id="txtCombinePattern" value="{1}_{2}_{3}_{4}" style="width:200px;" placeholder="예: {1}_{2}">
+        </div>
+        <div style="display:flex; align-items:center; gap:8px;">
+          <label style="font-size:13px; font-weight:bold; color:#334155;">구분자 설정:</label>
+          <input type="text" id="txtDelimiter" value="_" style="width:60px; text-align:center;">
+        </div>
+      </div>
+    </div>
+
+    <!-- 실행 및 제어 버튼 -->
+    <div class="action-bar">
+      <div class="btn-group">
+        <button class="btn btn-run" id="btnProcess" onclick="processAllFiles()">🚀 파일명 추출 실행</button>
+        <button class="btn btn-re" onclick="applyRenameDirect()">✏️ 이름 변경 적용</button>
+        <button class="btn btn-clear" onclick="clearFileList()">🗑️ 목록 초기화</button>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-zip" id="btnDownloadZip" onclick="downloadAsZip()" disabled>📦 ZIP 압축 다운로드</button>
+      </div>
+    </div>
+
+    <!-- 파일 테이블 -->
+    <div class="file-table-wrapper">
+      <table>
+        <thead>
+          <tr>
+            <th style="width:40px; text-align:center;">No.</th>
+            <th style="width:30px;"></th>
+            <th>기존 파일명</th>
+            <th>새 파일명 (미리보기)</th>
+            <th style="width:100px; text-align:center;">상태</th>
+            <th style="width:60px; text-align:center;">삭제</th>
+          </tr>
+        </thead>
+        <tbody id="fileTableBody">
+          <tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:20px;">첨부된 파일이 없습니다.</td></tr>
+        </tbody>
+      </table>
+    </div>
+
   </div>
-
-  <!-- 2. 추출 위치 설정 (2개씩 배치, 총 4개) -->
-  <div class="rule-cards-grid">
-    <div class="card-box rule-card">
-      <h4>📍 추출 위치 1</h4>
-      <div class="rule-fields-grid">
-        <div class="inline-item">
-          <label>기준단어:</label>
-          <input type="text" id="key1" value="성명" placeholder="예: 성명">
-        </div>
-        <div class="inline-item">
-          <label>탐색방식:</label>
-          <select id="dir1">
-            <option value="after" selected>기준 단어 뒤</option>
-            <option value="before">기준 단어 앞</option>
-            <option value="nextLine">다음 줄 전체</option>
-          </select>
-        </div>
-        <div class="inline-item">
-          <label>순번:</label>
-          <select id="idx1">
-            <option value="1" selected>첫 번째</option>
-            <option value="2">두 번째</option>
-            <option value="last">마지막</option>
-          </select>
-        </div>
-        <div class="inline-item">
-          <label>범위:</label>
-          <select id="range1">
-            <option value="word" selected>1단어(공백전까지)</option>
-            <option value="line">해당 줄 끝까지</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div class="card-box rule-card">
-      <h4>📍 추출 위치 2</h4>
-      <div class="rule-fields-grid">
-        <div class="inline-item">
-          <label>기준단어:</label>
-          <input type="text" id="key2" value="기관명" placeholder="예: 기관명">
-        </div>
-        <div class="inline-item">
-          <label>탐색방식:</label>
-          <select id="dir2">
-            <option value="after" selected>기준 단어 뒤</option>
-            <option value="before">기준 단어 앞</option>
-            <option value="nextLine">다음 줄 전체</option>
-          </select>
-        </div>
-        <div class="inline-item">
-          <label>순번:</label>
-          <select id="idx2">
-            <option value="1" selected>첫 번째</option>
-            <option value="2">두 번째</option>
-            <option value="last">마지막</option>
-          </select>
-        </div>
-        <div class="inline-item">
-          <label>범위:</label>
-          <select id="range2">
-            <option value="word">1단어(공백전까지)</option>
-            <option value="line" selected>해당 줄 끝까지</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div id="extraRulesWrap" style="display:none;">
-    <div class="card-box rule-card">
-      <h4>📍 추출 위치 3</h4>
-      <div class="rule-fields-grid">
-        <div class="inline-item">
-          <label>기준단어:</label>
-          <input type="text" id="key3" value="" placeholder="미사용 시 비워둠">
-        </div>
-        <div class="inline-item">
-          <label>탐색방식:</label>
-          <select id="dir3">
-            <option value="after" selected>기준 단어 뒤</option>
-            <option value="before">기준 단어 앞</option>
-            <option value="nextLine">다음 줄 전체</option>
-          </select>
-        </div>
-        <div class="inline-item">
-          <label>순번:</label>
-          <select id="idx3">
-            <option value="1" selected>첫 번째</option>
-            <option value="2">두 번째</option>
-            <option value="last">마지막</option>
-          </select>
-        </div>
-        <div class="inline-item">
-          <label>범위:</label>
-          <select id="range3">
-            <option value="word" selected>1단어(공백전까지)</option>
-            <option value="line">해당 줄 끝까지</option>
-          </select>
-        </div>
-      </div>
-    </div>
-
-    <div class="card-box rule-card">
-      <h4>📍 추출 위치 4</h4>
-      <div class="rule-fields-grid">
-        <div class="inline-item">
-          <label>기준단어:</label>
-          <input type="text" id="key4" value="" placeholder="미사용 시 비워둠">
-        </div>
-        <div class="inline-item">
-          <label>탐색방식:</label>
-          <select id="dir4">
-            <option value="after" selected>기준 단어 뒤</option>
-            <option value="before">기준 단어 앞</option>
-            <option value="nextLine">다음 줄 전체</option>
-          </select>
-        </div>
-        <div class="inline-item">
-          <label>순번:</label>
-          <select id="idx4">
-            <option value="1" selected>첫 번째</option>
-            <option value="2">두 번째</option>
-            <option value="last">마지막</option>
-          </select>
-        </div>
-        <div class="inline-item">
-          <label>범위:</label>
-          <select id="range4">
-            <option value="word" selected>1단어(공백전까지)</option>
-            <option value="line">해당 줄 끝까지</option>
-          </select>
-        </div>
-      </div>
-    </div>
-    </div><!-- /extraRulesWrap -->
-  </div>
-
-  <div class="btn-row" style="margin-bottom: 15px;">
-    <button class="btn btn-outline-indigo" id="btnToggleExtraRules" onclick="toggleExtraRules()">➕ 추출 위치 추가 (3, 4)</button>
-  </div>
-
-
-  <!-- 실행 버튼 영역 -->
-  <div class="action-bar">
-    <div class="btn-group">
-      <button class="btn btn-run" id="btnRun" onclick="runBatchProcess('all')" disabled>▶ 전체 분석 및 실행</button>
-      <button class="btn btn-sel-re" id="btnSelRe" onclick="runBatchProcess('selected')" disabled>🎯 선택한 파일만 재실행</button>
-      <button class="btn btn-re" id="btnRe" onclick="runBatchProcess('reAll')" disabled>🔄 전체 재실행</button>
-      <button class="btn btn-outline-danger" id="btnDeleteSelected" onclick="deleteSelectedFiles()" disabled>🗑️ 선택 파일 삭제</button>
-      <button class="btn btn-clear" id="btnClear" onclick="clearAllFiles()">💥 전체 초기화</button>
-    </div>
-    <div>
-      <button class="btn btn-zip" id="btnZip" onclick="downloadAllZip()" disabled>📦 전체 ZIP 일괄 다운로드</button>
-    </div>
-  </div>
-
-  <h3 style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
-    <span>업로드 파일 목록 및 실행 결과</span>
-    <span style="font-size: 12px; font-weight: normal; color: #64748b;">💡 마우스로 행을 끌어서 순서를 변경할 수 있습니다.</span>
-  </h3>
-  
-  <div class="file-table-wrapper">
-    <table id="resultTable">
-      <thead>
-        <tr>
-          <th style="width: 3%; text-align: center;">이동</th>
-          <th style="width: 3%; text-align: center;"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"></th>
-          <th style="width: 16%;">원본 파일명</th>
-          <th style="width: 9%;">추출값 1</th>
-          <th style="width: 9%;">추출값 2</th>
-          <th style="width: 9%;">추출값 3</th>
-          <th style="width: 9%;">추출값 4</th>
-          <th style="width: 22%;">변경될 파일명</th>
-          <th style="width: 20%;">상태 / 개별 다운로드</th>
-        </tr>
-      </thead>
-      <tbody id="tableBody"></tbody>
-    </table>
-  </div>
-
-  <!-- 4. 파일 목록 -> 엑셀 변환기 -->
-  <div class="card-box excel-card" id="excelCard">
-    <div class="excel-card-header">
-      <div class="excel-header-col excel-header-info">
-        <h4>📋 파일 목록 → 엑셀 리스트 변환기</h4>
-        <button class="btn-sm-outline" id="btnToggleExcelCard" onclick="toggleExcelCard()">열기 ▾</button>
-      </div>
-      <div class="excel-header-col excel-header-paste">① 여기에 붙여넣기</div>
-      <div class="excel-header-col excel-header-result">
-        <span>② 결과 (자동 변환됨)</span>
-        <span class="excel-actions">
-          <button class="btn-sm-outline" id="btnCopyExcel">📋 파일명만 복사</button>
-          <button class="btn-sm-outline" id="btnDownloadExcel">⬇️ xlsx</button>
-          <button class="btn-sm-outline" id="btnClearExcel">🗑️ 초기화</button>
-        </span>
-      </div>
-    </div>
-
-    <div class="excel-body" id="excelBody">
-    <div class="excel-layout">
-      <div class="excel-col excel-col-info">
-        <div class="excel-help">
-          <strong>💡 파일 목록 복사 방법</strong>
-          탐색기에서 복사할 파일 선택(<code>Ctrl+A</code>) → 복사(<code>Ctrl+Shift+C</code>)<br>
-          <span style="font-size:11.5px; color:#7c3aed;">(안되는 경우 Shift 누른 채 마우스 오른쪽 클릭 → "경로로 복사" 선택)</span><br>
-          → 가운데 칸에 붙여넣기(<code>Ctrl+V</code>)
-        </div>
-        <div class="excel-options">
-          <label><input type="checkbox" id="optExtractName" checked> 전체 경로에서 파일명만 추출</label>
-          <label><input type="checkbox" id="optSplitExt" checked> 확장자 별도 열로 분리</label>
-        </div>
-      </div>
-
-      <div class="excel-col excel-col-paste">
-        <textarea id="excelPasteArea" placeholder="탐색기에서 복사한 파일 목록을 여기에 붙여넣으세요..."></textarea>
-      </div>
-
-      <div class="excel-col excel-col-result">
-        <div class="excel-table-wrapper">
-          <table id="excelResultTable">
-            <thead><tr id="excelResultHead"></tr></thead>
-            <tbody id="excelResultBody">
-              <tr><td class="excel-empty" colspan="3">왼쪽 안내를 참고해 가운데 칸에 파일 목록을 붙여넣으면 여기에 표시됩니다.</td></tr>
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </div>
-    </div><!-- /excelBody -->
-  </div>
-
-  </div><!-- /main-content -->
-</div><!-- /app-container -->
+</div>
 
 <script>
-  if (window.pdfjsLib) {
-    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
-  }
+/* 글로벌 변수 및 로직 */
+let loadedFiles = [];
+let draggedIndex = null;
 
-  const dropZone = document.getElementById('dropZone');
-  const fileInput = document.getElementById('fileInput');
-  const btnRun = document.getElementById('btnRun');
-  const btnRe = document.getElementById('btnRe');
-  const btnSelRe = document.getElementById('btnSelRe');
-  const btnDeleteSelected = document.getElementById('btnDeleteSelected');
-  const btnZip = document.getElementById('btnZip');
-  const tableBody = document.getElementById('tableBody');
+const dropZone = document.getElementById('drop-zone');
+const fileInput = document.getElementById('file-input');
 
-  let fileQueue = [];
-  let draggedRowIndex = null;
+dropZone.addEventListener('click', () => fileInput.click());
+fileInput.addEventListener('change', (e) => handleFiles(Array.from(e.target.files)));
 
-  const STORAGE_KEY_PRESETS = 'doc_renamer_presets';
-  const STORAGE_KEY_DEFAULT = 'doc_renamer_default_preset';
+['dragenter', 'dragover', 'dragleave', 'drop'].forEach(ev => {
+  dropZone.addEventListener(ev, (e) => { e.preventDefault(); e.stopPropagation(); });
+});
+dropZone.addEventListener('dragenter', () => dropZone.classList.add('dragover'));
+dropZone.addEventListener('dragover', () => dropZone.classList.add('dragover'));
+dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+dropZone.addEventListener('drop', (e) => {
+  dropZone.classList.remove('dragover');
+  handleFiles(Array.from(e.dataTransfer.files));
+});
 
-  window.getCurrentConfigData = function() {
-    return {
-      commonWord: document.getElementById('commonWord').value,
-      commonPos: document.getElementById('commonPos').value,
-      fnKey: document.getElementById('fnKey').value,
-      fnMode: document.getElementById('fnMode').value,
-      rules: [1, 2, 3, 4].map(n => ({
-        key: document.getElementById(`key${n}`).value,
-        dir: document.getElementById(`dir${n}`).value,
-        idx: document.getElementById(`idx${n}`).value,
-        range: document.getElementById(`range${n}`).value
-      }))
-    };
-  };
-
-  window.applyConfigData = function(data) {
-    if (!data) return;
-    if (data.commonWord !== undefined) document.getElementById('commonWord').value = data.commonWord;
-    if (data.commonPos !== undefined) document.getElementById('commonPos').value = data.commonPos;
-    if (data.fnKey !== undefined) document.getElementById('fnKey').value = data.fnKey;
-    if (data.fnMode !== undefined) document.getElementById('fnMode').value = data.fnMode;
-
-    if (data.rules && data.rules.length) {
-      // 이전 버전(추출 위치 3개)에서 저장된 프로필도 그대로 불러올 수 있도록
-      // 없는 규칙은 기본값으로 채움
-      const defaults = [
-        { dir: 'after', idx: '1', range: 'word' },
-        { dir: 'after', idx: '1', range: 'line' },
-        { dir: 'after', idx: '1', range: 'word' },
-        { dir: 'after', idx: '1', range: 'word' }
-      ];
-      for (let i = 0; i < 4; i++) {
-        const r = data.rules[i];
-        const d = defaults[i];
-        document.getElementById(`key${i + 1}`).value = r ? (r.key || '') : '';
-        document.getElementById(`dir${i + 1}`).value = r ? (r.dir || d.dir) : d.dir;
-        document.getElementById(`idx${i + 1}`).value = r ? (r.idx || d.idx) : d.idx;
-        document.getElementById(`range${i + 1}`).value = r ? (r.range || d.range) : d.range;
-      }
-
-      // 불러온 프로필에 추출 위치 3·4 값이 있으면 자동으로 펼쳐서 보여줌
-      const hasExtra = (data.rules[2] && data.rules[2].key) || (data.rules[3] && data.rules[3].key);
-      if (hasExtra && window.setExtraRulesVisible) window.setExtraRulesVisible(true);
-    }
-  };
-
-  window.setExtraRulesVisible = function(visible) {
-    const wrap = document.getElementById('extraRulesWrap');
-    const btn = document.getElementById('btnToggleExtraRules');
-    if (!wrap || !btn) return;
-    wrap.style.display = visible ? 'contents' : 'none';
-    btn.textContent = visible ? '➖ 추출 위치 3, 4 숨기기' : '➕ 추출 위치 추가 (3, 4)';
-  };
-
-  window.toggleExtraRules = function() {
-    const wrap = document.getElementById('extraRulesWrap');
-    const isHidden = !wrap || wrap.style.display === 'none' || wrap.style.display === '';
-    window.setExtraRulesVisible(isHidden);
-  };
-
-
-  function getLocalSavedPresets() {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY_PRESETS) || '{}');
-  }
-
-  async function savePresetByName(name, configData) {
-    if (window.currentUser && window.savePresetToCloud) {
-      return await window.savePresetToCloud(name, configData, false);
-    } else {
-      const presets = getLocalSavedPresets();
-      presets[name] = configData;
-      localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(presets));
-      window.refreshPresetDropdown(name);
-      return true;
-    }
-  }
-
-  window.saveCurrentPreset = async function() {
-    const nameInput = document.getElementById('presetNameInput');
-    const name = nameInput.value.trim();
-    if (!name) {
-      alert('설정 프로필 이름을 입력해주세요.');
-      return;
-    }
-
-    const configData = window.getCurrentConfigData();
-    const ok = await savePresetByName(name, configData);
-    if (ok !== false) {
-      alert(`'${name}' 프로필이 저장되었습니다.`);
-    }
-
-    nameInput.value = '';
-  };
-
-  // 드롭다운에서 선택한 기존 프로필을 현재 설정 내용으로 덮어써서 수정
-  window.updateSelectedPreset = async function() {
-    const select = document.getElementById('presetSelect');
-    const name = select.value;
-    if (!name) {
-      alert('수정할 프로필을 목록에서 먼저 선택해주세요.');
-      return;
-    }
-    if (!confirm(`'${name}' 프로필을 현재 화면의 설정 내용으로 덮어쓸까요?`)) return;
-
-    const configData = window.getCurrentConfigData();
-    const ok = await savePresetByName(name, configData);
-    if (ok !== false) {
-      alert(`'${name}' 프로필이 수정되었습니다.`);
-    }
-  };
-
-  window.setAsDefaultPreset = async function() {
-    const currentData = window.getCurrentConfigData();
-    if (window.currentUser && window.savePresetToCloud) {
-      const ok = await window.savePresetToCloud(null, currentData, true);
-      if (ok !== false) {
-        alert('현재 설정이 클라우드 [기본값]으로 등록되었습니다.');
-      }
-    } else {
-      localStorage.setItem(STORAGE_KEY_DEFAULT, JSON.stringify(currentData));
-      alert('현재 설정이 이 컴퓨터의 [기본값]으로 등록되었습니다.');
-    }
-    window.updateDefaultNoticeText(true);
-  };
-
-  window.loadDefaultPresetOnStart = function() {
-    if (window.currentUser) return;
-    const defaultDataStr = localStorage.getItem(STORAGE_KEY_DEFAULT);
-    if (defaultDataStr) {
-      try {
-        window.applyConfigData(JSON.parse(defaultDataStr));
-        window.updateDefaultNoticeText(true);
-      } catch (e) { console.error(e); }
-    }
-  };
-
-  window.updateDefaultNoticeText = function(isLoaded = false) {
-    const notice = document.getElementById('defaultNotice');
-    notice.innerHTML = isLoaded ? `<span class="default-tag">⭐ 기본 설정 적용 중</span>` : '';
-  };
-
-  window.refreshPresetDropdown = function(selectedName = '') {
-    const presets = getLocalSavedPresets();
-    window.refreshPresetDropdownFromData(presets, selectedName);
-  };
-
-  window.refreshPresetDropdownFromData = function(presetsObj, selectedName = '') {
-    const select = document.getElementById('presetSelect');
-    select.innerHTML = '<option value="">-- 저장된 설정 프로필 선택 --</option>';
-    
-    for (let name in presetsObj) {
-      const opt = document.createElement('option');
-      opt.value = name;
-      opt.innerText = name;
-      if (name === selectedName) opt.selected = true;
-      select.appendChild(opt);
-    }
-    window.cachedPresets = presetsObj;
-  };
-
-  // 프로필 선택 시 즉시 화면 반영
-  window.loadSelectedPreset = function() {
-    const select = document.getElementById('presetSelect');
-    const name = select.value;
-    if (!name) return;
-
-    const presets = window.cachedPresets || getLocalSavedPresets();
-    if (presets[name]) {
-      window.applyConfigData(presets[name]);
-      document.getElementById('presetNameInput').value = name;
-    }
-  };
-
-  window.deleteSelectedPreset = async function() {
-    const select = document.getElementById('presetSelect');
-    const name = select.value;
-    if (!name) {
-      alert('삭제할 프로필을 목록에서 선택해주세요.');
-      return;
-    }
-
-    if (confirm(`'${name}' 설정 프로필을 정말 삭제하시겠습니까?`)) {
-      if (window.currentUser && window.deletePresetFromCloud) {
-        await window.deletePresetFromCloud(name);
-      } else {
-        const presets = getLocalSavedPresets();
-        delete presets[name];
-        localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(presets));
-        window.refreshPresetDropdown();
-      }
-      alert('삭제되었습니다.');
-    }
-  };
-
-  // --- Drag & Drop 및 파일 처리 ---
-  dropZone.addEventListener('click', () => fileInput.click());
-  fileInput.addEventListener('change', (e) => {
-    if (e.target.files.length > 0) handleFiles(e.target.files);
-  });
-
-  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
-    dropZone.addEventListener(eventName, preventDefaults, false);
-    document.body.addEventListener(eventName, preventDefaults, false);
-  });
-
-  function preventDefaults(e) {
-    e.preventDefault();
-    e.stopPropagation();
-  }
-
-  ['dragenter', 'dragover'].forEach(eventName => {
-    dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
-  });
-
-  ['dragleave', 'drop'].forEach(eventName => {
-    dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
-  });
-
-  dropZone.addEventListener('drop', (e) => {
-    const dt = e.dataTransfer;
-    const files = dt.files;
-    if (files && files.length > 0) {
-      handleFiles(files);
-    }
-  }, false);
-
-  function handleFiles(files) {
-    for (let file of files) {
-      const name = file.name.toLowerCase();
-      if (!name.endsWith('.pdf') && !name.endsWith('.hwpx')) continue;
-
-      if (!fileQueue.some(item => item.file.name === file.name)) {
-        const item = { 
-          id: 'item_' + Math.random().toString(36).substr(2, 9),
-          file: file, 
-          status: 'ready', 
-          newName: '', 
-          extractedText: null,
-          selected: false
-        };
-        fileQueue.push(item);
-      }
-    }
-    renderTable();
-    updateButtonStates();
-  }
-
-  // --- 테이블 렌더링 및 드래그 앤 드롭 순서 변경 ---
-  function renderTable() {
-    tableBody.innerHTML = '';
-    
-    fileQueue.forEach((item, index) => {
-      const row = document.createElement('tr');
-      row.className = 'draggable-row';
-      row.draggable = true;
-      row.dataset.index = index;
-
-      row.innerHTML = `
-        <td style="text-align: center;"><span class="drag-handle">☰</span></td>
-        <td style="text-align: center;">
-          <input type="checkbox" class="row-checkbox" ${item.selected ? 'checked' : ''} onchange="toggleItemSelect(${index}, this.checked)">
-        </td>
-        <td>${item.file.name}</td>
-        <td class="val-1">${item.vals ? item.vals[0] : '-'}</td>
-        <td class="val-2">${item.vals ? item.vals[1] : '-'}</td>
-        <td class="val-3">${item.vals ? item.vals[2] : '-'}</td>
-        <td class="val-4">${item.vals ? item.vals[3] : '-'}</td>
-        <td class="val-new">${item.newName || '-'}</td>
-        <td class="val-status">${getStatusBadgeHtml(item)}</td>
-      `;
-
-      row.addEventListener('dragstart', (e) => {
-        draggedRowIndex = index;
-        row.classList.add('dragging');
-        e.dataTransfer.effectAllowed = 'move';
-      });
-
-      row.addEventListener('dragend', () => {
-        row.classList.remove('dragging');
-        draggedRowIndex = null;
-      });
-
-      row.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        e.dataTransfer.dropEffect = 'move';
-      });
-
-      row.addEventListener('drop', (e) => {
-        e.preventDefault();
-        if (draggedRowIndex !== null && draggedRowIndex !== index) {
-          const movedItem = fileQueue.splice(draggedRowIndex, 1)[0];
-          fileQueue.splice(index, 0, movedItem);
-          renderTable();
-        }
-      });
-
-      tableBody.appendChild(row);
+function handleFiles(files) {
+  files.forEach(f => {
+    loadedFiles.push({
+      id: Math.random().toString(36).slice(2),
+      file: f,
+      oldName: f.name,
+      newName: '',
+      status: 'ready',
+      error: ''
     });
+  });
+  renderTable();
+}
 
-    updateSelectAllCheckboxState();
-    updateButtonStates();
+function renderTable() {
+  const tbody = document.getElementById('fileTableBody');
+  if (loadedFiles.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="6" style="text-align:center; color:#94a3b8; padding:20px;">첨부된 파일이 없습니다.</td></tr>';
+    document.getElementById('btnDownloadZip').disabled = true;
+    return;
   }
 
-  function getStatusBadgeHtml(item) {
-    if (item.status === 'ready') return `<span class="status-badge status-ready">대기 중</span>`;
-    if (item.status === 'working') return `<span class="status-badge status-working">분석 중...</span>`;
-    if (item.status === 'ocr') return `<span class="status-badge status-working">OCR 스캔 중...</span>`;
-    if (item.status === 'error') return `<span class="status-badge status-error">실패</span>`;
-    if (item.status === 'success') {
-      return `<span class="status-badge status-success">완료</span> <button class="btn-sm" onclick="triggerDownloadByIndex(${fileQueue.indexOf(item)})">다운로드</button>`;
-    }
-    return '';
-  }
+  tbody.innerHTML = '';
+  loadedFiles.forEach((item, index) => {
+    const tr = document.createElement('tr');
+    tr.className = 'draggable-row';
+    tr.draggable = true;
+    tr.dataset.index = index;
 
-  function toggleItemSelect(index, isChecked) {
-    fileQueue[index].selected = isChecked;
-    updateSelectAllCheckboxState();
-    updateButtonStates();
-  }
+    tr.addEventListener('dragstart', handleDragStart);
+    tr.addEventListener('dragover', handleDragOver);
+    tr.addEventListener('dragleave', handleDragLeave);
+    tr.addEventListener('drop', handleDrop);
+    tr.addEventListener('dragend', handleDragEnd);
 
-  function toggleSelectAll(masterCheckbox) {
-    const isChecked = masterCheckbox.checked;
-    fileQueue.forEach(item => item.selected = isChecked);
+    let statusBadge = '<span class="status-badge status-ready">대기</span>';
+    if (item.status === 'working') statusBadge = '<span class="status-badge status-working">처리중</span>';
+    else if (item.status === 'success') statusBadge = '<span class="status-badge status-success">완료</span>';
+    else if (item.status === 'error') statusBadge = `<span class="status-badge status-error" title="${item.error}">오류</span>`;
+
+    tr.innerHTML = `
+      <td style="text-align:center; font-weight:bold; color:#64748b;">${index + 1}</td>
+      <td class="drag-handle">☰</td>
+      <td>${escapeHtml(item.oldName)}</td>
+      <td><input type="text" value="${escapeHtml(item.newName)}" onchange="updateNewName(${index}, this.value)" style="width:100%;"></td>
+      <td style="text-align:center;">${statusBadge}</td>
+      <td style="text-align:center;"><button class="btn-sm" style="background:#ef4444;" onclick="removeFile(${index})">✕</button></td>
+    `;
+    tbody.appendChild(tr);
+  });
+
+  const hasSuccess = loadedFiles.some(f => f.status === 'success');
+  document.getElementById('btnDownloadZip').disabled = !hasSuccess;
+}
+
+function updateNewName(index, val) {
+  loadedFiles[index].newName = val;
+}
+
+function removeFile(index) {
+  loadedFiles.splice(index, 1);
+  renderTable();
+}
+
+function clearFileList() {
+  loadedFiles = [];
+  renderTable();
+}
+
+function escapeHtml(s) {
+  return String(s || '').replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+}
+
+/* 드래그 앤 드롭 행 이동 */
+function handleDragStart(e) { draggedIndex = Number(this.dataset.index); this.classList.add('dragging'); }
+function handleDragOver(e) { e.preventDefault(); }
+function handleDragLeave() {}
+function handleDrop(e) {
+  e.preventDefault();
+  const targetIndex = Number(this.dataset.index);
+  if (draggedIndex !== null && draggedIndex !== targetIndex) {
+    const moved = loadedFiles.splice(draggedIndex, 1)[0];
+    loadedFiles.splice(targetIndex, 0, moved);
     renderTable();
   }
+}
+function handleDragEnd() { this.classList.remove('dragging'); }
 
-  function updateSelectAllCheckboxState() {
-    const selectAll = document.getElementById('selectAllCheckbox');
-    if (fileQueue.length === 0) {
-      selectAll.checked = false;
-    } else {
-      selectAll.checked = fileQueue.every(i => i.selected);
+/* 프리셋/프로필 관리 (Local & Cloud) */
+function getConfigData() {
+  return {
+    prefix1: document.getElementById('prefix1').value,
+    suffix1: document.getElementById('suffix1').value,
+    length1: document.getElementById('length1').value,
+    prefix2: document.getElementById('prefix2').value,
+    suffix2: document.getElementById('suffix2').value,
+    length2: document.getElementById('length2').value,
+    prefix3: document.getElementById('prefix3').value,
+    suffix3: document.getElementById('suffix3').value,
+    length3: document.getElementById('length3').value,
+    prefix4: document.getElementById('prefix4').value,
+    suffix4: document.getElementById('suffix4').value,
+    length4: document.getElementById('length4').value,
+    chkAutoDate: document.getElementById('chkAutoDate').checked,
+    chkRemoveSpaces: document.getElementById('chkRemoveSpaces').checked,
+    txtReplaceFrom: document.getElementById('txtReplaceFrom').value,
+    txtReplaceTo: document.getElementById('txtReplaceTo').value,
+    txtCombinePattern: document.getElementById('txtCombinePattern').value,
+    txtDelimiter: document.getElementById('txtDelimiter').value
+  };
+}
+
+window.applyConfigData = function(cfg) {
+  if (!cfg) return;
+  if (cfg.prefix1 !== undefined) document.getElementById('prefix1').value = cfg.prefix1;
+  if (cfg.suffix1 !== undefined) document.getElementById('suffix1').value = cfg.suffix1;
+  if (cfg.length1 !== undefined) document.getElementById('length1').value = cfg.length1;
+  if (cfg.prefix2 !== undefined) document.getElementById('prefix2').value = cfg.prefix2;
+  if (cfg.suffix2 !== undefined) document.getElementById('suffix2').value = cfg.suffix2;
+  if (cfg.length2 !== undefined) document.getElementById('length2').value = cfg.length2;
+  if (cfg.prefix3 !== undefined) document.getElementById('prefix3').value = cfg.prefix3;
+  if (cfg.suffix3 !== undefined) document.getElementById('suffix3').value = cfg.suffix3;
+  if (cfg.length3 !== undefined) document.getElementById('length3').value = cfg.length3;
+  if (cfg.prefix4 !== undefined) document.getElementById('prefix4').value = cfg.prefix4;
+  if (cfg.suffix4 !== undefined) document.getElementById('suffix4').value = cfg.suffix4;
+  if (cfg.length4 !== undefined) document.getElementById('length4').value = cfg.length4;
+  if (cfg.chkAutoDate !== undefined) document.getElementById('chkAutoDate').checked = cfg.chkAutoDate;
+  if (cfg.chkRemoveSpaces !== undefined) document.getElementById('chkRemoveSpaces').checked = cfg.chkRemoveSpaces;
+  if (cfg.txtReplaceFrom !== undefined) document.getElementById('txtReplaceFrom').value = cfg.txtReplaceFrom;
+  if (cfg.txtReplaceTo !== undefined) document.getElementById('txtReplaceTo').value = cfg.txtReplaceTo;
+  if (cfg.txtCombinePattern !== undefined) document.getElementById('txtCombinePattern').value = cfg.txtCombinePattern;
+  if (cfg.txtDelimiter !== undefined) document.getElementById('txtDelimiter').value = cfg.txtDelimiter;
+};
+
+window.updateDefaultNoticeText = function(isCloud) {
+  const el = document.getElementById('defaultNoticeText');
+  if (el) el.textContent = isCloud ? '(클라우드 기본값 적용됨)' : '(로컬 기본값 적용됨)';
+};
+
+async function saveCurrentAsPreset() {
+  const name = document.getElementById('presetNameInput').value.trim();
+  if (!name) { alert('프로필 이름을 입력해주세요.'); return; }
+  const cfg = getConfigData();
+
+  if (window.currentUser) {
+    await window.savePresetToCloud(name, cfg, false);
+    alert(`[클라우드] '${name}' 프로필이 저장되었습니다.`);
+  } else {
+    const presets = JSON.parse(localStorage.getItem('rename_presets') || '{}');
+    presets[name] = cfg;
+    localStorage.setItem('rename_presets', JSON.stringify(presets));
+    window.refreshPresetDropdown();
+    alert(`[로컬] '${name}' 프로필이 저장되었습니다.`);
+  }
+}
+
+async function saveAsDefaultPreset() {
+  const cfg = getConfigData();
+  if (window.currentUser) {
+    await window.savePresetToCloud('default', cfg, true);
+    alert('[클라우드] 기본값으로 등록되었습니다.');
+  } else {
+    localStorage.setItem('rename_default_cfg', JSON.stringify(cfg));
+    window.updateDefaultNoticeText(false);
+    alert('[로컬] 기본값으로 등록되었습니다.');
+  }
+}
+
+window.refreshPresetDropdown = function() {
+  const select = document.getElementById('presetSelect');
+  select.innerHTML = '<option value="">-- 프로필 선택 --</option>';
+  const presets = JSON.parse(localStorage.getItem('rename_presets') || '{}');
+  Object.keys(presets).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    select.appendChild(opt);
+  });
+};
+
+window.refreshPresetDropdownFromData = function(presetsObj) {
+  const select = document.getElementById('presetSelect');
+  select.innerHTML = '<option value="">-- 프로필 선택 --</option>';
+  Object.keys(presetsObj).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = name;
+    opt.textContent = name;
+    select.appendChild(opt);
+  });
+};
+
+window.loadDefaultPresetOnStart = function() {
+  const def = localStorage.getItem('rename_default_cfg');
+  if (def) {
+    try {
+      window.applyConfigData(JSON.parse(def));
+      window.updateDefaultNoticeText(false);
+    } catch(e){}
+  }
+};
+
+function loadSelectedPreset() {
+  const name = document.getElementById('presetSelect').value;
+  if (!name) return;
+  if (window.currentUser) {
+    // Cloud data loading handled via snapshot
+  } else {
+    const presets = JSON.parse(localStorage.getItem('rename_presets') || '{}');
+    if (presets[name]) window.applyConfigData(presets[name]);
+  }
+}
+
+async function deleteSelectedPreset() {
+  const name = document.getElementById('presetSelect').value;
+  if (!name) { alert('삭제할 프로필을 선택해주세요.'); return; }
+  if (!confirm(`'${name}' 프로필을 삭제하시겠습니까?`)) return;
+
+  if (window.currentUser) {
+    await window.deletePresetFromCloud(name);
+  } else {
+    const presets = JSON.parse(localStorage.getItem('rename_presets') || '{}');
+    delete presets[name];
+    localStorage.setItem('rename_presets', JSON.stringify(presets));
+    window.refreshPresetDropdown();
+  }
+}
+
+/* 파일 텍스트 추출 및 이름 변경 엔진 */
+async function extractTextFromFile(file) {
+  const ext = file.name.split('.').pop().toLowerCase();
+  if (ext === 'txt') {
+    return await file.text();
+  } else if (ext === 'hwpx') {
+    const zip = await JSZip.loadAsync(await file.arrayBuffer());
+    const hpfDoc = new DOMParser().parseFromString(await zip.file('Contents/content.hpf').async('string'), 'application/xml');
+    const itemById = {};
+    Array.from(hpfDoc.getElementsByTagName('opf:item')).forEach(it => { itemById[it.getAttribute('id')] = it.getAttribute('href'); });
+    let fullText = '';
+    const sectionHrefs = Array.from(hpfDoc.getElementsByTagName('opf:itemref'))
+      .map(ir => itemById[ir.getAttribute('idref')])
+      .filter(href => href && /Contents\/section\d+\.xml$/.test(href));
+    for (const href of sectionHrefs) {
+      const xmlStr = await zip.file(href).async('string');
+      const xmlDoc = new DOMParser().parseFromString(xmlStr, 'application/xml');
+      const ts = xmlDoc.getElementsByTagName('hp:t');
+      for (let i = 0; i < ts.length; i++) fullText += ts[i].textContent + ' ';
     }
-  }
-
-  function deleteSelectedFiles() {
-    const selectedCount = fileQueue.filter(i => i.selected).length;
-    if (selectedCount === 0) return;
-
-    if (confirm(`선택한 ${selectedCount}개 파일을 목록에서 삭제하시겠습니까?`)) {
-      fileQueue = fileQueue.filter(i => !i.selected);
-      renderTable();
-    }
-  }
-
-  function clearAllFiles() {
-    fileQueue = [];
-    renderTable();
-    fileInput.value = '';
-  }
-
-  function updateButtonStates() {
-    const hasFiles = fileQueue.length > 0;
-    const hasSelected = fileQueue.some(i => i.selected);
-
-    btnRun.disabled = !hasFiles;
-    btnRe.disabled = !hasFiles;
-    btnSelRe.disabled = !hasSelected;
-    btnDeleteSelected.disabled = !hasSelected;
-    btnZip.disabled = !fileQueue.some(i => i.status === 'success');
-  }
-
-  // --- 메인 분석 및 파일명 변경 실행 로직 ---
-  async function runBatchProcess(mode = 'all') {
-    btnRun.disabled = true;
-    btnRe.disabled = true;
-    btnSelRe.disabled = true;
-    btnZip.disabled = true;
-
-    const commonWord = document.getElementById('commonWord').value.trim();
-    const commonPos = document.getElementById('commonPos').value;
-
-    const fnKey = document.getElementById('fnKey').value.trim();
-    const fnMode = document.getElementById('fnMode').value;
-
-    const rules = [1, 2, 3, 4].map(n => ({
-      key: document.getElementById(`key${n}`).value.trim(),
-      dir: document.getElementById(`dir${n}`).value,
-      idx: document.getElementById(`idx${n}`).value,
-      range: document.getElementById(`range${n}`).value
-    }));
-
-    for (let item of fileQueue) {
-      if (mode === 'all' && item.status === 'success') continue;
-      if (mode === 'selected' && !item.selected) continue;
-
-      item.status = 'working';
-      renderTable();
-
-      try {
-        if (!item.extractedText || mode === 'reAll' || mode === 'selected') {
-          if (item.file.name.toLowerCase().endsWith('.pdf')) {
-            item.extractedText = await extractPdfText(item.file);
-            if (item.extractedText.trim().length < 20 && window.Tesseract) {
-              item.status = 'ocr';
-              renderTable();
-              item.extractedText = await extractPdfOCR(item.file);
-            }
-          } else if (item.file.name.toLowerCase().endsWith('.hwpx')) {
-            item.extractedText = await extractHwpxText(item.file);
-          }
-        }
-
-        const vals = rules.map(rule => parseTextByRule(item.extractedText, rule));
-        item.vals = vals;
-
-        const ext = item.file.name.substring(item.file.name.lastIndexOf('.'));
-        const originalBaseName = item.file.name.replace(ext, '');
-
-        const cleanedBaseName = trimFileName(originalBaseName, fnKey, fnMode);
-        
-        let validParts = vals
-          .map(v => v ? v.trim().replace(/^[_]+|[_]+$/g, '') : "")
-          .filter(v => v !== "" && v !== "미확인");
-
-        if (commonWord !== "") {
-          const cleanCommon = commonWord.replace(/^[_]+|[_]+$/g, '');
-          if (commonPos === "prefix") {
-            validParts.unshift(cleanCommon);
-          } else {
-            validParts.push(cleanCommon);
-          }
-        }
-
-        if (validParts.length > 0) {
-          const prefix = validParts.join('_');
-          if (cleanedBaseName) {
-            item.newName = `[${prefix}]_${cleanedBaseName}${ext}`;
-          } else {
-            item.newName = `[${prefix}]${ext}`;
-          }
-        } else {
-          item.newName = cleanedBaseName ? `${cleanedBaseName}${ext}` : item.file.name;
-        }
-
-        item.status = 'success';
-
-      } catch (err) {
-        console.error(err);
-        item.status = 'error';
-      }
-      renderTable();
-    }
-
-    updateButtonStates();
-  }
-
-  function trimFileName(baseName, key, mode) {
-    if (mode === 'none') return baseName;
-    if (mode === 'removeAll') return "";
-
-    if (!key) return baseName;
-
-    const idx = baseName.indexOf(key);
-    if (idx === -1) return baseName;
-
-    if (mode === 'after') {
-      return baseName.substring(0, idx + key.length).trim().replace(/^[_]+|[_]+$/g, '');
-    } else if (mode === 'before') {
-      return baseName.substring(idx).trim().replace(/^[_]+|[_]+$/g, '');
-    } else if (mode === 'removeKey') {
-      return baseName.replace(key, '').trim().replace(/^[_]+|[_]+$/g, '');
-    }
-
-    return baseName;
-  }
-
-  function escapeRegExpChar(char) {
-    // 정규식에서 특별한 의미를 가지는 문자를 이스케이프 처리
-    return char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
-
-  function parseTextByRule(text, rule) {
-    if (!rule.key || !text) return "";
-
-    // 기준단어에 정규식 특수문자(괄호, 마침표, +, ? 등)가 포함돼도
-    // 안전하게 매칭되도록 각 글자를 이스케이프한 뒤 공백 유연 매칭을 적용
-    const flexibleKey = rule.key.split('').map(char => {
-      const escaped = escapeRegExpChar(char);
-      return /[a-zA-Z0-9가-힣]/.test(char) ? escaped + '\\s*' : escaped;
-    }).join('').replace(/\\s\*$/, '');
-
-    const matches = [...text.matchAll(new RegExp(flexibleKey, 'gi'))];
-    if (matches.length === 0) return "미확인";
-
-    let targetMatch = rule.idx === "last" ? matches[matches.length - 1] : (matches[parseInt(rule.idx) - 1] || matches[0]);
-    const keyPos = targetMatch.index;
-    const matchedTextLength = targetMatch[0].length;
-
-    if (rule.dir === "nextLine") {
-      const textAfter = text.substring(keyPos + matchedTextLength);
-      const lines = textAfter.split(/[\r\n]+/).map(l => l.trim()).filter(l => l.length > 0);
-      return lines.length > 0 ? cleanValue(lines[0]) : "미확인";
-    } else if (rule.dir === "after") {
-      const targetSlice = text.substring(keyPos + matchedTextLength).replace(/^[\s:]+/, '');
-      if (rule.range === "word") {
-        const m = targetSlice.match(/^[^\s]+/);
-        return m ? cleanValue(m[0]) : "미확인";
-      } else {
-        const m = targetSlice.match(/^[^\r\n]+/);
-        return m ? cleanValue(m[0]) : "미확인";
-      }
-    } else {
-      const targetSlice = text.substring(0, keyPos);
-      if (rule.range === "word") {
-        const words = targetSlice.trim().split(/\s+/);
-        return words.length > 0 ? cleanValue(words[words.length - 1]) : "미확인";
-      } else {
-        const lines = targetSlice.split(/[\r\n]+/);
-        return lines.length > 0 ? cleanValue(lines[lines.length - 1]) : "미확인";
-      }
-    }
-  }
-
-  function cleanValue(val) {
-    if (!val) return "";
-    return val
-      .replace(/[\r\n\t]+/g, ' ')
-      .replace(/[:;,"'`_]+/g, '')
-      .replace(/[\\/*?"<>|]+/g, '') // Windows/Mac 파일명에 쓸 수 없는 문자 제거
-      .replace(/^\s+|\s+$/g, '')
-      .trim();
-  }
-
-  async function extractPdfText(file) {
-    if (!window.pdfjsLib) return "";
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    let fullText = "";
+    return fullText;
+  } else if (ext === 'pdf') {
+    const pdf = await pdfjsLib.getDocument({ data: await file.arrayBuffer() }).promise;
+    let fullText = '';
     for (let i = 1; i <= pdf.numPages; i++) {
       const page = await pdf.getPage(i);
-      const textContent = await page.getTextContent();
-      fullText += textContent.items.map(item => item.str).join(" ") + "\n";
+      const content = await page.getTextContent();
+      fullText += content.items.map(item => item.str).join(' ') + ' ';
     }
     return fullText;
   }
+  return '';
+}
 
-  async function extractPdfOCR(file) {
-    if (!window.pdfjsLib || !window.Tesseract) return "";
-    const arrayBuffer = await file.arrayBuffer();
-    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
-    const page = await pdf.getPage(1);
-    const viewport = page.getViewport({ scale: 1.5 });
-    const canvas = document.createElement('canvas');
-    const context = canvas.getContext('2d');
-    canvas.height = viewport.height;
-    canvas.width = viewport.width;
-    await page.render({ canvasContext: context, viewport: viewport }).promise;
-
-    const worker = await Tesseract.createWorker('kor+eng');
-    const ret = await worker.recognize(canvas);
-    await worker.terminate();
-    return ret.data.text;
+function extractWordByRule(text, prefix, suffix, lengthStr) {
+  if (!prefix && !suffix) return '';
+  let startIdx = 0;
+  if (prefix) {
+    const pIdx = text.indexOf(prefix);
+    if (pIdx === -1) return '';
+    startIdx = pIdx + prefix.length;
   }
+  let sub = text.substring(startIdx).trim();
+  if (suffix) {
+    const sIdx = sub.indexOf(suffix);
+    if (sIdx !== -1) sub = sub.substring(0, sIdx).trim();
+  }
+  if (lengthStr && lengthStr.toUpperCase() !== 'ALL') {
+    const len = parseInt(lengthStr, 10);
+    if (!isNaN(len) && len > 0) sub = sub.substring(0, len);
+  }
+  return sub;
+}
 
-  async function extractHwpxText(file) {
-    if (!window.JSZip) return "";
-    const zip = await JSZip.loadAsync(file);
-    let fullText = "";
-    for (let filename of Object.keys(zip.files)) {
-      if (filename.startsWith("Contents/section") && filename.endsWith(".xml")) {
-        const xmlText = await zip.files[filename].async("string");
-        const parser = new DOMParser();
-        const xmlDoc = parser.parseFromString(xmlText, "text/xml");
-        fullText += xmlDoc.textContent + "\n";
+async function processAllFiles() {
+  if (loadedFiles.length === 0) return;
+  const cfg = getConfigData();
+  const btn = document.getElementById('btnProcess');
+  btn.disabled = true;
+  btn.textContent = '⏳ 추출 중...';
+
+  for (let i = 0; i < loadedFiles.length; i++) {
+    const item = loadedFiles[i];
+    item.status = 'working';
+    renderTable();
+
+    try {
+      const text = await extractTextFromFile(item.file);
+      const w1 = extractWordByRule(text, cfg.prefix1, cfg.suffix1, cfg.length1);
+      const w2 = extractWordByRule(text, cfg.prefix2, cfg.suffix2, cfg.length2);
+      const w3 = extractWordByRule(text, cfg.prefix3, cfg.suffix3, cfg.length3);
+      const w4 = extractWordByRule(text, cfg.prefix4, cfg.suffix4, cfg.length4);
+
+      let result = cfg.txtCombinePattern;
+      result = result.replace('{1}', w1).replace('{2}', w2).replace('{3}', w3).replace('{4}', w4);
+
+      if (cfg.chkAutoDate) {
+        result = result.replace(/\b(\d{2,4})[.-/](0?[1-9]|1[0-2])[.-/](0?[1-9]|[12]\d|3[01])\b/g, (m, y, month, d) => {
+          const yy = y.length === 4 ? y.slice(2) : y;
+          const mm = month.padStart(2, '0');
+          const dd = d.padStart(2, '0');
+          return `${yy}${mm}${dd}`;
+        });
       }
+
+      if (cfg.chkRemoveSpaces) {
+        result = result.replace(/\s+/g, '');
+      }
+
+      if (cfg.txtReplaceFrom) {
+        result = result.replaceAll(cfg.txtReplaceFrom, cfg.txtReplaceTo);
+      }
+
+      const ext = item.oldName.split('.').pop();
+      item.newName = `${result}.${ext}`;
+      item.status = 'success';
+    } catch (err) {
+      console.error(err);
+      item.status = 'error';
+      item.error = err.message || '추출 실패';
     }
-    return fullText;
+    renderTable();
   }
 
-  function triggerDownloadByIndex(index) {
-    const item = fileQueue[index];
-    if (!item) return;
-    const url = URL.createObjectURL(item.file);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = item.newName;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
+  btn.disabled = false;
+  btn.textContent = '🚀 파일명 추출 실행';
+}
 
-  async function downloadAllZip() {
-    if (!window.JSZip) return;
-    const zip = new JSZip();
-    const successItems = fileQueue.filter(i => i.status === 'success');
+function applyRenameDirect() {
+  alert('브라우저 보안 정책상 원본 파일 직접 수정은 지원되지 않습니다. [ZIP 압축 다운로드]를 통해 새로 변경된 파일명으로 받으실 수 있습니다.');
+}
 
-    for (let item of successItems) {
+async function downloadAsZip() {
+  const zip = new JSZip();
+  loadedFiles.forEach(item => {
+    if (item.status === 'success' && item.newName) {
       zip.file(item.newName, item.file);
     }
-
-    const content = await zip.generateAsync({ type: "blob" });
-    const url = URL.createObjectURL(content);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = "파일명_변경_완료_목록.zip";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(() => URL.revokeObjectURL(url), 1000);
-  }
-
-  // --- 파일 목록 -> 엑셀 변환기 ---
-  const excelPasteArea = document.getElementById('excelPasteArea');
-  const optExtractName = document.getElementById('optExtractName');
-  const optSplitExt = document.getElementById('optSplitExt');
-  const excelResultHead = document.getElementById('excelResultHead');
-  const excelResultBody = document.getElementById('excelResultBody');
-  const btnCopyExcel = document.getElementById('btnCopyExcel');
-  const btnDownloadExcel = document.getElementById('btnDownloadExcel');
-  const btnClearExcel = document.getElementById('btnClearExcel');
-
-  let excelHeaders = [];
-  let excelRows = [];
-
-  window.toggleExcelCard = function() {
-    const card = document.getElementById('excelCard');
-    const body = document.getElementById('excelBody');
-    const btn = document.getElementById('btnToggleExcelCard');
-    const opening = !body.classList.contains('open');
-    body.classList.toggle('open', opening);
-    card.classList.toggle('expanded', opening);
-    btn.textContent = opening ? '접기 ▴' : '열기 ▾';
-  };
-
-  function extractFileNameFromPath(raw) {
-    let s = raw.trim();
-    s = s.replace(/^"+|"+$/g, ''); // "경로로 복사"는 양쪽에 큰따옴표가 붙어서 나옴
-    const parts = s.split(/[\\/]/);
-    return parts[parts.length - 1] || s;
-  }
-
-  function splitNameExt(filename) {
-    const idx = filename.lastIndexOf('.');
-    if (idx <= 0) return { base: filename, ext: '' };
-    return { base: filename.slice(0, idx), ext: filename.slice(idx + 1) };
-  }
-
-  function escapeHtmlExcel(str) {
-    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-  }
-
-  function updateExcelResult() {
-    const raw = excelPasteArea.value;
-    const lines = raw.replace(/\r/g, '').split('\n').filter(l => l.trim().length > 0);
-
-    if (lines.length === 0) {
-      excelHeaders = [];
-      excelRows = [];
-      renderExcelTable();
-      return;
-    }
-
-    const hasTabs = lines.some(l => l.includes('\t'));
-
-    if (hasTabs) {
-      // 이미 여러 열로 구분된 데이터(예: 엑셀에서 복사)는 그대로 표로 변환
-      const parsed = lines.map(l => l.split('\t'));
-      const maxCols = Math.max(...parsed.map(r => r.length));
-      excelHeaders = ['No.', ...Array.from({ length: maxCols }, (_, i) => `열${i + 1}`)];
-      excelRows = parsed.map((r, i) => [String(i + 1), ...r, ...Array(maxCols - r.length).fill('')]);
-    } else {
-      const extract = optExtractName.checked;
-      const splitExt = optSplitExt.checked;
-
-      if (extract && splitExt) {
-        excelHeaders = ['No.', '파일명', '확장자'];
-        excelRows = lines.map((line, i) => {
-          const name = extractFileNameFromPath(line);
-          const { base, ext } = splitNameExt(name);
-          return [String(i + 1), base, ext];
-        });
-      } else if (extract && !splitExt) {
-        excelHeaders = ['No.', '파일명'];
-        excelRows = lines.map((line, i) => [String(i + 1), extractFileNameFromPath(line)]);
-      } else {
-        excelHeaders = ['No.', '원본 텍스트'];
-        excelRows = lines.map((line, i) => [String(i + 1), line.trim()]);
-      }
-    }
-
-    renderExcelTable();
-  }
-
-  function renderExcelTable() {
-    if (excelRows.length === 0) {
-      excelResultHead.innerHTML = '';
-      excelResultBody.innerHTML = `<tr><td class="excel-empty" colspan="3">왼쪽에 파일 목록을 붙여넣으면 여기에 표시됩니다.</td></tr>`;
-      return;
-    }
-    excelResultHead.innerHTML = excelHeaders.map(h => `<th>${escapeHtmlExcel(h)}</th>`).join('');
-    excelResultBody.innerHTML = excelRows.map(row =>
-      `<tr>${row.map(c => `<td>${escapeHtmlExcel(c)}</td>`).join('')}</tr>`
-    ).join('');
-  }
-
-  excelPasteArea.addEventListener('input', () => {
-    updateExcelResult();
   });
-  excelPasteArea.addEventListener('paste', () => {
-    setTimeout(() => {
-      updateExcelResult();
-    }, 0);
-  });
-  optExtractName.addEventListener('change', updateExcelResult);
-  optSplitExt.addEventListener('change', updateExcelResult);
-
-  btnClearExcel.addEventListener('click', () => {
-    excelPasteArea.value = '';
-    updateExcelResult();
-  });
-
-  function getFileNamesOnly() {
-    const raw = excelPasteArea.value;
-    const lines = raw.replace(/\r/g, '').split('\n').filter(l => l.trim().length > 0);
-    return lines.map(line => {
-      const firstCell = line.split('\t')[0]; // 탭으로 구분된 데이터라도 첫 열만 사용
-      const name = extractFileNameFromPath(firstCell);
-      const { base } = splitNameExt(name);
-      return base;
-    });
-  }
-
-  btnCopyExcel.addEventListener('click', async () => {
-    const names = getFileNamesOnly();
-    if (names.length === 0) { alert('복사할 데이터가 없습니다.'); return; }
-    const text = names.join('\n');
-    try {
-      await navigator.clipboard.writeText(text);
-      alert(`파일명 ${names.length}개(확장자 제외)가 복사되었습니다. 원하는 곳에 Ctrl+V로 붙여넣으세요.`);
-    } catch (e) {
-      console.error(e);
-      alert('클립보드 복사에 실패했습니다. 표를 마우스로 드래그해서 직접 복사해주세요.');
-    }
-  });
-
-  btnDownloadExcel.addEventListener('click', () => {
-    if (excelRows.length === 0) { alert('다운로드할 데이터가 없습니다.'); return; }
-    if (!window.XLSX) { alert('엑셀 변환 라이브러리를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.'); return; }
-    const ws = XLSX.utils.aoa_to_sheet([excelHeaders, ...excelRows]);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, '파일목록');
-    XLSX.writeFile(wb, '파일목록.xlsx');
-  });
+  const blob = await zip.generateAsync({ type: 'blob' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'renamed_files.zip';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
 </script>
 
 </body>
