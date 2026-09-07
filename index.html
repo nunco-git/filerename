@@ -207,7 +207,7 @@
       padding: 4px 10px; border-radius: 100px; font-weight: 700;
     }
 
-    .top-col-guide { flex: 1 1 46%; display: flex; min-width: 0; }
+    .top-col-guide { flex: 1 1 auto; display: flex; min-width: 0; }
     .login-banner {
       width: 100%;
       background: linear-gradient(180deg, #f0fdf4 0%, #ecfdf5 100%);
@@ -232,15 +232,25 @@
       border-radius: 10px;
       padding: 8px 12px;
       font-size: 0.83rem;
+      min-width: 0;
     }
+    .login-features li > span:not(.feat-icon) { min-width: 0; overflow: hidden; }
     .login-features .feat-icon {
       flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
       background: #16a34a; color: white; display: flex; align-items: center; justify-content: center;
       font-size: 13px; box-shadow: 0 2px 4px rgba(22,163,74,0.25);
     }
-    .login-features strong { font-size: 0.83rem; color: #14532d; }
+    .login-features strong {
+      font-size: 0.83rem;
+      color: #14532d;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+      min-width: 0;
+    }
 
-    .top-col-drop { flex: 0 0 32%; display: flex; }
+    .top-col-drop { flex: 0 0 clamp(200px, 25%, 320px); display: flex; }
     .drop-zone {
       flex: 1;
       border: 2px dashed #3b82f6;
@@ -467,13 +477,13 @@
       <div class="login-banner">
         <ul class="login-features">
           <li style="justify-content: space-between;">
-            <span style="display:flex; align-items:center; gap:10px;"><span class="feat-icon">📄</span><span><strong>PDF,이미지,HWPX 파일 내용의 특정 위치 단어로 파일 이름 자동 설정</strong></span></span>
-            <button class="btn btn-outline-indigo" id="btnClear" onclick="clearAllFiles()" style="padding: 5px 10px; font-size: 0.78rem;">💥 전체 초기화</button>
+            <span style="display:flex; align-items:center; gap:10px; min-width:0;"><span class="feat-icon">📄</span><span style="min-width:0;"><strong title="PDF,이미지,HWPX 파일 내용의 특정 위치 단어로 파일 이름 자동 설정">PDF,이미지,HWPX 파일 내용의 특정 위치 단어로 파일 이름 자동 설정</strong></span></span>
+            <button class="btn btn-outline-indigo" id="btnClear" onclick="clearAllFiles()" style="padding: 5px 10px; font-size: 0.78rem; flex-shrink:0;">💥 전체 초기화</button>
           </li>
-          <li><span class="feat-icon">🎯</span><span><strong>윈도우 탐색기의 파일 목록을 엑셀 리스트로 변환</strong></span></li>
+          <li><span class="feat-icon">🎯</span><span style="min-width:0;"><strong title="윈도우 탐색기의 파일 목록을 엑셀 리스트로 변환">윈도우 탐색기의 파일 목록을 엑셀 리스트로 변환</strong></span></li>
           <li style="justify-content: space-between;">
-            <span style="display:flex; align-items:center; gap:10px;"><span class="feat-icon">☁️</span><span><strong>구글 계정 로그인으로 파일 이름 생성 설정 저장 가능</strong></span></span>
-            <div class="login-actions">
+            <span style="display:flex; align-items:center; gap:10px; min-width:0;"><span class="feat-icon">☁️</span><span style="min-width:0;"><strong title="구글 계정 로그인으로 파일 이름 생성 설정 저장 가능">구글 계정 로그인으로 파일 이름 생성 설정 저장 가능</strong></span></span>
+            <div class="login-actions" style="flex-shrink:0;">
               <span id="userProfileInfo"></span>
               <button class="btn btn-google" id="btnLogin" onclick="window.loginWithGoogle()">
                 <svg width="14" height="14" viewBox="0 0 24 24"><path fill="#fff" d="M12.545,10.239v3.821h5.445c-0.712,2.315-2.647,3.972-5.445,3.972c-3.332,0-6.033-2.701-6.033-6.032s2.701-6.032,6.033-6.032c1.498,0,2.866,0.549,3.921,1.453l2.814-2.814C17.503,2.988,15.139,2,12.545,2C7.021,2,2.543,6.477,2.543,12s4.478,10,10.002,10c8.396,0,10.249-7.85,9.426-11.761H12.545z"/></svg>
