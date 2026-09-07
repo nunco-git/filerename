@@ -770,7 +770,772 @@
   </div><!-- /main-content -->
 </div><!-- /app-container -->
 
-<script>const _0x5605d1=_0x375b;(function(_0x20e4f3,_0x25abd6){const _0x47916d=_0x375b,_0x19ebba=_0x20e4f3();while(!![]){try{const _0x325894=-parseInt(_0x47916d(0x196))/0x1+parseInt(_0x47916d(0x219))/0x2*(-parseInt(_0x47916d(0x1bb))/0x3)+parseInt(_0x47916d(0x1d6))/0x4*(parseInt(_0x47916d(0x19e))/0x5)+-parseInt(_0x47916d(0x18f))/0x6*(-parseInt(_0x47916d(0x1c3))/0x7)+-parseInt(_0x47916d(0x137))/0x8*(-parseInt(_0x47916d(0x182))/0x9)+-parseInt(_0x47916d(0x154))/0xa*(-parseInt(_0x47916d(0x1d3))/0xb)+-parseInt(_0x47916d(0x228))/0xc*(parseInt(_0x47916d(0x187))/0xd);if(_0x325894===_0x25abd6)break;else _0x19ebba['push'](_0x19ebba['shift']());}catch(_0x49ca80){_0x19ebba['push'](_0x19ebba['shift']());}}}(_0x1b8f,0x35f4e));window[_0x5605d1(0x17f)]&&(pdfjsLib[_0x5605d1(0x13b)][_0x5605d1(0x1e2)]=_0x5605d1(0x1aa));const dropZone=document[_0x5605d1(0x16d)](_0x5605d1(0x141)),fileInput=document[_0x5605d1(0x16d)](_0x5605d1(0x160)),btnRun=document[_0x5605d1(0x16d)](_0x5605d1(0x1e1)),btnRe=document[_0x5605d1(0x16d)](_0x5605d1(0x1a8)),btnSelRe=document[_0x5605d1(0x16d)](_0x5605d1(0x201)),btnDeleteSelected=document['getElementById'](_0x5605d1(0x13c)),btnZip=document[_0x5605d1(0x16d)](_0x5605d1(0x171)),tableBody=document[_0x5605d1(0x16d)](_0x5605d1(0x151));let fileQueue=[],draggedRowIndex=null;const STORAGE_KEY_PRESETS=_0x5605d1(0x1a6),STORAGE_KEY_DEFAULT=_0x5605d1(0x1f7);window[_0x5605d1(0x1b0)]=function(){const _0x3add2e=_0x5605d1;return{'commonWord':document[_0x3add2e(0x16d)](_0x3add2e(0x1e4))[_0x3add2e(0x1ec)],'commonPos':document[_0x3add2e(0x16d)](_0x3add2e(0x1af))[_0x3add2e(0x1ec)],'fnKey':document[_0x3add2e(0x16d)](_0x3add2e(0x1ee))[_0x3add2e(0x1ec)],'fnMode':document[_0x3add2e(0x16d)](_0x3add2e(0x15d))[_0x3add2e(0x1ec)],'rules':[0x1,0x2,0x3,0x4][_0x3add2e(0x1fd)](_0x115151=>({'key':document[_0x3add2e(0x16d)](_0x3add2e(0x1f3)+_0x115151)[_0x3add2e(0x1ec)],'dir':document[_0x3add2e(0x16d)](_0x3add2e(0x206)+_0x115151)[_0x3add2e(0x1ec)],'idx':document[_0x3add2e(0x16d)](_0x3add2e(0x14e)+_0x115151)[_0x3add2e(0x1ec)],'range':document[_0x3add2e(0x16d)](_0x3add2e(0x157)+_0x115151)[_0x3add2e(0x1ec)]}))};},window[_0x5605d1(0x152)]=function(_0xb16956){const _0x3b9ab6=_0x5605d1;if(!_0xb16956)return;if(_0xb16956['commonWord']!==undefined)document[_0x3b9ab6(0x16d)](_0x3b9ab6(0x1e4))[_0x3b9ab6(0x1ec)]=_0xb16956[_0x3b9ab6(0x1e4)];if(_0xb16956[_0x3b9ab6(0x1af)]!==undefined)document[_0x3b9ab6(0x16d)](_0x3b9ab6(0x1af))[_0x3b9ab6(0x1ec)]=_0xb16956[_0x3b9ab6(0x1af)];if(_0xb16956['fnKey']!==undefined)document[_0x3b9ab6(0x16d)](_0x3b9ab6(0x1ee))[_0x3b9ab6(0x1ec)]=_0xb16956[_0x3b9ab6(0x1ee)];if(_0xb16956[_0x3b9ab6(0x15d)]!==undefined)document[_0x3b9ab6(0x16d)](_0x3b9ab6(0x15d))['value']=_0xb16956['fnMode'];if(_0xb16956[_0x3b9ab6(0x237)]&&_0xb16956[_0x3b9ab6(0x237)][_0x3b9ab6(0x190)]){const _0x1d4617=[{'dir':_0x3b9ab6(0x142),'idx':'1','range':_0x3b9ab6(0x13a)},{'dir':_0x3b9ab6(0x142),'idx':'1','range':_0x3b9ab6(0x18d)},{'dir':_0x3b9ab6(0x142),'idx':'1','range':_0x3b9ab6(0x13a)},{'dir':_0x3b9ab6(0x142),'idx':'1','range':_0x3b9ab6(0x13a)}];for(let _0x5eed59=0x0;_0x5eed59<0x4;_0x5eed59++){const _0x30deec=_0xb16956[_0x3b9ab6(0x237)][_0x5eed59],_0x11b4ca=_0x1d4617[_0x5eed59];document[_0x3b9ab6(0x16d)](_0x3b9ab6(0x1f3)+(_0x5eed59+0x1))[_0x3b9ab6(0x1ec)]=_0x30deec?_0x30deec[_0x3b9ab6(0x1f3)]||'':'',document[_0x3b9ab6(0x16d)](_0x3b9ab6(0x206)+(_0x5eed59+0x1))[_0x3b9ab6(0x1ec)]=_0x30deec?_0x30deec[_0x3b9ab6(0x206)]||_0x11b4ca[_0x3b9ab6(0x206)]:_0x11b4ca[_0x3b9ab6(0x206)],document[_0x3b9ab6(0x16d)](_0x3b9ab6(0x14e)+(_0x5eed59+0x1))[_0x3b9ab6(0x1ec)]=_0x30deec?_0x30deec[_0x3b9ab6(0x14e)]||_0x11b4ca[_0x3b9ab6(0x14e)]:_0x11b4ca['idx'],document[_0x3b9ab6(0x16d)](_0x3b9ab6(0x157)+(_0x5eed59+0x1))['value']=_0x30deec?_0x30deec[_0x3b9ab6(0x157)]||_0x11b4ca[_0x3b9ab6(0x157)]:_0x11b4ca[_0x3b9ab6(0x157)];}const _0x2f2c04=_0xb16956[_0x3b9ab6(0x237)][0x2]&&_0xb16956[_0x3b9ab6(0x237)][0x2][_0x3b9ab6(0x1f3)]||_0xb16956[_0x3b9ab6(0x237)][0x3]&&_0xb16956[_0x3b9ab6(0x237)][0x3]['key'];if(_0x2f2c04&&window[_0x3b9ab6(0x1eb)])window[_0x3b9ab6(0x1eb)](!![]);}},window[_0x5605d1(0x1eb)]=function(_0x48489b){const _0x5b9b5f=_0x5605d1,_0x144beb=document[_0x5b9b5f(0x16d)]('extraRulesWrap'),_0x5aaaf1=document[_0x5b9b5f(0x16d)](_0x5b9b5f(0x22d));if(!_0x144beb||!_0x5aaaf1)return;_0x144beb[_0x5b9b5f(0x1dd)][_0x5b9b5f(0x17a)]=_0x48489b?_0x5b9b5f(0x174):_0x5b9b5f(0x1ab),_0x5aaaf1[_0x5b9b5f(0x21b)]=_0x48489b?_0x5b9b5f(0x1a4):'➕\x20추출\x20위치\x20추가\x20(3,\x204)';},window[_0x5605d1(0x202)]=function(){const _0x110a1f=_0x5605d1,_0x21648d=document[_0x110a1f(0x16d)](_0x110a1f(0x15a)),_0x3b12a6=!_0x21648d||_0x21648d[_0x110a1f(0x1dd)][_0x110a1f(0x17a)]===_0x110a1f(0x1ab)||_0x21648d[_0x110a1f(0x1dd)][_0x110a1f(0x17a)]==='';window['setExtraRulesVisible'](_0x3b12a6);};function getLocalSavedPresets(){const _0x3949a8=_0x5605d1;return JSON[_0x3949a8(0x221)](localStorage[_0x3949a8(0x217)](STORAGE_KEY_PRESETS)||'{}');}async function savePresetByName(_0x544329,_0x20b5e2){const _0x3a2081=_0x5605d1;if(window[_0x3a2081(0x1cc)]&&window[_0x3a2081(0x1dc)])return await window[_0x3a2081(0x1dc)](_0x544329,_0x20b5e2,![]);else{const _0x46c8f2=getLocalSavedPresets();return _0x46c8f2[_0x544329]=_0x20b5e2,localStorage[_0x3a2081(0x188)](STORAGE_KEY_PRESETS,JSON[_0x3a2081(0x183)](_0x46c8f2)),window[_0x3a2081(0x216)](_0x544329),!![];}}window[_0x5605d1(0x16b)]=async function(){const _0x45b592=_0x5605d1,_0x16d1a8=document[_0x45b592(0x16d)](_0x45b592(0x19b)),_0x2e8319=_0x16d1a8[_0x45b592(0x1ec)][_0x45b592(0x175)]();if(!_0x2e8319){alert(_0x45b592(0x239));return;}const _0x3ef3e7=window[_0x45b592(0x1b0)](),_0xb1ec61=await savePresetByName(_0x2e8319,_0x3ef3e7);_0xb1ec61!==![]&&alert('\x27'+_0x2e8319+_0x45b592(0x147)),_0x16d1a8[_0x45b592(0x1ec)]='';},window[_0x5605d1(0x1a9)]=async function(){const _0x62a763=_0x5605d1,_0x389384=document[_0x62a763(0x16d)](_0x62a763(0x1ac)),_0x3612b9=_0x389384[_0x62a763(0x1ec)];if(!_0x3612b9){alert(_0x62a763(0x21d));return;}if(!confirm('\x27'+_0x3612b9+_0x62a763(0x149)))return;const _0x233b8f=window[_0x62a763(0x1b0)](),_0x19d936=await savePresetByName(_0x3612b9,_0x233b8f);_0x19d936!==![]&&alert('\x27'+_0x3612b9+'\x27\x20프로필이\x20수정되었습니다.');},window[_0x5605d1(0x191)]=async function(){const _0x263ad1=_0x5605d1,_0x33e348=window[_0x263ad1(0x1b0)]();if(window[_0x263ad1(0x1cc)]&&window[_0x263ad1(0x1dc)]){const _0x20ee47=await window[_0x263ad1(0x1dc)](null,_0x33e348,!![]);_0x20ee47!==![]&&alert(_0x263ad1(0x19a));}else localStorage['setItem'](STORAGE_KEY_DEFAULT,JSON[_0x263ad1(0x183)](_0x33e348)),alert(_0x263ad1(0x1cf));window[_0x263ad1(0x1bc)](!![]);},window['loadDefaultPresetOnStart']=function(){const _0x2568a8=_0x5605d1;if(window[_0x2568a8(0x1cc)])return;const _0x544186=localStorage['getItem'](STORAGE_KEY_DEFAULT);if(_0x544186)try{window[_0x2568a8(0x152)](JSON[_0x2568a8(0x221)](_0x544186)),window[_0x2568a8(0x1bc)](!![]);}catch(_0x53f445){console['error'](_0x53f445);}},window[_0x5605d1(0x1bc)]=function(_0x409439=![]){const _0x2324a2=_0x5605d1,_0x1ed378=document[_0x2324a2(0x16d)](_0x2324a2(0x195));_0x1ed378[_0x2324a2(0x22c)]=_0x409439?_0x2324a2(0x192):'';},window[_0x5605d1(0x216)]=function(_0x41d263=''){const _0x4f68f4=_0x5605d1,_0x1a85ea=getLocalSavedPresets();window[_0x4f68f4(0x1c9)](_0x1a85ea,_0x41d263);},window['refreshPresetDropdownFromData']=function(_0x4373b5,_0x3c7ab1=''){const _0x4b4339=_0x5605d1,_0x39b28b=document[_0x4b4339(0x16d)](_0x4b4339(0x1ac));_0x39b28b[_0x4b4339(0x22c)]=_0x4b4339(0x14f);for(let _0x106fb0 in _0x4373b5){const _0x23c64e=document[_0x4b4339(0x210)](_0x4b4339(0x215));_0x23c64e[_0x4b4339(0x1ec)]=_0x106fb0,_0x23c64e[_0x4b4339(0x158)]=_0x106fb0;if(_0x106fb0===_0x3c7ab1)_0x23c64e[_0x4b4339(0x23e)]=!![];_0x39b28b[_0x4b4339(0x224)](_0x23c64e);}window[_0x4b4339(0x1c6)]=_0x4373b5;},window[_0x5605d1(0x13d)]=function(){const _0x5ba4f4=_0x5605d1,_0x277a5c=document[_0x5ba4f4(0x16d)](_0x5ba4f4(0x1ac)),_0x125eee=_0x277a5c[_0x5ba4f4(0x1ec)];if(!_0x125eee)return;const _0x52c8b3=window[_0x5ba4f4(0x1c6)]||getLocalSavedPresets();_0x52c8b3[_0x125eee]&&(window[_0x5ba4f4(0x152)](_0x52c8b3[_0x125eee]),document[_0x5ba4f4(0x16d)](_0x5ba4f4(0x19b))[_0x5ba4f4(0x1ec)]=_0x125eee);},window[_0x5605d1(0x148)]=async function(){const _0x15b846=_0x5605d1,_0x5e4672=document['getElementById']('presetSelect'),_0xf42bc0=_0x5e4672[_0x15b846(0x1ec)];if(!_0xf42bc0){alert(_0x15b846(0x14a));return;}if(confirm('\x27'+_0xf42bc0+_0x15b846(0x205))){if(window[_0x15b846(0x1cc)]&&window[_0x15b846(0x1ef)])await window[_0x15b846(0x1ef)](_0xf42bc0);else{const _0x46f990=getLocalSavedPresets();delete _0x46f990[_0xf42bc0],localStorage[_0x15b846(0x188)](STORAGE_KEY_PRESETS,JSON[_0x15b846(0x183)](_0x46f990)),window[_0x15b846(0x216)]();}alert('삭제되었습니다.');}},dropZone[_0x5605d1(0x159)](_0x5605d1(0x227),()=>fileInput[_0x5605d1(0x227)]()),fileInput[_0x5605d1(0x159)](_0x5605d1(0x21c),_0x2e3c3f=>{const _0x1783a6=_0x5605d1;if(_0x2e3c3f[_0x1783a6(0x1c5)][_0x1783a6(0x143)][_0x1783a6(0x190)]>0x0)handleFiles(_0x2e3c3f[_0x1783a6(0x1c5)][_0x1783a6(0x143)]);}),[_0x5605d1(0x1da),_0x5605d1(0x134),_0x5605d1(0x146),_0x5605d1(0x176)][_0x5605d1(0x1ce)](_0x5e0d4b=>{const _0x366460=_0x5605d1;dropZone[_0x366460(0x159)](_0x5e0d4b,preventDefaults,![]),document[_0x366460(0x1d5)][_0x366460(0x159)](_0x5e0d4b,preventDefaults,![]);});function preventDefaults(_0x2388ad){const _0xb174ae=_0x5605d1;_0x2388ad[_0xb174ae(0x14b)](),_0x2388ad[_0xb174ae(0x1e5)]();}[_0x5605d1(0x1da),_0x5605d1(0x134)][_0x5605d1(0x1ce)](_0x5d1e54=>{const _0xa837af=_0x5605d1;dropZone[_0xa837af(0x159)](_0x5d1e54,()=>dropZone[_0xa837af(0x1f4)][_0xa837af(0x18b)]('dragover'),![]);}),[_0x5605d1(0x146),_0x5605d1(0x176)][_0x5605d1(0x1ce)](_0x5c8b09=>{const _0x5f21a0=_0x5605d1;dropZone[_0x5f21a0(0x159)](_0x5c8b09,()=>dropZone[_0x5f21a0(0x1f4)][_0x5f21a0(0x1c0)](_0x5f21a0(0x134)),![]);}),dropZone[_0x5605d1(0x159)](_0x5605d1(0x176),_0x28cd3b=>{const _0x23acae=_0x5605d1,_0x214905=_0x28cd3b[_0x23acae(0x1df)],_0xb672d2=_0x214905[_0x23acae(0x143)];_0xb672d2&&_0xb672d2[_0x23acae(0x190)]>0x0&&handleFiles(_0xb672d2);},![]);function handleFiles(_0x57363f){const _0x14b437=_0x5605d1;for(let _0x1348a6 of _0x57363f){const _0x4849ca=_0x1348a6[_0x14b437(0x198)][_0x14b437(0x20e)]();if(!_0x4849ca[_0x14b437(0x185)](_0x14b437(0x21e))&&!_0x4849ca[_0x14b437(0x185)](_0x14b437(0x163)))continue;if(!fileQueue[_0x14b437(0x150)](_0xf6f39a=>_0xf6f39a[_0x14b437(0x1a2)][_0x14b437(0x198)]===_0x1348a6[_0x14b437(0x198)])){const _0x41a08b={'id':_0x14b437(0x207)+Math[_0x14b437(0x1d4)]()[_0x14b437(0x1d8)](0x24)[_0x14b437(0x222)](0x2,0x9),'file':_0x1348a6,'status':_0x14b437(0x194),'newName':'','extractedText':null,'selected':![]};fileQueue[_0x14b437(0x22b)](_0x41a08b);}}renderTable(),updateButtonStates();}function renderTable(){const _0x1f2341=_0x5605d1;tableBody[_0x1f2341(0x22c)]='',fileQueue[_0x1f2341(0x1ce)]((_0x525008,_0x3fd354)=>{const _0x371b9e=_0x1f2341,_0x188970=document[_0x371b9e(0x210)]('tr');_0x188970[_0x371b9e(0x223)]='draggable-row',_0x188970['draggable']=!![],_0x188970[_0x371b9e(0x1ae)][_0x371b9e(0x1fe)]=_0x3fd354,_0x188970[_0x371b9e(0x22c)]=_0x371b9e(0x17b)+(_0x525008[_0x371b9e(0x23e)]?_0x371b9e(0x220):'')+_0x371b9e(0x1a0)+_0x3fd354+_0x371b9e(0x20a)+_0x525008[_0x371b9e(0x1a2)][_0x371b9e(0x198)]+_0x371b9e(0x1b6)+(_0x525008[_0x371b9e(0x15b)]?_0x525008[_0x371b9e(0x15b)][0x0]:'-')+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<td\x20class=\x22val-2\x22>'+(_0x525008[_0x371b9e(0x15b)]?_0x525008['vals'][0x1]:'-')+_0x371b9e(0x1bf)+(_0x525008[_0x371b9e(0x15b)]?_0x525008[_0x371b9e(0x15b)][0x2]:'-')+_0x371b9e(0x1f6)+(_0x525008[_0x371b9e(0x15b)]?_0x525008[_0x371b9e(0x15b)][0x3]:'-')+_0x371b9e(0x1f9)+(_0x525008[_0x371b9e(0x17d)]||'-')+_0x371b9e(0x1c2)+getStatusBadgeHtml(_0x525008)+_0x371b9e(0x1f0),_0x188970['addEventListener'](_0x371b9e(0x238),_0x388ebe=>{const _0x20a665=_0x371b9e;draggedRowIndex=_0x3fd354,_0x188970[_0x20a665(0x1f4)][_0x20a665(0x18b)](_0x20a665(0x23a)),_0x388ebe['dataTransfer'][_0x20a665(0x1b2)]=_0x20a665(0x178);}),_0x188970[_0x371b9e(0x159)]('dragend',()=>{const _0x2dc501=_0x371b9e;_0x188970['classList'][_0x2dc501(0x1c0)](_0x2dc501(0x23a)),draggedRowIndex=null;}),_0x188970[_0x371b9e(0x159)](_0x371b9e(0x134),_0xef3fe5=>{const _0x1ca61f=_0x371b9e;_0xef3fe5[_0x1ca61f(0x14b)](),_0xef3fe5[_0x1ca61f(0x1df)][_0x1ca61f(0x20f)]=_0x1ca61f(0x178);}),_0x188970[_0x371b9e(0x159)](_0x371b9e(0x176),_0x5c6b21=>{const _0x5139f8=_0x371b9e;_0x5c6b21[_0x5139f8(0x14b)]();if(draggedRowIndex!==null&&draggedRowIndex!==_0x3fd354){const _0x40f044=fileQueue[_0x5139f8(0x138)](draggedRowIndex,0x1)[0x0];fileQueue[_0x5139f8(0x138)](_0x3fd354,0x0,_0x40f044),renderTable();}}),tableBody[_0x371b9e(0x224)](_0x188970);}),updateSelectAllCheckboxState(),updateButtonStates();}function getStatusBadgeHtml(_0x81436f){const _0x273998=_0x5605d1;if(_0x81436f[_0x273998(0x1b8)]==='ready')return _0x273998(0x1d9);if(_0x81436f[_0x273998(0x1b8)]===_0x273998(0x1b1))return _0x273998(0x14c);if(_0x81436f[_0x273998(0x1b8)]===_0x273998(0x1ba))return _0x273998(0x1c1);if(_0x81436f[_0x273998(0x1b8)]===_0x273998(0x165))return'<span\x20class=\x22status-badge\x20status-error\x22>실패</span>';if(_0x81436f[_0x273998(0x1b8)]==='success')return _0x273998(0x229)+fileQueue[_0x273998(0x167)](_0x81436f)+_0x273998(0x20b);return'';}function toggleItemSelect(_0x3b1d36,_0x3cf5ea){const _0x349773=_0x5605d1;fileQueue[_0x3b1d36][_0x349773(0x23e)]=_0x3cf5ea,updateSelectAllCheckboxState(),updateButtonStates();}function _0x375b(_0x4db8bc,_0x538d08){_0x4db8bc=_0x4db8bc-0x134;const _0x1b8f38=_0x1b8f();let _0x375b14=_0x1b8f38[_0x4db8bc];if(_0x375b['LpCPPO']===undefined){var _0x35c6f2=function(_0x4fb917){const _0x19a9e8='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';let _0x3fa62c='',_0x115151='';for(let _0xb16956=0x0,_0x1d4617,_0x2f2c04,_0x5eed59=0x0;_0x2f2c04=_0x4fb917['charAt'](_0x5eed59++);~_0x2f2c04&&(_0x1d4617=_0xb16956%0x4?_0x1d4617*0x40+_0x2f2c04:_0x2f2c04,_0xb16956++%0x4)?_0x3fa62c+=String['fromCharCode'](0xff&_0x1d4617>>(-0x2*_0xb16956&0x6)):0x0){_0x2f2c04=_0x19a9e8['indexOf'](_0x2f2c04);}for(let _0x30deec=0x0,_0x11b4ca=_0x3fa62c['length'];_0x30deec<_0x11b4ca;_0x30deec++){_0x115151+='%'+('00'+_0x3fa62c['charCodeAt'](_0x30deec)['toString'](0x10))['slice'](-0x2);}return decodeURIComponent(_0x115151);};_0x375b['bBaJBi']=_0x35c6f2,_0x375b['OPUObA']={},_0x375b['LpCPPO']=!![];}const _0x29c6a5=_0x1b8f38[0x0];_0x375b['pwZiGz']!==_0x29c6a5&&(_0x375b['OPUObA']={},_0x375b['pwZiGz']=_0x29c6a5);const _0x166795=_0x375b['OPUObA'][_0x4db8bc];return _0x166795===undefined?(_0x375b14=_0x375b['bBaJBi'](_0x375b14),_0x375b['OPUObA'][_0x4db8bc]=_0x375b14):_0x375b14=_0x166795,_0x375b14;}function toggleSelectAll(_0x4681d6){const _0x521c99=_0x5605d1,_0x44f56e=_0x4681d6[_0x521c99(0x220)];fileQueue[_0x521c99(0x1ce)](_0x576482=>_0x576482['selected']=_0x44f56e),renderTable();}function updateSelectAllCheckboxState(){const _0x3d5ba6=_0x5605d1,_0x44daa5=document[_0x3d5ba6(0x16d)](_0x3d5ba6(0x14d));fileQueue[_0x3d5ba6(0x190)]===0x0?_0x44daa5[_0x3d5ba6(0x220)]=![]:_0x44daa5[_0x3d5ba6(0x220)]=fileQueue[_0x3d5ba6(0x172)](_0x3b5b4e=>_0x3b5b4e[_0x3d5ba6(0x23e)]);}function deleteSelectedFiles(){const _0x1da076=_0x5605d1,_0x3274cc=fileQueue[_0x1da076(0x23c)](_0x42e38b=>_0x42e38b[_0x1da076(0x23e)])[_0x1da076(0x190)];if(_0x3274cc===0x0)return;confirm(_0x1da076(0x20c)+_0x3274cc+_0x1da076(0x1bd))&&(fileQueue=fileQueue[_0x1da076(0x23c)](_0x5a9d50=>!_0x5a9d50[_0x1da076(0x23e)]),renderTable());}function clearAllFiles(){const _0x1ed4e7=_0x5605d1;fileQueue=[],renderTable(),fileInput[_0x1ed4e7(0x1ec)]='';}function updateButtonStates(){const _0x4b2764=_0x5605d1,_0x30aa82=fileQueue[_0x4b2764(0x190)]>0x0,_0x522599=fileQueue[_0x4b2764(0x150)](_0x2fbdf9=>_0x2fbdf9[_0x4b2764(0x23e)]);btnRun[_0x4b2764(0x23b)]=!_0x30aa82,btnRe[_0x4b2764(0x23b)]=!_0x30aa82,btnSelRe[_0x4b2764(0x23b)]=!_0x522599,btnDeleteSelected[_0x4b2764(0x23b)]=!_0x522599,btnZip[_0x4b2764(0x23b)]=!fileQueue[_0x4b2764(0x150)](_0x3392fa=>_0x3392fa[_0x4b2764(0x1b8)]===_0x4b2764(0x1cd));}async function runBatchProcess(_0x25bc00=_0x5605d1(0x1d1)){const _0x6456ca=_0x5605d1;btnRun[_0x6456ca(0x23b)]=!![],btnRe[_0x6456ca(0x23b)]=!![],btnSelRe[_0x6456ca(0x23b)]=!![],btnZip[_0x6456ca(0x23b)]=!![];const _0x42ea00=document[_0x6456ca(0x16d)](_0x6456ca(0x1e4))[_0x6456ca(0x1ec)][_0x6456ca(0x175)](),_0x29cea9=document[_0x6456ca(0x16d)](_0x6456ca(0x1af))[_0x6456ca(0x1ec)],_0x27a1c3=document[_0x6456ca(0x16d)](_0x6456ca(0x1ee))[_0x6456ca(0x1ec)][_0x6456ca(0x175)](),_0x1b76e8=document['getElementById'](_0x6456ca(0x15d))[_0x6456ca(0x1ec)],_0x54b49e=[0x1,0x2,0x3,0x4][_0x6456ca(0x1fd)](_0x2b37de=>({'key':document[_0x6456ca(0x16d)](_0x6456ca(0x1f3)+_0x2b37de)[_0x6456ca(0x1ec)][_0x6456ca(0x175)](),'dir':document[_0x6456ca(0x16d)](_0x6456ca(0x206)+_0x2b37de)[_0x6456ca(0x1ec)],'idx':document[_0x6456ca(0x16d)]('idx'+_0x2b37de)[_0x6456ca(0x1ec)],'range':document[_0x6456ca(0x16d)](_0x6456ca(0x157)+_0x2b37de)[_0x6456ca(0x1ec)]}));for(let _0x2c8c47 of fileQueue){if(_0x25bc00==='all'&&_0x2c8c47[_0x6456ca(0x1b8)]===_0x6456ca(0x1cd))continue;if(_0x25bc00===_0x6456ca(0x23e)&&!_0x2c8c47['selected'])continue;_0x2c8c47[_0x6456ca(0x1b8)]=_0x6456ca(0x1b1),renderTable();try{if(!_0x2c8c47[_0x6456ca(0x16c)]||_0x25bc00===_0x6456ca(0x135)||_0x25bc00===_0x6456ca(0x23e)){if(_0x2c8c47[_0x6456ca(0x1a2)][_0x6456ca(0x198)][_0x6456ca(0x20e)]()[_0x6456ca(0x185)](_0x6456ca(0x21e)))_0x2c8c47[_0x6456ca(0x16c)]=await extractPdfText(_0x2c8c47[_0x6456ca(0x1a2)]),_0x2c8c47[_0x6456ca(0x16c)][_0x6456ca(0x175)]()[_0x6456ca(0x190)]<0x14&&window[_0x6456ca(0x1db)]&&(_0x2c8c47[_0x6456ca(0x1b8)]=_0x6456ca(0x1ba),renderTable(),_0x2c8c47[_0x6456ca(0x16c)]=await extractPdfOCR(_0x2c8c47[_0x6456ca(0x1a2)]));else _0x2c8c47[_0x6456ca(0x1a2)][_0x6456ca(0x198)][_0x6456ca(0x20e)]()[_0x6456ca(0x185)](_0x6456ca(0x163))&&(_0x2c8c47[_0x6456ca(0x16c)]=await extractHwpxText(_0x2c8c47['file']));}const _0x1f17cf=_0x54b49e[_0x6456ca(0x1fd)](_0x491527=>parseTextByRule(_0x2c8c47['extractedText'],_0x491527));_0x2c8c47[_0x6456ca(0x15b)]=_0x1f17cf;const _0x310a15=_0x2c8c47[_0x6456ca(0x1a2)][_0x6456ca(0x198)][_0x6456ca(0x203)](_0x2c8c47[_0x6456ca(0x1a2)][_0x6456ca(0x198)][_0x6456ca(0x1d7)]('.')),_0x4640e7=_0x2c8c47[_0x6456ca(0x1a2)][_0x6456ca(0x198)][_0x6456ca(0x1c7)](_0x310a15,''),_0x29b9c1=trimFileName(_0x4640e7,_0x27a1c3,_0x1b76e8);let _0x59c864=_0x1f17cf[_0x6456ca(0x1fd)](_0x3d1bae=>_0x3d1bae?_0x3d1bae[_0x6456ca(0x175)]()[_0x6456ca(0x1c7)](/^[_]+|[_]+$/g,''):'')[_0x6456ca(0x23c)](_0x153e89=>_0x153e89!==''&&_0x153e89!==_0x6456ca(0x22f));if(_0x42ea00!==''){const _0x1c76b0=_0x42ea00[_0x6456ca(0x1c7)](/^[_]+|[_]+$/g,'');_0x29cea9==='prefix'?_0x59c864[_0x6456ca(0x1f1)](_0x1c76b0):_0x59c864[_0x6456ca(0x22b)](_0x1c76b0);}if(_0x59c864[_0x6456ca(0x190)]>0x0){const _0x17c11e=_0x59c864[_0x6456ca(0x161)]('_');_0x29b9c1?_0x2c8c47[_0x6456ca(0x17d)]='['+_0x17c11e+']_'+_0x29b9c1+_0x310a15:_0x2c8c47[_0x6456ca(0x17d)]='['+_0x17c11e+']'+_0x310a15;}else _0x2c8c47[_0x6456ca(0x17d)]=_0x29b9c1?''+_0x29b9c1+_0x310a15:_0x2c8c47[_0x6456ca(0x1a2)][_0x6456ca(0x198)];_0x2c8c47[_0x6456ca(0x1b8)]=_0x6456ca(0x1cd);}catch(_0x2a125e){console[_0x6456ca(0x165)](_0x2a125e),_0x2c8c47[_0x6456ca(0x1b8)]=_0x6456ca(0x165);}renderTable();}updateButtonStates();}function trimFileName(_0x3fa322,_0xe5e479,_0x17bdb6){const _0x140670=_0x5605d1;if(_0x17bdb6===_0x140670(0x1ab))return _0x3fa322;if(_0x17bdb6===_0x140670(0x1ff))return'';if(!_0xe5e479)return _0x3fa322;const _0x1ca39f=_0x3fa322[_0x140670(0x167)](_0xe5e479);if(_0x1ca39f===-0x1)return _0x3fa322;if(_0x17bdb6===_0x140670(0x142))return _0x3fa322[_0x140670(0x203)](0x0,_0x1ca39f+_0xe5e479[_0x140670(0x190)])[_0x140670(0x175)]()[_0x140670(0x1c7)](/^[_]+|[_]+$/g,'');else{if(_0x17bdb6===_0x140670(0x1b3))return _0x3fa322['substring'](_0x1ca39f)[_0x140670(0x175)]()[_0x140670(0x1c7)](/^[_]+|[_]+$/g,'');else{if(_0x17bdb6===_0x140670(0x15c))return _0x3fa322[_0x140670(0x1c7)](_0xe5e479,'')[_0x140670(0x175)]()[_0x140670(0x1c7)](/^[_]+|[_]+$/g,'');}}return _0x3fa322;}function escapeRegExpChar(_0x138be8){const _0xaa2c06=_0x5605d1;return _0x138be8[_0xaa2c06(0x1c7)](/[.*+?^${}()|[\]\\]/g,_0xaa2c06(0x1a3));}function parseTextByRule(_0x39a5c7,_0x50b8b8){const _0x320ac1=_0x5605d1;if(!_0x50b8b8['key']||!_0x39a5c7)return'';const _0xf0d549=_0x50b8b8[_0x320ac1(0x1f3)][_0x320ac1(0x179)]('')[_0x320ac1(0x1fd)](_0x2eb6cb=>{const _0x3bddfd=_0x320ac1,_0x2b9808=escapeRegExpChar(_0x2eb6cb);return/[a-zA-Z0-9가-힣]/[_0x3bddfd(0x1e8)](_0x2eb6cb)?_0x2b9808+_0x3bddfd(0x13e):_0x2b9808;})[_0x320ac1(0x161)]('')[_0x320ac1(0x1c7)](/\\s\*$/,''),_0x2356d7=[..._0x39a5c7[_0x320ac1(0x1be)](new RegExp(_0xf0d549,'gi'))];if(_0x2356d7[_0x320ac1(0x190)]===0x0)return _0x320ac1(0x22f);let _0x57c899=_0x50b8b8[_0x320ac1(0x14e)]===_0x320ac1(0x193)?_0x2356d7[_0x2356d7[_0x320ac1(0x190)]-0x1]:_0x2356d7[parseInt(_0x50b8b8[_0x320ac1(0x14e)])-0x1]||_0x2356d7[0x0];const _0x3f1259=_0x57c899[_0x320ac1(0x1fe)],_0x3014d6=_0x57c899[0x0][_0x320ac1(0x190)];if(_0x50b8b8[_0x320ac1(0x206)]===_0x320ac1(0x19d)){const _0x5d5ef0=_0x39a5c7[_0x320ac1(0x203)](_0x3f1259+_0x3014d6),_0x545dbe=_0x5d5ef0[_0x320ac1(0x179)](/[\r\n]+/)[_0x320ac1(0x1fd)](_0x5767ef=>_0x5767ef[_0x320ac1(0x175)]())[_0x320ac1(0x23c)](_0x28954d=>_0x28954d[_0x320ac1(0x190)]>0x0);return _0x545dbe['length']>0x0?cleanValue(_0x545dbe[0x0]):_0x320ac1(0x22f);}else{if(_0x50b8b8[_0x320ac1(0x206)]===_0x320ac1(0x142)){const _0x2629b4=_0x39a5c7[_0x320ac1(0x203)](_0x3f1259+_0x3014d6)[_0x320ac1(0x1c7)](/^[\s:]+/,'');if(_0x50b8b8[_0x320ac1(0x157)]===_0x320ac1(0x13a)){const _0x3e0f8e=_0x2629b4[_0x320ac1(0x1e7)](/^[^\s]+/);return _0x3e0f8e?cleanValue(_0x3e0f8e[0x0]):_0x320ac1(0x22f);}else{const _0x646d2c=_0x2629b4[_0x320ac1(0x1e7)](/^[^\r\n]+/);return _0x646d2c?cleanValue(_0x646d2c[0x0]):_0x320ac1(0x22f);}}else{const _0x34b885=_0x39a5c7[_0x320ac1(0x203)](0x0,_0x3f1259);if(_0x50b8b8[_0x320ac1(0x157)]===_0x320ac1(0x13a)){const _0xa183a8=_0x34b885[_0x320ac1(0x175)]()[_0x320ac1(0x179)](/\s+/);return _0xa183a8[_0x320ac1(0x190)]>0x0?cleanValue(_0xa183a8[_0xa183a8[_0x320ac1(0x190)]-0x1]):_0x320ac1(0x22f);}else{const _0x59517f=_0x34b885[_0x320ac1(0x179)](/[\r\n]+/);return _0x59517f[_0x320ac1(0x190)]>0x0?cleanValue(_0x59517f[_0x59517f[_0x320ac1(0x190)]-0x1]):_0x320ac1(0x22f);}}}}function cleanValue(_0x28e839){const _0x506de4=_0x5605d1;if(!_0x28e839)return'';return _0x28e839[_0x506de4(0x1c7)](/[\r\n\t]+/g,'\x20')[_0x506de4(0x1c7)](/[:;,"'`_]+/g,'')['replace'](/[\\/*?"<>|]+/g,'')[_0x506de4(0x1c7)](/^\s+|\s+$/g,'')[_0x506de4(0x175)]();}async function extractPdfText(_0x48c85b){const _0x1aaf70=_0x5605d1;if(!window[_0x1aaf70(0x17f)])return'';const _0x4e6958=await _0x48c85b[_0x1aaf70(0x1c4)](),_0x173921=await pdfjsLib[_0x1aaf70(0x1b9)]({'data':_0x4e6958})[_0x1aaf70(0x16a)];let _0x433258='';for(let _0x36896f=0x1;_0x36896f<=_0x173921[_0x1aaf70(0x173)];_0x36896f++){const _0x209085=await _0x173921[_0x1aaf70(0x144)](_0x36896f),_0x3c2bb4=await _0x209085['getTextContent']();_0x433258+=_0x3c2bb4[_0x1aaf70(0x218)][_0x1aaf70(0x1fd)](_0x1e8591=>_0x1e8591[_0x1aaf70(0x213)])[_0x1aaf70(0x161)]('\x20')+'\x0a';}return _0x433258;}async function extractPdfOCR(_0x50931c){const _0x14ce66=_0x5605d1;if(!window[_0x14ce66(0x17f)]||!window[_0x14ce66(0x1db)])return'';const _0x415651=await _0x50931c[_0x14ce66(0x1c4)](),_0x2db60c=await pdfjsLib[_0x14ce66(0x1b9)]({'data':_0x415651})[_0x14ce66(0x16a)],_0x4fd19e=await _0x2db60c[_0x14ce66(0x144)](0x1),_0x4bda15=_0x4fd19e[_0x14ce66(0x19c)]({'scale':1.5}),_0x3f44ea=document[_0x14ce66(0x210)](_0x14ce66(0x18e)),_0x397fbb=_0x3f44ea[_0x14ce66(0x225)]('2d');_0x3f44ea[_0x14ce66(0x22e)]=_0x4bda15[_0x14ce66(0x22e)],_0x3f44ea[_0x14ce66(0x233)]=_0x4bda15[_0x14ce66(0x233)],await _0x4fd19e['render']({'canvasContext':_0x397fbb,'viewport':_0x4bda15})[_0x14ce66(0x16a)];const _0x2fe4ad=await Tesseract[_0x14ce66(0x21f)](_0x14ce66(0x234)),_0x2bcf66=await _0x2fe4ad[_0x14ce66(0x168)](_0x3f44ea);return await _0x2fe4ad['terminate'](),_0x2bcf66[_0x14ce66(0x22a)][_0x14ce66(0x170)];}async function extractHwpxText(_0x163e12){const _0xdbb654=_0x5605d1;if(!window[_0xdbb654(0x186)])return'';const _0x276d2f=await JSZip[_0xdbb654(0x1ca)](_0x163e12);let _0x19f849='';for(let _0x4cae21 of Object[_0xdbb654(0x1b4)](_0x276d2f[_0xdbb654(0x143)])){if(_0x4cae21[_0xdbb654(0x1fc)](_0xdbb654(0x204))&&_0x4cae21[_0xdbb654(0x185)](_0xdbb654(0x1fa))){const _0x3389f8=await _0x276d2f[_0xdbb654(0x143)][_0x4cae21][_0xdbb654(0x1ea)](_0xdbb654(0x199)),_0x4fccb4=new DOMParser(),_0x4b0bde=_0x4fccb4[_0xdbb654(0x1f2)](_0x3389f8,_0xdbb654(0x1b7));_0x19f849+=_0x4b0bde[_0xdbb654(0x21b)]+'\x0a';}}return _0x19f849;}function triggerDownloadByIndex(_0xff4c72){const _0x568ca1=_0x5605d1,_0x19ffab=fileQueue[_0xff4c72];if(!_0x19ffab)return;const _0x42cabc=URL[_0x568ca1(0x162)](_0x19ffab[_0x568ca1(0x1a2)]),_0x269992=document[_0x568ca1(0x210)]('a');_0x269992['href']=_0x42cabc,_0x269992[_0x568ca1(0x1a1)]=_0x19ffab[_0x568ca1(0x17d)],document[_0x568ca1(0x1d5)][_0x568ca1(0x224)](_0x269992),_0x269992[_0x568ca1(0x227)](),_0x269992[_0x568ca1(0x1c0)](),setTimeout(()=>URL[_0x568ca1(0x226)](_0x42cabc),0x3e8);}async function downloadAllZip(){const _0x22ddc4=_0x5605d1;if(!window[_0x22ddc4(0x186)])return;const _0x40ccfe=new JSZip(),_0x335e64=fileQueue[_0x22ddc4(0x23c)](_0x2d7b34=>_0x2d7b34[_0x22ddc4(0x1b8)]==='success');for(let _0x432296 of _0x335e64){_0x40ccfe[_0x22ddc4(0x1a2)](_0x432296[_0x22ddc4(0x17d)],_0x432296[_0x22ddc4(0x1a2)]);}const _0x5306b6=await _0x40ccfe[_0x22ddc4(0x153)]({'type':_0x22ddc4(0x230)}),_0x49db38=URL[_0x22ddc4(0x162)](_0x5306b6),_0x6e2e88=document[_0x22ddc4(0x210)]('a');_0x6e2e88[_0x22ddc4(0x200)]=_0x49db38,_0x6e2e88[_0x22ddc4(0x1a1)]=_0x22ddc4(0x181),document[_0x22ddc4(0x1d5)][_0x22ddc4(0x224)](_0x6e2e88),_0x6e2e88[_0x22ddc4(0x227)](),_0x6e2e88[_0x22ddc4(0x1c0)](),setTimeout(()=>URL[_0x22ddc4(0x226)](_0x49db38),0x3e8);}const excelPasteArea=document[_0x5605d1(0x16d)](_0x5605d1(0x155)),optExtractName=document[_0x5605d1(0x16d)](_0x5605d1(0x164)),optSplitExt=document[_0x5605d1(0x16d)](_0x5605d1(0x156)),excelResultHead=document[_0x5605d1(0x16d)](_0x5605d1(0x1fb)),excelResultBody=document[_0x5605d1(0x16d)](_0x5605d1(0x180)),btnCopyExcel=document[_0x5605d1(0x16d)](_0x5605d1(0x17c)),btnDownloadExcel=document[_0x5605d1(0x16d)](_0x5605d1(0x177)),btnClearExcel=document[_0x5605d1(0x16d)]('btnClearExcel');let excelHeaders=[],excelRows=[];function _0x1b8f(){const _0x6c3a00=['7zIe7j6SioYePoYGLEYDTcdTGBtRNBZSMRdRK5WGw+Q4SoUZUoQWKL3SNlZROzWG65oX66gD65cy7jEi7iQ164Ui64UKlG','ChjLC2v0tMfTzuLUChv0','z2v0vMLLD3bVCNq','BMv4DeXPBMu','mZvNvfDmu2K','pc90CJ4','ig9Uy2HHBMDLpsj0B2DNBgvjDgvTu2vSzwn0ka','zg93BMXVywq','zMLSzq','xcqM','4P6wioY2LoY2NcdSNitSUzGGmYWGncdSIkJQUldQUla','phrKpG','zg9Jx3jLBMfTzxjFChjLC2v0CW','Dg9Nz2XLrxHJzwXdyxjK','yNrUuMu','DxbKyxrLu2vSzwn0zwrqCMvZzxq','Ahr0Chm6lY9Jzg4UANnKzwXPDNiUBMv0l25WBs9WzgzQCY1KAxn0qdmUmteUmtC0l2j1AwXKl3bKzI53B3jRzxiUBwLUlMPZ','BM9Uzq','ChjLC2v0u2vSzwn0','jMX0oW','zgf0yxnLDa','y29TBw9Uug9Z','z2v0q3vYCMvUDenVBMzPz0rHDge','D29YA2LUzW','zwzMzwn0qwXSB3DLza','yMvMB3jL','A2v5CW','Aw5JBhvKzxm','pc90zd4kicaGicaGica8DgqGy2XHC3m9iNzHBc0XiJ4','Dgv4Dc94BwW','C3rHDhvZ','z2v0rg9JDw1LBNq','B2nY','mJa4nZDzzxHSDuu','DxbKyxrLrgvMyxvSDe5VDgLJzvrLEhq','6RcCio2mJoYDVoYDHcdRQQNROz3SL5dSHjWG7ikT7kcC7zwy7iUC6RkG7iQ164Ui6RMmpW','Bwf0y2HbBgW','pc90zd4kicaGicaGica8DgqGy2XHC3m9iNzHBc0ZiJ4','CMvTB3zL','phnWyw4Gy2XHC3m9iNn0yxr1CY1IywrNzsbZDgf0DxmTD29YA2LUzYi+t0nsioYkPoY6LcdSPjeUlI48l3nWyw4+','pc90zd4kicaGicaGica8DgqGy2XHC3m9iNzHBc1ZDgf0DxmIpG','n1vTDKrqwG','yxjYyxLcDwzMzxi','DgfYz2v0','y2fJAgvKuhjLC2v0CW','CMvWBgfJzq','yM9VA19HChbLBMrFC2HLzxq','CMvMCMvZAfbYzxnLDerYB3bKB3DUrNjVBurHDge','Bg9HzefZEw5J','jMD0oW','y3vYCMvUDfvZzxi','C3vJy2vZCW','zM9YrwfJAa','7zIe7j6SioYePoYGLEYDTcdSNBqG7lU07zoO7ysW7j2yifVQUldRS7JQSjjD7jY866gCioUtSEUHNEUqMoYxIoYkTEUlIoUlPc4','pc90zd4','ywXS','CgfZDgu','mZuXmta1n1fcBe9NBG','CMfUzg9T','yM9KEq','mte5nJmYqu90t0ns','BgfZDeLUzgv4t2y','Dg9tDhjPBMC','phnWyw4Gy2XHC3m9iNn0yxr1CY1IywrNzsbZDgf0DxmTCMvHzhKIpUUmGoQ4ScdSPje8l3nWyw4+','zhjHz2vUDgvY','vgvZC2vYywn0','C2f2zvbYzxnLDfrVq2XVDwq','C3r5Bgu','zMLSBa','zgf0yvrYyw5ZzMvY','7yYm7j2866Qf','yNrUuNvU','D29YA2vYu3jJ','7zMv7j6L7j6q','y29TBw9Uv29Yza','C3rVCfbYB3bHz2f0Aw9U','phrYpJX0zcbJBgfZCZ0IzxHJzwWTzw1WDhKIignVBhnWyw49iJmIpUYzVoYQVEYxKcdTJiZSNBWG66QP66gD7j2eioU2MEYxRoUeO+YCVoUPTcdSL6ZQUldSL5aG7zgC7iUC65cP64Ui64UKlJWVDgq+pc90CJ4','Bwf0y2G','DgvZDa','phrYpG','yxn5BMm','C2v0rxH0CMfsDwXLC1zPC2LIBgu','DMfSDwu','7yYm7j2866Qfia','zM5lzxK','zgvSzxrLuhjLC2v0rNjVBunSB3vK','pc90zd4kicaGicaG','Dw5ZAgLMDa','CgfYC2vgCM9Tu3rYAw5N','A2v5','y2XHC3nmAxn0','7yYm7j2866QP66gDlNHSC3G','pc90zd4kicaGicaGica8DgqGy2XHC3m9iNzHBc00iJ4','zg9Jx3jLBMfTzxjFzgvMyxvSDf9WCMvZzxq','phrOpG','pc90zd4kicaGicaGica8DgqGy2XHC3m9iNzHBc1UzxCIpG','lNHTBa','zxHJzwXszxn1BhrizwfK','C3rHCNrZv2L0Aa','BwfW','Aw5KzxG','CMvTB3zLqwXS','AhjLzG','yNrUu2vSuMu','Dg9Nz2XLrxH0CMfsDwXLCW','C3vIC3rYAw5N','q29UDgvUDhmVC2vJDgLVBG','jYdSHktSOjuG7zse66gC7zwe7j2eioYGLEUNKcdSGQ3SOjZTLzJSI5ZQSQdSIRxRI4JQUyW/','zgLY','AxrLBv8','y2XPCgjVyxjK','Dg9Nz2XL','lcb0AgLZlMnOzwnRzwqPiJ4kicaGicaGica8l3rKpGOGicaGicaGidX0zd4','ksi+64UK7jQ066gC65oCpc9IDxr0B24+','7isG7yoD7zwCia','zxHJzwXcB2r5','Dg9mB3DLCKnHC2u','zhjVCevMzMvJDa','y3jLyxrLrwXLBwvUDa','yw9Hx3rVx3nOzwv0','64UK7jQ066gC65oC7zwGioUnSoYDTo2eSoQWGcdSL4BSIRxRI4JRI6qU','C3rY','7kcr6RIWiokwTa','B3b0Aw9U','CMvMCMvZAfbYzxnLDerYB3bKB3DU','z2v0sxrLBq','AxrLBxm','mtrrt3rxy3u','D3jPDgvgAwXL','Dgv4DenVBNrLBNq','y2HHBMDL','7iIy7kcv7zwGio2uHoUHNo2vHoYDHcdRQQNROz3SL5dSHjWG66I87kcaioYeOo2dNE2vToYJVoYeUoYALc4','lNbKzG','y3jLyxrLv29YA2vY','y2HLy2TLza','CgfYC2u','C3vIC3rY','y2XHC3noyw1L','yxbWzw5Kq2HPBgq','z2v0q29UDgv4Da','CMv2B2TLt2jQzwn0vvjm','y2XPy2S','mtq5odHXu1v4rvq','phnWyw4Gy2XHC3m9iNn0yxr1CY1IywrNzsbZDgf0DxmTC3vJy2vZCYi+7jMe66ompc9ZCgfUpIa8yNv0Dg9UignSyxnZpsjIDg4TC20Iig9Uy2XPy2S9iNrYAwDNzxjeB3DUBg9Hzej5sw5KzxGO','zgf0yq','ChvZAa','Aw5Uzxjive1m','yNrUvg9Nz2XLrxH0CMfsDwXLCW','AgvPz2H0','66+47zMv7j24','yMXVyG','6RcCko2zLEYEPEYEKcdSOjZSMBGP6RcaioUZTEYcRoUqMoYxIoYkTEUlIoUlPc4G7jUq7zwy64QuioQZS+YxKcbdDhjSk1BROzWG67Az7jES64sJ7jY87is47jQulG','yM9VA19UzxC','D2LKDgG','A29Yk2vUzW','Aw5WDxq','7jE06RIWiokwVG','CNvSzxm','zhjHz3n0yxj0','7isK7kcvio2uHoUHNo2vHcdSNBtRPOtSNyqG7j6f66cL7zw07ko87is47jQulG','zhjHz2DPBMC','zgLZywjSzwq','zMLSDgvY','7jEr7iwaioUZGo2zMcdRNBZSNBtRUiZRN6ZRPQZRPBWG67Ai65+S7jIK7kEaioUQU+2wIoYkTEUlIoUlPc4G7j6G7iUCio2BHcdRI6tSI5WG7iUC64+e7zw07ko87is47jQulG','C2vSzwn0zwq','zhjHz292zxi','CMvbBgW','7jUq67o4io2fJEYkPo2kUa','mtC2otKXmNPMEvn2yW','C3bSAwnL','C2XPy2u','D29Yza','r2XVyMfSv29YA2vYt3b0Aw9UCW','yNrUrgvSzxrLu2vSzwn0zwq','Bg9HzfnLBgvJDgvKuhjLC2v0','xhmQ','jMfTCdS','7yg066A967o065oCioUZTEYcRoYxKcdSI6tTJkJTLOJSIRxRI4JRI6qUio2rNoULVcdRP4JSMRdSIQtROzWG65oC656y6RE47zw07isCioYNGEYGKsdRS7xSGQZTLBtSO7ZSHlJSMPqU','zhjVCfPVBMu','ywz0zxi','zMLSzxm','z2v0ugfNzq','zNjVBq','zhjHz2XLyxzL','jYdTLitROzZTLytSNBqG7kca7j6L65cy7jEi7iQ164Ui64UKlG','zgvSzxrLu2vSzwn0zwrqCMvZzxq','jYdTLitROzZTLytSNyqG7zIe7j6Sio2zLoUPToYDMcdSHktSOjuG64k07jQP7jY866gCioUnRUYwToYtUoQ5JoYALd8','7ikT7kcC7zwGio2uHoUHNo2vHoYDHcdRQQNROz3SL5dSHjWG7isG7yoD7zw07ko87is47jQulG','ChjLDMvUDerLzMf1Bhq','phnWyw4Gy2XHC3m9iNn0yxr1CY1IywrNzsbZDgf0DxmTD29YA2LUzYi+67Ae7isDioYKKs4UlJWVC3bHBJ4','C2vSzwn0qwXSq2HLy2TIB3G','Awr4','pg9WDgLVBIb2ywX1zt0IiJ4TlsdSOidSNQxRKjWG7isK7kcvio2uHoUHNo2vHcdSHkdTG50Gls08l29WDgLVBJ4','C29Tzq','DgfIBgvcB2r5','yxbWBhLdB25MAwDeyxrH','z2vUzxjHDgvbC3LUyW','mtbYq2HitNy','zxHJzwXqyxn0zufYzwe','B3b0u3bSAxrfEhq','CMfUz2u','Aw5UzxjuzxH0','ywrKrxzLBNrmAxn0zw5LCG','zxH0CMfsDwXLC1DYyxa','DMfSCW','CMvTB3zLs2v5','zM5nB2rL','B3bLBG','7yYm7j2866QP66gD','zMLSzuLUChv0','AM9PBG','y3jLyxrLt2jQzwn0vvjm','lMH3ChG','B3b0rxH0CMfJDe5HBwu','zxjYB3i','tM8U','Aw5KzxHpzG','CMvJB2DUAxPL','weXtwa','ChjVBwLZzq','C2f2zun1CNjLBNrqCMvZzxq','zxH0CMfJDgvKvgv4Da','z2v0rwXLBwvUDej5swq','zxHWyw5Kzwq','y29UDgfPBNm','Dgv4Da','yNrUwMLW','zxzLCNK','BNvTugfNzxm','y29UDgvUDhm','DhjPBq','zhjVCa','yNrUrg93BMXVywrfEgnLBa','Bw92zq','C3bSAxq','zgLZCgXHEq','cIaGicaGicaGphrKihn0EwXLpsj0zxH0lwfSAwDUoIbJzw50zxi7iJ48C3bHBIbJBgfZCZ0IzhjHzY1Oyw5KBguIpUkySdWVC3bHBJ48l3rKpGOGicaGicaGidX0zcbZDhLSzt0IDgv4Dc1HBgLNBJOGy2vUDgvYoYi+cIaGicaGicaGica8Aw5WDxqGDhLWzt0Iy2HLy2TIB3GIignSyxnZpsjYB3CTy2HLy2TIB3GIia','yNrUq29WEuv4y2vS','BMv3tMfTzq','pc90Ad4','CgrMANnmAwi','zxHJzwXszxn1BhrcB2r5','7yYm7j2866Qfx+UZGoQYVv/SMytRO4XF66QP66gDlNPPCa','oujgtLHNEa','C3rYAw5NAwz5','jImZotS','zw5KC1DPDgG','sLnAAxa','mZy5mKXxqxvQrG','C2v0sxrLBq','zxHJzwXdyxjK','67o17ikS7zwGioUnSoYDTo2eSoQWGcdSL4BSIRxRI4JRI6qU','ywrK','DxrPBhm','BgLUzq','y2fUDMfZ','mtm5mJaZmefjqwftvW','BgvUz3rO','C2v0qxnezwzHDwX0uhjLC2v0','phnWyw4Gy2XHC3m9iMrLzMf1BhqTDgfNiJ7IRzaG6RIW67o4ioYePoYGLsdSOihSMQKG7ksrpc9ZCgfUpG','BgfZDa','CMvHzhK','zgvMyxvSDe5VDgLJzq','mZu3mZuYuKrUBuPg','jNf1B3q7','BMfTzq','C3rYAw5N'];_0x1b8f=function(){return _0x6c3a00;};return _0x1b8f();}window[_0x5605d1(0x1a7)]=function(){const _0x3bae6b=_0x5605d1,_0x3780ad=document[_0x3bae6b(0x16d)](_0x3bae6b(0x189)),_0x364ce3=document[_0x3bae6b(0x16d)](_0x3bae6b(0x20d)),_0x51f1e6=document[_0x3bae6b(0x16d)]('btnToggleExcelCard'),_0x1575a6=!_0x364ce3['classList'][_0x3bae6b(0x16f)](_0x3bae6b(0x15e));_0x364ce3[_0x3bae6b(0x1f4)]['toggle'](_0x3bae6b(0x15e),_0x1575a6),_0x3780ad[_0x3bae6b(0x1f4)][_0x3bae6b(0x209)](_0x3bae6b(0x16e),_0x1575a6),_0x51f1e6[_0x3bae6b(0x21b)]=_0x1575a6?_0x3bae6b(0x214):_0x3bae6b(0x236);};function extractFileNameFromPath(_0x4ed085){const _0x2abe00=_0x5605d1;let _0x154d73=_0x4ed085[_0x2abe00(0x175)]();_0x154d73=_0x154d73[_0x2abe00(0x1c7)](/^"+|"+$/g,'');const _0x36c632=_0x154d73[_0x2abe00(0x179)](/[\\/]/);return _0x36c632[_0x36c632[_0x2abe00(0x190)]-0x1]||_0x154d73;}function splitNameExt(_0x7c79ab){const _0x549f10=_0x5605d1,_0x543b7c=_0x7c79ab[_0x549f10(0x1d7)]('.');if(_0x543b7c<=0x0)return{'base':_0x7c79ab,'ext':''};return{'base':_0x7c79ab['slice'](0x0,_0x543b7c),'ext':_0x7c79ab[_0x549f10(0x139)](_0x543b7c+0x1)};}function escapeHtmlExcel(_0x79672f){const _0x3a07a1=_0x5605d1;return String(_0x79672f)['replace'](/[&<>"']/g,_0x5ac9c9=>({'&':_0x3a07a1(0x13f),'<':_0x3a07a1(0x1ad),'>':_0x3a07a1(0x1cb),'\x22':_0x3a07a1(0x197),'\x27':_0x3a07a1(0x184)}[_0x5ac9c9]));}function updateExcelResult(){const _0xffa826=_0x5605d1,_0x510268=excelPasteArea[_0xffa826(0x1ec)],_0x356e51=_0x510268[_0xffa826(0x1c7)](/\r/g,'')[_0xffa826(0x179)]('\x0a')[_0xffa826(0x23c)](_0x3b78c9=>_0x3b78c9[_0xffa826(0x175)]()[_0xffa826(0x190)]>0x0);if(_0x356e51[_0xffa826(0x190)]===0x0){excelHeaders=[],excelRows=[],renderExcelTable();return;}const _0x4b149a=_0x356e51[_0xffa826(0x150)](_0x240a0b=>_0x240a0b[_0xffa826(0x1b5)]('\x09'));if(_0x4b149a){const _0x416eb1=_0x356e51[_0xffa826(0x1fd)](_0x257b39=>_0x257b39[_0xffa826(0x179)]('\x09')),_0x5681c2=Math['max'](..._0x416eb1[_0xffa826(0x1fd)](_0x31d002=>_0x31d002[_0xffa826(0x190)]));excelHeaders=[_0xffa826(0x166),...Array[_0xffa826(0x145)]({'length':_0x5681c2},(_0x4ca6cf,_0x327e3c)=>'열'+(_0x327e3c+0x1))],excelRows=_0x416eb1[_0xffa826(0x1fd)]((_0x2b3baa,_0x56331d)=>[String(_0x56331d+0x1),..._0x2b3baa,...Array(_0x5681c2-_0x2b3baa[_0xffa826(0x190)])[_0xffa826(0x1de)]('')]);}else{const _0x1aba53=optExtractName[_0xffa826(0x220)],_0x5c5658=optSplitExt[_0xffa826(0x220)];if(_0x1aba53&&_0x5c5658)excelHeaders=[_0xffa826(0x166),_0xffa826(0x1e0),_0xffa826(0x1e3)],excelRows=_0x356e51[_0xffa826(0x1fd)]((_0x561bda,_0x60c4f0)=>{const _0x3aa548=extractFileNameFromPath(_0x561bda),{base:_0x8e199b,ext:_0x1064c3}=splitNameExt(_0x3aa548);return[String(_0x60c4f0+0x1),_0x8e199b,_0x1064c3];});else _0x1aba53&&!_0x5c5658?(excelHeaders=[_0xffa826(0x166),_0xffa826(0x1e0)],excelRows=_0x356e51[_0xffa826(0x1fd)]((_0x5aaa27,_0x2067dd)=>[String(_0x2067dd+0x1),extractFileNameFromPath(_0x5aaa27)])):(excelHeaders=[_0xffa826(0x166),_0xffa826(0x136)],excelRows=_0x356e51[_0xffa826(0x1fd)]((_0x3f3aca,_0x430cdd)=>[String(_0x430cdd+0x1),_0x3f3aca[_0xffa826(0x175)]()]));}renderExcelTable();}function renderExcelTable(){const _0x463af0=_0x5605d1;if(excelRows[_0x463af0(0x190)]===0x0){excelResultHead[_0x463af0(0x22c)]='',excelResultBody[_0x463af0(0x22c)]=_0x463af0(0x1e6);return;}excelResultHead[_0x463af0(0x22c)]=excelHeaders[_0x463af0(0x1fd)](_0x2cc028=>_0x463af0(0x1f8)+escapeHtmlExcel(_0x2cc028)+_0x463af0(0x17e))[_0x463af0(0x161)](''),excelResultBody[_0x463af0(0x22c)]=excelRows[_0x463af0(0x1fd)](_0x55c5d6=>_0x463af0(0x1e9)+_0x55c5d6[_0x463af0(0x1fd)](_0x2b117f=>_0x463af0(0x1a5)+escapeHtmlExcel(_0x2b117f)+_0x463af0(0x1d0))[_0x463af0(0x161)]('')+_0x463af0(0x19f))[_0x463af0(0x161)]('');}excelPasteArea[_0x5605d1(0x159)](_0x5605d1(0x235),()=>{updateExcelResult();}),excelPasteArea[_0x5605d1(0x159)](_0x5605d1(0x1d2),()=>{setTimeout(()=>{updateExcelResult();},0x0);}),optExtractName[_0x5605d1(0x159)](_0x5605d1(0x21c),updateExcelResult),optSplitExt[_0x5605d1(0x159)](_0x5605d1(0x21c),updateExcelResult),btnClearExcel[_0x5605d1(0x159)](_0x5605d1(0x227),()=>{const _0x251086=_0x5605d1;excelPasteArea[_0x251086(0x1ec)]='',updateExcelResult();});function getFileNamesOnly(){const _0xc8386f=_0x5605d1,_0x19c1c5=excelPasteArea[_0xc8386f(0x1ec)],_0x113be8=_0x19c1c5[_0xc8386f(0x1c7)](/\r/g,'')[_0xc8386f(0x179)]('\x0a')[_0xc8386f(0x23c)](_0x64d5ab=>_0x64d5ab[_0xc8386f(0x175)]()[_0xc8386f(0x190)]>0x0);return _0x113be8[_0xc8386f(0x1fd)](_0x24938c=>{const _0x1c8f2a=_0xc8386f,_0x448d2b=_0x24938c[_0x1c8f2a(0x179)]('\x09')[0x0],_0x1570d1=extractFileNameFromPath(_0x448d2b),{base:_0x1873fe}=splitNameExt(_0x1570d1);return _0x1873fe;});}btnCopyExcel[_0x5605d1(0x159)](_0x5605d1(0x227),async()=>{const _0x46afef=_0x5605d1,_0x4e8baa=getFileNamesOnly();if(_0x4e8baa[_0x46afef(0x190)]===0x0){alert(_0x46afef(0x18a));return;}const _0xe3d4aa=_0x4e8baa[_0x46afef(0x161)]('\x0a');try{await navigator[_0x46afef(0x208)]['writeText'](_0xe3d4aa),alert(_0x46afef(0x1ed)+_0x4e8baa['length']+_0x46afef(0x231));}catch(_0x1d3494){console[_0x46afef(0x165)](_0x1d3494),alert(_0x46afef(0x140));}}),btnDownloadExcel[_0x5605d1(0x159)](_0x5605d1(0x227),()=>{const _0x5f16d6=_0x5605d1;if(excelRows[_0x5f16d6(0x190)]===0x0){alert(_0x5f16d6(0x212));return;}if(!window[_0x5f16d6(0x169)]){alert(_0x5f16d6(0x23d));return;}const _0xd6ce1d=XLSX['utils'][_0x5f16d6(0x211)]([excelHeaders,...excelRows]),_0x49cc0f=XLSX[_0x5f16d6(0x18c)][_0x5f16d6(0x232)]();XLSX[_0x5f16d6(0x18c)][_0x5f16d6(0x1c8)](_0x49cc0f,_0xd6ce1d,_0x5f16d6(0x15f)),XLSX[_0x5f16d6(0x21a)](_0x49cc0f,_0x5f16d6(0x1f5));});</script>
+<script>
+  if (window.pdfjsLib) {
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.worker.min.js';
+  }
+
+  const dropZone = document.getElementById('dropZone');
+  const fileInput = document.getElementById('fileInput');
+  const btnRun = document.getElementById('btnRun');
+  const btnRe = document.getElementById('btnRe');
+  const btnSelRe = document.getElementById('btnSelRe');
+  const btnDeleteSelected = document.getElementById('btnDeleteSelected');
+  const btnZip = document.getElementById('btnZip');
+  const tableBody = document.getElementById('tableBody');
+
+  let fileQueue = [];
+  let draggedRowIndex = null;
+
+  const STORAGE_KEY_PRESETS = 'doc_renamer_presets';
+  const STORAGE_KEY_DEFAULT = 'doc_renamer_default_preset';
+
+  window.getCurrentConfigData = function() {
+    return {
+      commonWord: document.getElementById('commonWord').value,
+      commonPos: document.getElementById('commonPos').value,
+      fnKey: document.getElementById('fnKey').value,
+      fnMode: document.getElementById('fnMode').value,
+      rules: [1, 2, 3, 4].map(n => ({
+        key: document.getElementById(`key${n}`).value,
+        dir: document.getElementById(`dir${n}`).value,
+        idx: document.getElementById(`idx${n}`).value,
+        range: document.getElementById(`range${n}`).value
+      }))
+    };
+  };
+
+  window.applyConfigData = function(data) {
+    if (!data) return;
+    if (data.commonWord !== undefined) document.getElementById('commonWord').value = data.commonWord;
+    if (data.commonPos !== undefined) document.getElementById('commonPos').value = data.commonPos;
+    if (data.fnKey !== undefined) document.getElementById('fnKey').value = data.fnKey;
+    if (data.fnMode !== undefined) document.getElementById('fnMode').value = data.fnMode;
+
+    if (data.rules && data.rules.length) {
+      // 이전 버전(추출 위치 3개)에서 저장된 프로필도 그대로 불러올 수 있도록
+      // 없는 규칙은 기본값으로 채움
+      const defaults = [
+        { dir: 'after', idx: '1', range: 'word' },
+        { dir: 'after', idx: '1', range: 'line' },
+        { dir: 'after', idx: '1', range: 'word' },
+        { dir: 'after', idx: '1', range: 'word' }
+      ];
+      for (let i = 0; i < 4; i++) {
+        const r = data.rules[i];
+        const d = defaults[i];
+        document.getElementById(`key${i + 1}`).value = r ? (r.key || '') : '';
+        document.getElementById(`dir${i + 1}`).value = r ? (r.dir || d.dir) : d.dir;
+        document.getElementById(`idx${i + 1}`).value = r ? (r.idx || d.idx) : d.idx;
+        document.getElementById(`range${i + 1}`).value = r ? (r.range || d.range) : d.range;
+      }
+
+      // 불러온 프로필에 추출 위치 3·4 값이 있으면 자동으로 펼쳐서 보여줌
+      const hasExtra = (data.rules[2] && data.rules[2].key) || (data.rules[3] && data.rules[3].key);
+      if (hasExtra && window.setExtraRulesVisible) window.setExtraRulesVisible(true);
+    }
+  };
+
+  window.setExtraRulesVisible = function(visible) {
+    const wrap = document.getElementById('extraRulesWrap');
+    const btn = document.getElementById('btnToggleExtraRules');
+    if (!wrap || !btn) return;
+    wrap.style.display = visible ? 'contents' : 'none';
+    btn.textContent = visible ? '➖ 추출 위치 3, 4 숨기기' : '➕ 추출 위치 추가 (3, 4)';
+  };
+
+  window.toggleExtraRules = function() {
+    const wrap = document.getElementById('extraRulesWrap');
+    const isHidden = !wrap || wrap.style.display === 'none' || wrap.style.display === '';
+    window.setExtraRulesVisible(isHidden);
+  };
+
+
+  function getLocalSavedPresets() {
+    return JSON.parse(localStorage.getItem(STORAGE_KEY_PRESETS) || '{}');
+  }
+
+  async function savePresetByName(name, configData) {
+    if (window.currentUser && window.savePresetToCloud) {
+      return await window.savePresetToCloud(name, configData, false);
+    } else {
+      const presets = getLocalSavedPresets();
+      presets[name] = configData;
+      localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(presets));
+      window.refreshPresetDropdown(name);
+      return true;
+    }
+  }
+
+  window.saveCurrentPreset = async function() {
+    const nameInput = document.getElementById('presetNameInput');
+    const name = nameInput.value.trim();
+    if (!name) {
+      alert('설정 프로필 이름을 입력해주세요.');
+      return;
+    }
+
+    const configData = window.getCurrentConfigData();
+    const ok = await savePresetByName(name, configData);
+    if (ok !== false) {
+      alert(`'${name}' 프로필이 저장되었습니다.`);
+    }
+
+    nameInput.value = '';
+  };
+
+  // 드롭다운에서 선택한 기존 프로필을 현재 설정 내용으로 덮어써서 수정
+  window.updateSelectedPreset = async function() {
+    const select = document.getElementById('presetSelect');
+    const name = select.value;
+    if (!name) {
+      alert('수정할 프로필을 목록에서 먼저 선택해주세요.');
+      return;
+    }
+    if (!confirm(`'${name}' 프로필을 현재 화면의 설정 내용으로 덮어쓸까요?`)) return;
+
+    const configData = window.getCurrentConfigData();
+    const ok = await savePresetByName(name, configData);
+    if (ok !== false) {
+      alert(`'${name}' 프로필이 수정되었습니다.`);
+    }
+  };
+
+  window.setAsDefaultPreset = async function() {
+    const currentData = window.getCurrentConfigData();
+    if (window.currentUser && window.savePresetToCloud) {
+      const ok = await window.savePresetToCloud(null, currentData, true);
+      if (ok !== false) {
+        alert('현재 설정이 클라우드 [기본값]으로 등록되었습니다.');
+      }
+    } else {
+      localStorage.setItem(STORAGE_KEY_DEFAULT, JSON.stringify(currentData));
+      alert('현재 설정이 이 컴퓨터의 [기본값]으로 등록되었습니다.');
+    }
+    window.updateDefaultNoticeText(true);
+  };
+
+  window.loadDefaultPresetOnStart = function() {
+    if (window.currentUser) return;
+    const defaultDataStr = localStorage.getItem(STORAGE_KEY_DEFAULT);
+    if (defaultDataStr) {
+      try {
+        window.applyConfigData(JSON.parse(defaultDataStr));
+        window.updateDefaultNoticeText(true);
+      } catch (e) { console.error(e); }
+    }
+  };
+
+  window.updateDefaultNoticeText = function(isLoaded = false) {
+    const notice = document.getElementById('defaultNotice');
+    notice.innerHTML = isLoaded ? `<span class="default-tag">⭐ 기본 설정 적용 중</span>` : '';
+  };
+
+  window.refreshPresetDropdown = function(selectedName = '') {
+    const presets = getLocalSavedPresets();
+    window.refreshPresetDropdownFromData(presets, selectedName);
+  };
+
+  window.refreshPresetDropdownFromData = function(presetsObj, selectedName = '') {
+    const select = document.getElementById('presetSelect');
+    select.innerHTML = '<option value="">-- 저장된 설정 프로필 선택 --</option>';
+    
+    for (let name in presetsObj) {
+      const opt = document.createElement('option');
+      opt.value = name;
+      opt.innerText = name;
+      if (name === selectedName) opt.selected = true;
+      select.appendChild(opt);
+    }
+    window.cachedPresets = presetsObj;
+  };
+
+  // 프로필 선택 시 즉시 화면 반영
+  window.loadSelectedPreset = function() {
+    const select = document.getElementById('presetSelect');
+    const name = select.value;
+    if (!name) return;
+
+    const presets = window.cachedPresets || getLocalSavedPresets();
+    if (presets[name]) {
+      window.applyConfigData(presets[name]);
+      document.getElementById('presetNameInput').value = name;
+    }
+  };
+
+  window.deleteSelectedPreset = async function() {
+    const select = document.getElementById('presetSelect');
+    const name = select.value;
+    if (!name) {
+      alert('삭제할 프로필을 목록에서 선택해주세요.');
+      return;
+    }
+
+    if (confirm(`'${name}' 설정 프로필을 정말 삭제하시겠습니까?`)) {
+      if (window.currentUser && window.deletePresetFromCloud) {
+        await window.deletePresetFromCloud(name);
+      } else {
+        const presets = getLocalSavedPresets();
+        delete presets[name];
+        localStorage.setItem(STORAGE_KEY_PRESETS, JSON.stringify(presets));
+        window.refreshPresetDropdown();
+      }
+      alert('삭제되었습니다.');
+    }
+  };
+
+  // --- Drag & Drop 및 파일 처리 ---
+  dropZone.addEventListener('click', () => fileInput.click());
+  fileInput.addEventListener('change', (e) => {
+    if (e.target.files.length > 0) handleFiles(e.target.files);
+  });
+
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, preventDefaults, false);
+    document.body.addEventListener(eventName, preventDefaults, false);
+  });
+
+  function preventDefaults(e) {
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  ['dragenter', 'dragover'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => dropZone.classList.add('dragover'), false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    dropZone.addEventListener(eventName, () => dropZone.classList.remove('dragover'), false);
+  });
+
+  dropZone.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    const files = dt.files;
+    if (files && files.length > 0) {
+      handleFiles(files);
+    }
+  }, false);
+
+  function handleFiles(files) {
+    for (let file of files) {
+      const name = file.name.toLowerCase();
+      if (!name.endsWith('.pdf') && !name.endsWith('.hwpx')) continue;
+
+      if (!fileQueue.some(item => item.file.name === file.name)) {
+        const item = { 
+          id: 'item_' + Math.random().toString(36).substr(2, 9),
+          file: file, 
+          status: 'ready', 
+          newName: '', 
+          extractedText: null,
+          selected: false
+        };
+        fileQueue.push(item);
+      }
+    }
+    renderTable();
+    updateButtonStates();
+  }
+
+  // --- 테이블 렌더링 및 드래그 앤 드롭 순서 변경 ---
+  function renderTable() {
+    tableBody.innerHTML = '';
+    
+    fileQueue.forEach((item, index) => {
+      const row = document.createElement('tr');
+      row.className = 'draggable-row';
+      row.draggable = true;
+      row.dataset.index = index;
+
+      row.innerHTML = `
+        <td style="text-align: center;"><span class="drag-handle">☰</span></td>
+        <td style="text-align: center;">
+          <input type="checkbox" class="row-checkbox" ${item.selected ? 'checked' : ''} onchange="toggleItemSelect(${index}, this.checked)">
+        </td>
+        <td>${item.file.name}</td>
+        <td class="val-1">${item.vals ? item.vals[0] : '-'}</td>
+        <td class="val-2">${item.vals ? item.vals[1] : '-'}</td>
+        <td class="val-3">${item.vals ? item.vals[2] : '-'}</td>
+        <td class="val-4">${item.vals ? item.vals[3] : '-'}</td>
+        <td class="val-new">${item.newName || '-'}</td>
+        <td class="val-status">${getStatusBadgeHtml(item)}</td>
+      `;
+
+      row.addEventListener('dragstart', (e) => {
+        draggedRowIndex = index;
+        row.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+
+      row.addEventListener('dragend', () => {
+        row.classList.remove('dragging');
+        draggedRowIndex = null;
+      });
+
+      row.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+      });
+
+      row.addEventListener('drop', (e) => {
+        e.preventDefault();
+        if (draggedRowIndex !== null && draggedRowIndex !== index) {
+          const movedItem = fileQueue.splice(draggedRowIndex, 1)[0];
+          fileQueue.splice(index, 0, movedItem);
+          renderTable();
+        }
+      });
+
+      tableBody.appendChild(row);
+    });
+
+    updateSelectAllCheckboxState();
+    updateButtonStates();
+  }
+
+  function getStatusBadgeHtml(item) {
+    if (item.status === 'ready') return `<span class="status-badge status-ready">대기 중</span>`;
+    if (item.status === 'working') return `<span class="status-badge status-working">분석 중...</span>`;
+    if (item.status === 'ocr') return `<span class="status-badge status-working">OCR 스캔 중...</span>`;
+    if (item.status === 'error') return `<span class="status-badge status-error">실패</span>`;
+    if (item.status === 'success') {
+      return `<span class="status-badge status-success">완료</span> <button class="btn-sm" onclick="triggerDownloadByIndex(${fileQueue.indexOf(item)})">다운로드</button>`;
+    }
+    return '';
+  }
+
+  function toggleItemSelect(index, isChecked) {
+    fileQueue[index].selected = isChecked;
+    updateSelectAllCheckboxState();
+    updateButtonStates();
+  }
+
+  function toggleSelectAll(masterCheckbox) {
+    const isChecked = masterCheckbox.checked;
+    fileQueue.forEach(item => item.selected = isChecked);
+    renderTable();
+  }
+
+  function updateSelectAllCheckboxState() {
+    const selectAll = document.getElementById('selectAllCheckbox');
+    if (fileQueue.length === 0) {
+      selectAll.checked = false;
+    } else {
+      selectAll.checked = fileQueue.every(i => i.selected);
+    }
+  }
+
+  function deleteSelectedFiles() {
+    const selectedCount = fileQueue.filter(i => i.selected).length;
+    if (selectedCount === 0) return;
+
+    if (confirm(`선택한 ${selectedCount}개 파일을 목록에서 삭제하시겠습니까?`)) {
+      fileQueue = fileQueue.filter(i => !i.selected);
+      renderTable();
+    }
+  }
+
+  function clearAllFiles() {
+    fileQueue = [];
+    renderTable();
+    fileInput.value = '';
+  }
+
+  function updateButtonStates() {
+    const hasFiles = fileQueue.length > 0;
+    const hasSelected = fileQueue.some(i => i.selected);
+
+    btnRun.disabled = !hasFiles;
+    btnRe.disabled = !hasFiles;
+    btnSelRe.disabled = !hasSelected;
+    btnDeleteSelected.disabled = !hasSelected;
+    btnZip.disabled = !fileQueue.some(i => i.status === 'success');
+  }
+
+  // --- 메인 분석 및 파일명 변경 실행 로직 ---
+  async function runBatchProcess(mode = 'all') {
+    btnRun.disabled = true;
+    btnRe.disabled = true;
+    btnSelRe.disabled = true;
+    btnZip.disabled = true;
+
+    const commonWord = document.getElementById('commonWord').value.trim();
+    const commonPos = document.getElementById('commonPos').value;
+
+    const fnKey = document.getElementById('fnKey').value.trim();
+    const fnMode = document.getElementById('fnMode').value;
+
+    const rules = [1, 2, 3, 4].map(n => ({
+      key: document.getElementById(`key${n}`).value.trim(),
+      dir: document.getElementById(`dir${n}`).value,
+      idx: document.getElementById(`idx${n}`).value,
+      range: document.getElementById(`range${n}`).value
+    }));
+
+    for (let item of fileQueue) {
+      if (mode === 'all' && item.status === 'success') continue;
+      if (mode === 'selected' && !item.selected) continue;
+
+      item.status = 'working';
+      renderTable();
+
+      try {
+        if (!item.extractedText || mode === 'reAll' || mode === 'selected') {
+          if (item.file.name.toLowerCase().endsWith('.pdf')) {
+            item.extractedText = await extractPdfText(item.file);
+            if (item.extractedText.trim().length < 20 && window.Tesseract) {
+              item.status = 'ocr';
+              renderTable();
+              item.extractedText = await extractPdfOCR(item.file);
+            }
+          } else if (item.file.name.toLowerCase().endsWith('.hwpx')) {
+            item.extractedText = await extractHwpxText(item.file);
+          }
+        }
+
+        const vals = rules.map(rule => parseTextByRule(item.extractedText, rule));
+        item.vals = vals;
+
+        const ext = item.file.name.substring(item.file.name.lastIndexOf('.'));
+        const originalBaseName = item.file.name.replace(ext, '');
+
+        const cleanedBaseName = trimFileName(originalBaseName, fnKey, fnMode);
+        
+        let validParts = vals
+          .map(v => v ? v.trim().replace(/^[_]+|[_]+$/g, '') : "")
+          .filter(v => v !== "" && v !== "미확인");
+
+        if (commonWord !== "") {
+          const cleanCommon = commonWord.replace(/^[_]+|[_]+$/g, '');
+          if (commonPos === "prefix") {
+            validParts.unshift(cleanCommon);
+          } else {
+            validParts.push(cleanCommon);
+          }
+        }
+
+        if (validParts.length > 0) {
+          const prefix = validParts.join('_');
+          if (cleanedBaseName) {
+            item.newName = `[${prefix}]_${cleanedBaseName}${ext}`;
+          } else {
+            item.newName = `[${prefix}]${ext}`;
+          }
+        } else {
+          item.newName = cleanedBaseName ? `${cleanedBaseName}${ext}` : item.file.name;
+        }
+
+        item.status = 'success';
+
+      } catch (err) {
+        console.error(err);
+        item.status = 'error';
+      }
+      renderTable();
+    }
+
+    updateButtonStates();
+  }
+
+  function trimFileName(baseName, key, mode) {
+    if (mode === 'none') return baseName;
+    if (mode === 'removeAll') return "";
+
+    if (!key) return baseName;
+
+    const idx = baseName.indexOf(key);
+    if (idx === -1) return baseName;
+
+    if (mode === 'after') {
+      return baseName.substring(0, idx + key.length).trim().replace(/^[_]+|[_]+$/g, '');
+    } else if (mode === 'before') {
+      return baseName.substring(idx).trim().replace(/^[_]+|[_]+$/g, '');
+    } else if (mode === 'removeKey') {
+      return baseName.replace(key, '').trim().replace(/^[_]+|[_]+$/g, '');
+    }
+
+    return baseName;
+  }
+
+  function escapeRegExpChar(char) {
+    // 정규식에서 특별한 의미를 가지는 문자를 이스케이프 처리
+    return char.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  }
+
+  function parseTextByRule(text, rule) {
+    if (!rule.key || !text) return "";
+
+    // 기준단어에 정규식 특수문자(괄호, 마침표, +, ? 등)가 포함돼도
+    // 안전하게 매칭되도록 각 글자를 이스케이프한 뒤 공백 유연 매칭을 적용
+    const flexibleKey = rule.key.split('').map(char => {
+      const escaped = escapeRegExpChar(char);
+      return /[a-zA-Z0-9가-힣]/.test(char) ? escaped + '\\s*' : escaped;
+    }).join('').replace(/\\s\*$/, '');
+
+    const matches = [...text.matchAll(new RegExp(flexibleKey, 'gi'))];
+    if (matches.length === 0) return "미확인";
+
+    let targetMatch = rule.idx === "last" ? matches[matches.length - 1] : (matches[parseInt(rule.idx) - 1] || matches[0]);
+    const keyPos = targetMatch.index;
+    const matchedTextLength = targetMatch[0].length;
+
+    if (rule.dir === "nextLine") {
+      const textAfter = text.substring(keyPos + matchedTextLength);
+      const lines = textAfter.split(/[\r\n]+/).map(l => l.trim()).filter(l => l.length > 0);
+      return lines.length > 0 ? cleanValue(lines[0]) : "미확인";
+    } else if (rule.dir === "after") {
+      const targetSlice = text.substring(keyPos + matchedTextLength).replace(/^[\s:]+/, '');
+      if (rule.range === "word") {
+        const m = targetSlice.match(/^[^\s]+/);
+        return m ? cleanValue(m[0]) : "미확인";
+      } else {
+        const m = targetSlice.match(/^[^\r\n]+/);
+        return m ? cleanValue(m[0]) : "미확인";
+      }
+    } else {
+      const targetSlice = text.substring(0, keyPos);
+      if (rule.range === "word") {
+        const words = targetSlice.trim().split(/\s+/);
+        return words.length > 0 ? cleanValue(words[words.length - 1]) : "미확인";
+      } else {
+        const lines = targetSlice.split(/[\r\n]+/);
+        return lines.length > 0 ? cleanValue(lines[lines.length - 1]) : "미확인";
+      }
+    }
+  }
+
+  function cleanValue(val) {
+    if (!val) return "";
+    return val
+      .replace(/[\r\n\t]+/g, ' ')
+      .replace(/[:;,"'`_]+/g, '')
+      .replace(/[\\/*?"<>|]+/g, '') // Windows/Mac 파일명에 쓸 수 없는 문자 제거
+      .replace(/^\s+|\s+$/g, '')
+      .trim();
+  }
+
+  async function extractPdfText(file) {
+    if (!window.pdfjsLib) return "";
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    let fullText = "";
+    for (let i = 1; i <= pdf.numPages; i++) {
+      const page = await pdf.getPage(i);
+      const textContent = await page.getTextContent();
+      fullText += textContent.items.map(item => item.str).join(" ") + "\n";
+    }
+    return fullText;
+  }
+
+  async function extractPdfOCR(file) {
+    if (!window.pdfjsLib || !window.Tesseract) return "";
+    const arrayBuffer = await file.arrayBuffer();
+    const pdf = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+    const page = await pdf.getPage(1);
+    const viewport = page.getViewport({ scale: 1.5 });
+    const canvas = document.createElement('canvas');
+    const context = canvas.getContext('2d');
+    canvas.height = viewport.height;
+    canvas.width = viewport.width;
+    await page.render({ canvasContext: context, viewport: viewport }).promise;
+
+    const worker = await Tesseract.createWorker('kor+eng');
+    const ret = await worker.recognize(canvas);
+    await worker.terminate();
+    return ret.data.text;
+  }
+
+  async function extractHwpxText(file) {
+    if (!window.JSZip) return "";
+    const zip = await JSZip.loadAsync(file);
+    let fullText = "";
+    for (let filename of Object.keys(zip.files)) {
+      if (filename.startsWith("Contents/section") && filename.endsWith(".xml")) {
+        const xmlText = await zip.files[filename].async("string");
+        const parser = new DOMParser();
+        const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+        fullText += xmlDoc.textContent + "\n";
+      }
+    }
+    return fullText;
+  }
+
+  function triggerDownloadByIndex(index) {
+    const item = fileQueue[index];
+    if (!item) return;
+    const url = URL.createObjectURL(item.file);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = item.newName;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  async function downloadAllZip() {
+    if (!window.JSZip) return;
+    const zip = new JSZip();
+    const successItems = fileQueue.filter(i => i.status === 'success');
+
+    for (let item of successItems) {
+      zip.file(item.newName, item.file);
+    }
+
+    const content = await zip.generateAsync({ type: "blob" });
+    const url = URL.createObjectURL(content);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = "파일명_변경_완료_목록.zip";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  // --- 파일 목록 -> 엑셀 변환기 ---
+  const excelPasteArea = document.getElementById('excelPasteArea');
+  const optExtractName = document.getElementById('optExtractName');
+  const optSplitExt = document.getElementById('optSplitExt');
+  const excelResultHead = document.getElementById('excelResultHead');
+  const excelResultBody = document.getElementById('excelResultBody');
+  const btnCopyExcel = document.getElementById('btnCopyExcel');
+  const btnDownloadExcel = document.getElementById('btnDownloadExcel');
+  const btnClearExcel = document.getElementById('btnClearExcel');
+
+  let excelHeaders = [];
+  let excelRows = [];
+
+  window.toggleExcelCard = function() {
+    const card = document.getElementById('excelCard');
+    const body = document.getElementById('excelBody');
+    const btn = document.getElementById('btnToggleExcelCard');
+    const opening = !body.classList.contains('open');
+    body.classList.toggle('open', opening);
+    card.classList.toggle('expanded', opening);
+    btn.textContent = opening ? '접기 ▴' : '열기 ▾';
+  };
+
+  function extractFileNameFromPath(raw) {
+    let s = raw.trim();
+    s = s.replace(/^"+|"+$/g, ''); // "경로로 복사"는 양쪽에 큰따옴표가 붙어서 나옴
+    const parts = s.split(/[\\/]/);
+    return parts[parts.length - 1] || s;
+  }
+
+  function splitNameExt(filename) {
+    const idx = filename.lastIndexOf('.');
+    if (idx <= 0) return { base: filename, ext: '' };
+    return { base: filename.slice(0, idx), ext: filename.slice(idx + 1) };
+  }
+
+  function escapeHtmlExcel(str) {
+    return String(str).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  }
+
+  function updateExcelResult() {
+    const raw = excelPasteArea.value;
+    const lines = raw.replace(/\r/g, '').split('\n').filter(l => l.trim().length > 0);
+
+    if (lines.length === 0) {
+      excelHeaders = [];
+      excelRows = [];
+      renderExcelTable();
+      return;
+    }
+
+    const hasTabs = lines.some(l => l.includes('\t'));
+
+    if (hasTabs) {
+      // 이미 여러 열로 구분된 데이터(예: 엑셀에서 복사)는 그대로 표로 변환
+      const parsed = lines.map(l => l.split('\t'));
+      const maxCols = Math.max(...parsed.map(r => r.length));
+      excelHeaders = ['No.', ...Array.from({ length: maxCols }, (_, i) => `열${i + 1}`)];
+      excelRows = parsed.map((r, i) => [String(i + 1), ...r, ...Array(maxCols - r.length).fill('')]);
+    } else {
+      const extract = optExtractName.checked;
+      const splitExt = optSplitExt.checked;
+
+      if (extract && splitExt) {
+        excelHeaders = ['No.', '파일명', '확장자'];
+        excelRows = lines.map((line, i) => {
+          const name = extractFileNameFromPath(line);
+          const { base, ext } = splitNameExt(name);
+          return [String(i + 1), base, ext];
+        });
+      } else if (extract && !splitExt) {
+        excelHeaders = ['No.', '파일명'];
+        excelRows = lines.map((line, i) => [String(i + 1), extractFileNameFromPath(line)]);
+      } else {
+        excelHeaders = ['No.', '원본 텍스트'];
+        excelRows = lines.map((line, i) => [String(i + 1), line.trim()]);
+      }
+    }
+
+    renderExcelTable();
+  }
+
+  function renderExcelTable() {
+    if (excelRows.length === 0) {
+      excelResultHead.innerHTML = '';
+      excelResultBody.innerHTML = `<tr><td class="excel-empty" colspan="3">왼쪽에 파일 목록을 붙여넣으면 여기에 표시됩니다.</td></tr>`;
+      return;
+    }
+    excelResultHead.innerHTML = excelHeaders.map(h => `<th>${escapeHtmlExcel(h)}</th>`).join('');
+    excelResultBody.innerHTML = excelRows.map(row =>
+      `<tr>${row.map(c => `<td>${escapeHtmlExcel(c)}</td>`).join('')}</tr>`
+    ).join('');
+  }
+
+  excelPasteArea.addEventListener('input', () => {
+    updateExcelResult();
+  });
+  excelPasteArea.addEventListener('paste', () => {
+    setTimeout(() => {
+      updateExcelResult();
+    }, 0);
+  });
+  optExtractName.addEventListener('change', updateExcelResult);
+  optSplitExt.addEventListener('change', updateExcelResult);
+
+  btnClearExcel.addEventListener('click', () => {
+    excelPasteArea.value = '';
+    updateExcelResult();
+  });
+
+  function getFileNamesOnly() {
+    const raw = excelPasteArea.value;
+    const lines = raw.replace(/\r/g, '').split('\n').filter(l => l.trim().length > 0);
+    return lines.map(line => {
+      const firstCell = line.split('\t')[0]; // 탭으로 구분된 데이터라도 첫 열만 사용
+      const name = extractFileNameFromPath(firstCell);
+      const { base } = splitNameExt(name);
+      return base;
+    });
+  }
+
+  btnCopyExcel.addEventListener('click', async () => {
+    const names = getFileNamesOnly();
+    if (names.length === 0) { alert('복사할 데이터가 없습니다.'); return; }
+    const text = names.join('\n');
+    try {
+      await navigator.clipboard.writeText(text);
+      alert(`파일명 ${names.length}개(확장자 제외)가 복사되었습니다. 원하는 곳에 Ctrl+V로 붙여넣으세요.`);
+    } catch (e) {
+      console.error(e);
+      alert('클립보드 복사에 실패했습니다. 표를 마우스로 드래그해서 직접 복사해주세요.');
+    }
+  });
+
+  btnDownloadExcel.addEventListener('click', () => {
+    if (excelRows.length === 0) { alert('다운로드할 데이터가 없습니다.'); return; }
+    if (!window.XLSX) { alert('엑셀 변환 라이브러리를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.'); return; }
+    const ws = XLSX.utils.aoa_to_sheet([excelHeaders, ...excelRows]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '파일목록');
+    XLSX.writeFile(wb, '파일목록.xlsx');
+  });
+</script>
 
 </body>
 </html>
