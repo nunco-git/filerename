@@ -12,6 +12,8 @@
   <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- 엑셀 열기암호(AES) 해독용 저수준 암호화 라이브러리 (엑셀병합기와 동일 방식) -->
+  <script src="https://cdn.jsdelivr.net/npm/node-forge@1.3.1/dist/forge.min.js"></script>
 
   <style>
     * { box-sizing: border-box; }
@@ -165,9 +167,31 @@
       margin-bottom: 15px;
     }
     .rule-card h4 {
-      margin: 0 0 10px 0;
+      margin: 0;
       color: #2563eb;
       font-size: 0.92rem;
+    }
+    /* 1번째 줄: 제목 + 기준단어 입력창 / 2번째 줄: 나머지 3개 목록창
+       - 제목과, 2번째 줄 맨 앞의 빈 칸(rule-card-title-spacer)의 너비를 동일하게 맞춰서
+         2번째 줄 시작 위치가 기준단어 입력창 시작 위치와 정렬되도록 함 */
+    .rule-card-row {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .rule-card-row + .rule-card-row {
+      margin-top: 10px;
+    }
+    .rule-card-title, .rule-card-title-spacer {
+      flex: 0 0 118px;
+      white-space: nowrap;
+    }
+    .rule-sub-fields {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
     }
     .rule-fields-grid {
       display: flex;
@@ -184,6 +208,11 @@
       min-width: 0;
     }
     .inline-item input, .inline-item select { min-width: 0; }
+    /* 기준단어 입력창: 남는 공간을 최대한 차지 */
+    .inline-item-grow { flex: 1 1 auto; min-width: 60px; }
+    /* 탐색방식/순번/범위: 2번째 줄에서 남는 가로 공간을 넓게 채움 */
+    .rule-sub-fields .inline-item { flex: 1 1 0; }
+    .rule-sub-fields .inline-item select { width: 100%; }
     .inline-item label {
       font-size: 12px;
       font-weight: bold;
@@ -341,9 +370,10 @@
       <div class="login-banner">
         <ul class="login-features">
           <li style="justify-content: space-between;">
-            <span style="display:flex; align-items:center; gap:10px; min-width:0;"><span class="feat-icon">📄</span><span style="min-width:0;"><strong title="PDF,이미지,HWPX 파일 내용의 특정 위치 단어로 파일 이름 자동 설정">PDF,이미지,HWPX 파일 내용의 특정 위치 단어로 파일 이름 자동 설정</strong></span></span>
+            <span style="display:flex; align-items:center; gap:10px; min-width:0;"><span class="feat-icon">📄</span><span style="min-width:0;"><strong title="PDF,이미지,HWPX,엑셀 파일 내용의 특정 위치 단어로 파일 이름 자동 설정">PDF,이미지,HWPX,엑셀 파일 내용의 특정 위치 단어로 파일 이름 자동 설정</strong></span></span>
             <button class="btn btn-outline-indigo" id="btnClear" onclick="clearAllFiles()" style="padding: 5px 10px; font-size: 0.78rem; flex-shrink:0;">💥 전체 초기화</button>
           </li>
+          <li><span class="feat-icon">⬇️</span><span style="min-width:0;"><strong title="인터넷에서 다운받아 자동생성되는 파일명 관리에 편리">인터넷에서 다운받아 자동생성되는 파일명 관리에 편리</strong></span></li>
           <li><span class="feat-icon">🎯</span><span style="min-width:0;"><strong title="윈도우 탐색기의 파일 목록을 엑셀 리스트로 변환">윈도우 탐색기의 파일 목록을 엑셀 리스트로 변환</strong></span></li>
         </ul>
       </div>
@@ -353,8 +383,8 @@
       <div class="drop-zone" id="dropZone">
         <div class="drop-icon">📂</div>
         <strong>파일을 마우스로 끌어다 놓거나<br>클릭하여 선택하세요</strong>
-        <div class="drop-sub">PDF, HWPX, 이미지(JPG·PNG 등) 파일 지원</div>
-        <input type="file" id="fileInput" multiple accept=".pdf,.hwpx,.jpg,.jpeg,.png,.webp,.bmp" style="display:none;">
+        <div class="drop-sub">PDF, HWPX, 이미지(JPG·PNG 등), 엑셀(XLSX) 파일 지원</div>
+        <input type="file" id="fileInput" multiple accept=".pdf,.hwpx,.jpg,.jpeg,.png,.webp,.bmp,.xlsx" style="display:none;">
       </div>
     </div>
   </div>
@@ -362,69 +392,81 @@
   <!-- 1. 추출 위치 설정 (2개씩 배치) -->
   <div class="rule-cards-grid">
     <div class="card-box rule-card">
-      <h4>📍 추출 위치 1</h4>
-      <div class="rule-fields-grid">
-        <div class="inline-item">
-          <label>기준단어:</label>
-          <input type="text" id="key1" value="성명" placeholder="예: 성명">
+      <div class="rule-card-row">
+        <h4 class="rule-card-title">📍 추출 위치 1</h4>
+        <div class="inline-item inline-item-grow">
+          <label>기준단어(쉼표로 여러개):</label>
+          <input type="text" id="key1" value="" placeholder="예: 관북리 유적, 부소산성, 정림사지">
         </div>
-        <div class="inline-item">
-          <label>탐색방식:</label>
-          <select id="dir1">
-            <option value="after" selected>기준 단어 뒤</option>
-            <option value="before">기준 단어 앞</option>
-            <option value="nextLine">다음 줄 전체</option>
-          </select>
-        </div>
-        <div class="inline-item">
-          <label>순번:</label>
-          <select id="idx1">
-            <option value="1" selected>첫 번째</option>
-            <option value="2">두 번째</option>
-            <option value="last">마지막</option>
-          </select>
-        </div>
-        <div class="inline-item">
-          <label>범위:</label>
-          <select id="range1">
-            <option value="word" selected>1단어(공백전까지)</option>
-            <option value="word2">2단어(공백전까지)</option>
-            <option value="line">해당 줄 끝까지</option>
-          </select>
+      </div>
+      <div class="rule-card-row">
+        <div class="rule-card-title-spacer"></div>
+        <div class="rule-sub-fields">
+          <div class="inline-item">
+            <label>탐색방식:</label>
+            <select id="dir1">
+              <option value="self">기준단어 검색값</option>
+              <option value="after" selected>기준 단어 뒤</option>
+              <option value="before">기준 단어 앞</option>
+              <option value="nextLine">다음 줄 전체</option>
+            </select>
+          </div>
+          <div class="inline-item">
+            <label>순번:</label>
+            <select id="idx1">
+              <option value="1" selected>첫 번째</option>
+              <option value="2">두 번째</option>
+              <option value="last">마지막</option>
+            </select>
+          </div>
+          <div class="inline-item">
+            <label>범위:</label>
+            <select id="range1">
+              <option value="word" selected>1단어(공백전까지)</option>
+              <option value="word2">2단어(공백전까지)</option>
+              <option value="line">해당 줄 끝까지</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
 
     <div class="card-box rule-card">
-      <h4>📍 추출 위치 2</h4>
-      <div class="rule-fields-grid">
-        <div class="inline-item">
-          <label>기준단어:</label>
-          <input type="text" id="key2" value="기관명" placeholder="예: 기관명">
+      <div class="rule-card-row">
+        <h4 class="rule-card-title">📍 추출 위치 2</h4>
+        <div class="inline-item inline-item-grow">
+          <label>기준단어(쉼표로 여러개):</label>
+          <input type="text" id="key2" value="" placeholder="예: 백제왕릉원, 나성">
         </div>
-        <div class="inline-item">
-          <label>탐색방식:</label>
-          <select id="dir2">
-            <option value="after" selected>기준 단어 뒤</option>
-            <option value="before">기준 단어 앞</option>
-            <option value="nextLine">다음 줄 전체</option>
-          </select>
-        </div>
-        <div class="inline-item">
-          <label>순번:</label>
-          <select id="idx2">
-            <option value="1" selected>첫 번째</option>
-            <option value="2">두 번째</option>
-            <option value="last">마지막</option>
-          </select>
-        </div>
-        <div class="inline-item">
-          <label>범위:</label>
-          <select id="range2">
-            <option value="word">1단어(공백전까지)</option>
-            <option value="word2">2단어(공백전까지)</option>
-            <option value="line" selected>해당 줄 끝까지</option>
-          </select>
+      </div>
+      <div class="rule-card-row">
+        <div class="rule-card-title-spacer"></div>
+        <div class="rule-sub-fields">
+          <div class="inline-item">
+            <label>탐색방식:</label>
+            <select id="dir2">
+              <option value="self">기준단어 검색값</option>
+              <option value="after" selected>기준 단어 뒤</option>
+              <option value="before">기준 단어 앞</option>
+              <option value="nextLine">다음 줄 전체</option>
+            </select>
+          </div>
+          <div class="inline-item">
+            <label>순번:</label>
+            <select id="idx2">
+              <option value="1" selected>첫 번째</option>
+              <option value="2">두 번째</option>
+              <option value="last">마지막</option>
+            </select>
+          </div>
+          <div class="inline-item">
+            <label>범위:</label>
+            <select id="range2">
+              <option value="word">1단어(공백전까지)</option>
+              <option value="word2">2단어(공백전까지)</option>
+              <option value="line" selected>해당 줄 끝까지</option>
+            </select>
+          </div>
         </div>
       </div>
     </div>
@@ -453,7 +495,7 @@
         <div class="fn-row-inline">
           <div class="inline-item">
             <label>추가 공통단어:</label>
-            <input type="text" id="commonWord" value="" placeholder="예: [부여군청], 2026년">
+            <input type="text" id="commonWord" value="" placeholder="예: 세계문화유산, 백제역사유적지구">
           </div>
           <div class="inline-item">
             <label>공통단어 위치:</label>
@@ -466,13 +508,13 @@
       </div>
     </div>
 
-    <div class="card-box run-card" style="display:flex; align-items:center; justify-content:center;">
-      <div class="btn-group">
-        <button class="btn btn-outline-indigo" id="btnRun" onclick="runBatchProcess('all')" disabled>▶ 전체 분석 및 실행</button>
-        <button class="btn btn-outline-indigo" id="btnSelRe" onclick="runBatchProcess('selected')" disabled>🎯 선택한 파일만 재실행</button>
+    <div class="card-box run-card" style="display:flex; flex-direction:column; justify-content:center;">
+      <div class="btn-group" style="width:100%; flex-wrap:wrap;">
+        <button class="btn btn-outline-indigo" id="btnRun" onclick="runBatchProcess('all')" disabled style="flex:1 1 0; min-width:120px;">▶ 전체 분석 및 실행</button>
+        <button class="btn btn-outline-indigo" id="btnSelRe" onclick="runBatchProcess('selected')" disabled style="flex:1 1 0; min-width:120px;">🎯 선택한 파일만 재실행</button>
         <button class="btn btn-outline-indigo" id="btnRe" onclick="runBatchProcess('reAll')" disabled style="display:none;">🔄 전체 재실행</button>
-        <button class="btn btn-outline-indigo" id="btnDeleteSelected" onclick="deleteSelectedFiles()" disabled>🗑️ 선택 파일 삭제</button>
-        <button class="btn btn-outline-indigo" id="btnZip" onclick="downloadAllZip()" disabled>📥 전체 파일 다운로드</button>
+        <button class="btn btn-outline-indigo" id="btnDeleteSelected" onclick="deleteSelectedFiles()" disabled style="flex:1 1 0; min-width:120px;">🗑️ 선택 파일 삭제</button>
+        <button class="btn btn-outline-indigo" id="btnZip" onclick="downloadAllZip()" disabled style="flex:1 1 0; min-width:120px;">📥 전체 파일 다운로드</button>
       </div>
     </div>
   </div>
@@ -560,7 +602,10 @@
 <script>
 (function () {
   function extractRangeText(text, matchStart, matchLen, dir, range) {
-    if (dir === 'nextLine') {
+    if (dir === 'self') {
+      const matched = text.substring(matchStart, matchStart + matchLen);
+      return matched ? cleanValue(matched) : '미확인';
+    } else if (dir === 'nextLine') {
       const after = text.substring(matchStart + matchLen);
       const lines = after.split(/[\r\n]+/).map(l => l.trim()).filter(l => l.length > 0);
       return lines.length > 0 ? cleanValue(lines[0]) : '미확인';
@@ -591,17 +636,34 @@
     }
   }
 
-  // '2단어(공백전까지)' 범위를 지원하도록 parseTextByRule을 재정의 (그 외 로직은 기존과 동일)
-  function parseTextByRule(text, rule) {
-    if (!rule.key || !text) return '';
-    const keyPattern = rule.key.split('').map(ch => {
+  // 쉼표(,)로 여러 기준단어를 입력하면, 앞에서부터 순서대로 문서에서 실제로
+  // 발견되는 첫 번째 기준단어를 사용해 매칭한다. (예: "성명,이름,신청인")
+  function buildKeyPattern(keyword) {
+    return keyword.split('').map(ch => {
       const esc = escapeRegExpChar(ch);
       return /[a-zA-Z0-9가-힣]/.test(ch) ? esc + '\\s*' : esc;
     }).join('').replace(/\s*$/, '');
-    const matches = [...text.matchAll(new RegExp(keyPattern, 'gi'))];
-    if (matches.length === 0) return '미확인';
-    const match = rule.idx === 'last' ? matches[matches.length - 1] : (matches[parseInt(rule.idx) - 1] || matches[0]);
-    return extractRangeText(text, match.index, match[0].length, rule.dir, rule.range);
+  }
+
+  function parseTextByRule(text, rule) {
+    if (!rule.key || !text) return '';
+    const keywords = rule.key.split(',').map(k => k.trim()).filter(k => k !== '');
+    if (keywords.length === 0) return '';
+
+    for (const keyword of keywords) {
+      const keyPattern = buildKeyPattern(keyword);
+      if (!keyPattern) continue;
+      let matches;
+      try {
+        matches = [...text.matchAll(new RegExp(keyPattern, 'gi'))];
+      } catch (e) {
+        continue;
+      }
+      if (matches.length === 0) continue;
+      const match = rule.idx === 'last' ? matches[matches.length - 1] : (matches[parseInt(rule.idx) - 1] || matches[0]);
+      return extractRangeText(text, match.index, match[0].length, rule.dir, rule.range);
+    }
+    return '미확인';
   }
   window.parseTextByRule = parseTextByRule;
 
@@ -616,12 +678,80 @@
   }
   window.extractImageOCR = extractImageOCR;
 
-  // 이미지 파일도 인식하도록 handleFiles를 재정의 (기존 PDF/HWPX 로직은 그대로 유지)
+  // 엑셀(.xlsx) 파일의 모든 시트/셀 내용을 하나의 텍스트로 합쳐서
+  // 기존 PDF/HWPX와 동일한 방식(기준단어 매칭)으로 추출할 수 있게 한다.
+  // 열기암호가 걸린 파일이면, 처리 도중 비밀번호를 물어보고 그 자리에서 해독한 뒤 계속 진행한다.
+  function xlsxWorkbookToText(workbook) {
+    let text = '';
+    workbook.SheetNames.forEach(sheetName => {
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      rows.forEach(row => {
+        text += row.map(cell => String(cell ?? '')).join(' ') + '\n';
+      });
+    });
+    return text;
+  }
+
+  async function extractXlsxText(file) {
+    if (!window.XLSX) return '';
+    const buffer = await file.arrayBuffer();
+
+    // 1) 우선 암호 없는 일반 xlsx로 시도
+    try {
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      return xlsxWorkbookToText(workbook);
+    } catch (e) {
+      // 암호가 걸려있어 실패한 것으로 보고 아래에서 해독을 시도한다
+    }
+
+    if (!window.forge) {
+      alert(`"${file.name}" 파일은 열기암호가 걸려 있는데, 암호 해독 라이브러리를 불러오지 못했습니다.\n인터넷 연결을 확인 후 새로고침 해주세요.`);
+      return '';
+    }
+
+    // 2) 직전에 입력했던 비밀번호가 있으면 먼저 자동으로 시도 (여러 파일이 같은 암호를 쓰는 경우가 많음)
+    if (window.__xlsxLastPassword) {
+      try {
+        const decrypted = decryptAgileXlsx(buffer, window.__xlsxLastPassword);
+        const workbook = XLSX.read(decrypted, { type: 'array' });
+        return xlsxWorkbookToText(workbook);
+      } catch (e) {
+        // 이전 비밀번호로 안 풀리면 아래에서 새로 물어본다
+      }
+    }
+
+    // 3) 비밀번호를 직접 물어봄 (최대 3회 시도)
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const pw = window.prompt(`"${file.name}" 파일은 열기암호가 걸려 있습니다.\n비밀번호를 입력해주세요.`);
+      if (pw === null) return ''; // 사용자가 취소함
+      if (!pw) continue;
+      try {
+        const decrypted = decryptAgileXlsx(buffer, pw);
+        window.__xlsxLastPassword = pw; // 다음 파일부터는 이 비밀번호를 먼저 시도
+        const workbook = XLSX.read(decrypted, { type: 'array' });
+        return xlsxWorkbookToText(workbook);
+      } catch (e2) {
+        if (e2 && e2.message === 'WRONG_PASSWORD') {
+          alert('비밀번호가 올바르지 않습니다. 다시 시도해주세요.');
+          continue;
+        } else {
+          alert(`"${file.name}" 파일은 지원하지 않는 암호화 방식이거나 처리할 수 없습니다.`);
+          return '';
+        }
+      }
+    }
+    return '';
+  }
+  window.extractXlsxText = extractXlsxText;
+
+  // 이미지/엑셀 파일도 인식하도록 handleFiles를 재정의 (기존 PDF/HWPX 로직은 그대로 유지)
   function handleFiles(files) {
     for (let file of files) {
       const lower = file.name.toLowerCase();
       const isImage = IMAGE_EXTS.some(ext => lower.endsWith(ext));
-      if (!lower.includes('.pdf') && !lower.includes('.hwpx') && !isImage) continue;
+      const isXlsx = lower.endsWith('.xlsx');
+      if (!lower.includes('.pdf') && !lower.includes('.hwpx') && !isImage && !isXlsx) continue;
       if (!fileQueue.some(f => f.file.name === file.name)) {
         fileQueue.push({
           id: 'f_' + Math.random().toString(36).slice(2, 9),
@@ -638,7 +768,7 @@
   }
   window.handleFiles = handleFiles;
 
-  // 이미지 OCR 분기를 추가한 runBatchProcess (그 외 PDF/HWPX 처리 로직은 기존과 동일)
+  // 엑셀 텍스트 추출 분기를 추가한 runBatchProcess (그 외 PDF/HWPX/이미지 처리 로직은 기존과 동일)
   async function runBatchProcess(mode = 'all') {
     btnRun.disabled = true;
     btnRe.disabled = true;
@@ -675,6 +805,8 @@
             }
           } else if (lower.includes('.hwpx')) {
             item.extractedText = await extractHwpxText(item.file);
+          } else if (lower.endsWith('.xlsx')) {
+            item.extractedText = await extractXlsxText(item.file);
           } else if (IMAGE_EXTS.some(ext => lower.endsWith(ext))) {
             item.status = 'ocr';
             renderTable();
@@ -715,6 +847,183 @@
     updateButtonStates();
   }
   window.runBatchProcess = runBatchProcess;
+
+  /* =========================================================================
+   * 🔓 엑셀 열기암호(MS-OFFCRYPTO Agile Encryption) 일괄 해제
+   * -------------------------------------------------------------------------
+   * '엑셀병합기' 도구에서 쓰던 것과 동일한 방식입니다.
+   * SheetJS 무료버전은 진짜 "열기 암호"가 걸린 파일은 못 읽기 때문에,
+   * forge.js의 저수준 AES/해시 함수로 [MS-OFFCRYPTO] Agile Encryption 규격을
+   * 브라우저에서 직접 해독합니다. 파일은 서버로 전송되지 않습니다.
+   * ========================================================================= */
+  const AGILE_BLOCK_KEYS = {
+    key: Uint8Array.from([0x14, 0x6e, 0x0b, 0xe7, 0xab, 0xac, 0xd0, 0xd6]),
+    verifierInput: Uint8Array.from([0xfe, 0xa7, 0xd2, 0x76, 0x3b, 0x4b, 0x9e, 0x79]),
+    verifierValue: Uint8Array.from([0xd7, 0xaa, 0x0f, 0x6d, 0x30, 0x61, 0x34, 0x4e])
+  };
+
+  function u8ToBinStr(u8) {
+    let s = '';
+    for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
+    return s;
+  }
+  function binStrToU8(s) {
+    const u8 = new Uint8Array(s.length);
+    for (let i = 0; i < s.length; i++) u8[i] = s.charCodeAt(i);
+    return u8;
+  }
+  function base64ToU8(b64) {
+    return binStrToU8(atob(b64));
+  }
+  function uint32LEBytes(n) {
+    return Uint8Array.from([n & 0xff, (n >>> 8) & 0xff, (n >>> 16) & 0xff, (n >>> 24) & 0xff]);
+  }
+  function passwordToUtf16LEBytes(password) {
+    const u8 = new Uint8Array(password.length * 2);
+    for (let i = 0; i < password.length; i++) {
+      const code = password.charCodeAt(i);
+      u8[i * 2] = code & 0xff;
+      u8[i * 2 + 1] = (code >> 8) & 0xff;
+    }
+    return u8;
+  }
+  function hashConcat(algorithm, buffers) {
+    const mdName = algorithm.toLowerCase();
+    if (!forge.md[mdName]) throw new Error('UNSUPPORTED_ENCRYPTION');
+    const md = forge.md[mdName].create();
+    buffers.forEach(b => md.update(u8ToBinStr(b)));
+    return binStrToU8(md.digest().getBytes());
+  }
+  function aesCbcDecryptNoPad(keyU8, ivU8, inputU8) {
+    const decipher = forge.cipher.createDecipher('AES-CBC', u8ToBinStr(keyU8));
+    decipher.start({ iv: u8ToBinStr(ivU8) });
+    decipher.update(forge.util.createBuffer(u8ToBinStr(inputU8)));
+    decipher.finish(() => true); // 패딩 제거 없이(raw) 그대로 사용
+    return binStrToU8(decipher.output.getBytes());
+  }
+  function convertPasswordToKey(password, hashAlgorithm, saltValue, spinCount, keyBits, blockKey) {
+    const pwBytes = passwordToUtf16LEBytes(password);
+    let key = hashConcat(hashAlgorithm, [saltValue, pwBytes]);
+    for (let i = 0; i < spinCount; i++) {
+      key = hashConcat(hashAlgorithm, [uint32LEBytes(i), key]);
+    }
+    key = hashConcat(hashAlgorithm, [key, blockKey]);
+    const keyBytes = keyBits / 8;
+    if (key.length < keyBytes) {
+      const tmp = new Uint8Array(keyBytes).fill(0x36);
+      tmp.set(key);
+      key = tmp;
+    } else if (key.length > keyBytes) {
+      key = key.slice(0, keyBytes);
+    }
+    return key;
+  }
+  function createAgileIV(hashAlgorithm, saltValue, blockSize, blockKeyOrIndex) {
+    const blockKey = (typeof blockKeyOrIndex === 'number') ? uint32LEBytes(blockKeyOrIndex) : blockKeyOrIndex;
+    let iv = hashConcat(hashAlgorithm, [saltValue, blockKey]);
+    if (iv.length < blockSize) {
+      const tmp = new Uint8Array(blockSize).fill(0x36);
+      tmp.set(iv);
+      iv = tmp;
+    } else if (iv.length > blockSize) {
+      iv = iv.slice(0, blockSize);
+    }
+    return iv;
+  }
+  function decryptAgilePackage(saltValue, blockSize, hashAlgorithm, packageKey, input) {
+    const CHUNK = 4096;
+    const OFFSET = 8; // 앞 8바이트는 해독 후 원본 길이(uint32le)를 담고 있음
+    const outputChunks = [];
+    let i = 0, start = 0, end = 0;
+    while (end < input.length) {
+      start = end;
+      end = start + CHUNK;
+      if (end > input.length) end = input.length;
+      let inputChunk = input.slice(start + OFFSET, end + OFFSET);
+      const remainder = inputChunk.length % blockSize;
+      if (remainder) {
+        const padded = new Uint8Array(inputChunk.length + (blockSize - remainder));
+        padded.set(inputChunk);
+        inputChunk = padded;
+      }
+      if (inputChunk.length > 0) {
+        const iv = createAgileIV(hashAlgorithm, saltValue, blockSize, i);
+        outputChunks.push(aesCbcDecryptNoPad(packageKey, iv, inputChunk));
+      }
+      i++;
+    }
+    let total = outputChunks.reduce((a, c) => a + c.length, 0);
+    let output = new Uint8Array(total);
+    let pos = 0;
+    for (const c of outputChunks) { output.set(c, pos); pos += c.length; }
+    const length = (input[0]) | (input[1] << 8) | (input[2] << 16) | (input[3] << 24);
+    return output.slice(0, length >>> 0);
+  }
+
+  // CFB(OLE 컴파운드 파일) 컨테이너에서 EncryptionInfo/EncryptedPackage 스트림을 꺼내
+  // 실제 암호를 해독하여 순수 xlsx(zip) 바이트를 반환한다.
+  function decryptAgileXlsx(fileArrayBuffer, password) {
+    const u8 = new Uint8Array(fileArrayBuffer);
+    let cfb;
+    try {
+      cfb = XLSX.CFB.read(u8, { type: 'array' });
+    } catch (e) {
+      throw new Error('NOT_ENCRYPTED');
+    }
+    const encInfoEntry = XLSX.CFB.find(cfb, 'EncryptionInfo');
+    const encPkgEntry = XLSX.CFB.find(cfb, 'EncryptedPackage');
+    if (!encInfoEntry || !encPkgEntry) throw new Error('NOT_ENCRYPTED');
+
+    let encInfo = encInfoEntry.content;
+    let encPkg = encPkgEntry.content;
+    if (!(encInfo instanceof Uint8Array)) encInfo = new Uint8Array(encInfo);
+    if (!(encPkg instanceof Uint8Array)) encPkg = new Uint8Array(encPkg);
+
+    const verMajor = encInfo[0] | (encInfo[1] << 8);
+    const verMinor = encInfo[2] | (encInfo[3] << 8);
+    if (!(verMajor === 4 && verMinor === 4)) {
+      throw new Error('UNSUPPORTED_ENCRYPTION');
+    }
+
+    const xmlStr = new TextDecoder('utf-8').decode(encInfo.slice(8));
+    const doc = new DOMParser().parseFromString(xmlStr, 'application/xml');
+    if (doc.getElementsByTagName('parsererror').length > 0) throw new Error('UNSUPPORTED_ENCRYPTION');
+
+    const keyDataEl = doc.getElementsByTagName('keyData')[0];
+    const encKeyEl = doc.getElementsByTagName('p:encryptedKey')[0] || doc.getElementsByTagName('encryptedKey')[0];
+    if (!keyDataEl || !encKeyEl) throw new Error('UNSUPPORTED_ENCRYPTION');
+
+    const pkg = {
+      saltValue: base64ToU8(keyDataEl.getAttribute('saltValue')),
+      hashAlgorithm: keyDataEl.getAttribute('hashAlgorithm'),
+      blockSize: parseInt(keyDataEl.getAttribute('blockSize'), 10)
+    };
+    const keyInfo = {
+      encryptedKeyValue: base64ToU8(encKeyEl.getAttribute('encryptedKeyValue')),
+      saltValue: base64ToU8(encKeyEl.getAttribute('saltValue')),
+      hashAlgorithm: encKeyEl.getAttribute('hashAlgorithm'),
+      spinCount: parseInt(encKeyEl.getAttribute('spinCount'), 10),
+      keyBits: parseInt(encKeyEl.getAttribute('keyBits'), 10),
+      encryptedVerifierHashInput: base64ToU8(encKeyEl.getAttribute('encryptedVerifierHashInput')),
+      encryptedVerifierHashValue: base64ToU8(encKeyEl.getAttribute('encryptedVerifierHashValue'))
+    };
+
+    const verifierInputKey = convertPasswordToKey(password, keyInfo.hashAlgorithm, keyInfo.saltValue, keyInfo.spinCount, keyInfo.keyBits, AGILE_BLOCK_KEYS.verifierInput);
+    const verifierHashInput = aesCbcDecryptNoPad(verifierInputKey, keyInfo.saltValue, keyInfo.encryptedVerifierHashInput);
+    const verifierValueKey = convertPasswordToKey(password, keyInfo.hashAlgorithm, keyInfo.saltValue, keyInfo.spinCount, keyInfo.keyBits, AGILE_BLOCK_KEYS.verifierValue);
+    const verifierHashValueDecrypted = aesCbcDecryptNoPad(verifierValueKey, keyInfo.saltValue, keyInfo.encryptedVerifierHashValue);
+    const computedHash = hashConcat(keyInfo.hashAlgorithm, [verifierHashInput]);
+    let match = computedHash.length > 0;
+    for (let k = 0; k < computedHash.length; k++) {
+      if (computedHash[k] !== verifierHashValueDecrypted[k]) { match = false; break; }
+    }
+    if (!match) throw new Error('WRONG_PASSWORD');
+
+    const key = convertPasswordToKey(password, keyInfo.hashAlgorithm, keyInfo.saltValue, keyInfo.spinCount, keyInfo.keyBits, AGILE_BLOCK_KEYS.key);
+    const packageKey = aesCbcDecryptNoPad(key, keyInfo.saltValue, keyInfo.encryptedKeyValue);
+
+    return decryptAgilePackage(pkg.saltValue, pkg.blockSize, pkg.hashAlgorithm, packageKey, encPkg);
+  }
 })();
 </script>
 
