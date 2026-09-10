@@ -159,10 +159,10 @@
     .preset-btn-group-top { display: flex; gap: 8px; }
     .preset-btn-group-bottom { display: flex; gap: 8px; }
 
-    /* 추출위치 카드: 2개씩 그리드 배치 */
+    /* 추출위치 카드: 3개씩 그리드 배치 */
     .rule-cards-grid {
       display: grid;
-      grid-template-columns: 1fr 1fr;
+      grid-template-columns: repeat(3, 1fr);
       gap: 12px;
       margin-bottom: 15px;
     }
@@ -171,20 +171,25 @@
       color: #2563eb;
       font-size: 0.92rem;
     }
-    /* 1번째 줄: 제목 + 기준단어 입력창 / 2번째 줄: 나머지 3개 목록창
+    /* 1번째 줄: 제목 + 기준단어 입력창 + 탐색방식 / 2번째 줄: 순번 + 범위
        - 제목과, 2번째 줄 맨 앞의 빈 칸(rule-card-title-spacer)의 너비를 동일하게 맞춰서
          2번째 줄 시작 위치가 기준단어 입력창 시작 위치와 정렬되도록 함 */
     .rule-card-row {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
     }
     .rule-card-row + .rule-card-row {
       margin-top: 10px;
     }
     .rule-card-title, .rule-card-title-spacer {
-      flex: 0 0 118px;
+      flex: 0 0 96px;
       white-space: nowrap;
+    }
+    /* 1번째 줄의 탐색방식: 2번째 줄 범위와 같은 비율로 우측 폭을 맞춤 */
+    .inline-item-dir {
+      flex: 1 1 0;
+      min-width: 128px;
     }
     .rule-sub-fields {
       display: flex;
@@ -208,8 +213,8 @@
       min-width: 0;
     }
     .inline-item input, .inline-item select { min-width: 0; }
-    /* 기준단어 입력창: 남는 공간을 최대한 차지 */
-    .inline-item-grow { flex: 1 1 auto; min-width: 60px; }
+    /* 기준단어 입력창: 2번째 줄 순번과 같은 비율로 좌측 폭만 차지 (하단 범위 시작 위치까지만) */
+    .inline-item-grow { flex: 1 1 0; min-width: 60px; }
     /* 탐색방식/순번/범위: 2번째 줄에서 남는 가로 공간을 넓게 채움 */
     .rule-sub-fields .inline-item { flex: 1 1 0; }
     .rule-sub-fields .inline-item select { width: 100%; }
@@ -344,6 +349,10 @@
       .excel-header-info, .excel-header-paste, .excel-header-result { flex-basis: auto; }
     }
 
+    @media (max-width: 1400px) {
+      .rule-cards-grid { grid-template-columns: 1fr 1fr; }
+    }
+
     @media (max-width: 992px) {
       .top-section { flex-direction: column; }
       .top-col-title, .top-col-guide, .top-col-drop { flex-basis: auto; }
@@ -389,28 +398,28 @@
     </div>
   </div>
 
-  <!-- 1. 추출 위치 설정 (2개씩 배치) -->
+  <!-- 1. 추출 위치 설정 (3개씩 배치) -->
   <div class="rule-cards-grid">
     <div class="card-box rule-card">
       <div class="rule-card-row">
         <h4 class="rule-card-title">📍 추출 위치 1</h4>
         <div class="inline-item inline-item-grow">
-          <label>기준단어(쉼표로 여러개):</label>
+          <label>기준단어:</label>
           <input type="text" id="key1" value="" placeholder="예: 관북리 유적, 부소산성, 정림사지">
+        </div>
+        <div class="inline-item inline-item-dir">
+          <label>탐색방식:</label>
+          <select id="dir1">
+            <option value="self">기준단어 검색값</option>
+            <option value="after" selected>기준 단어 뒤</option>
+            <option value="before">기준 단어 앞</option>
+            <option value="nextLine">다음 줄 전체</option>
+          </select>
         </div>
       </div>
       <div class="rule-card-row">
         <div class="rule-card-title-spacer"></div>
         <div class="rule-sub-fields">
-          <div class="inline-item">
-            <label>탐색방식:</label>
-            <select id="dir1">
-              <option value="self">기준단어 검색값</option>
-              <option value="after" selected>기준 단어 뒤</option>
-              <option value="before">기준 단어 앞</option>
-              <option value="nextLine">다음 줄 전체</option>
-            </select>
-          </div>
           <div class="inline-item">
             <label>순번:</label>
             <select id="idx1">
@@ -435,22 +444,22 @@
       <div class="rule-card-row">
         <h4 class="rule-card-title">📍 추출 위치 2</h4>
         <div class="inline-item inline-item-grow">
-          <label>기준단어(쉼표로 여러개):</label>
+          <label>기준단어:</label>
           <input type="text" id="key2" value="" placeholder="예: 백제왕릉원, 나성">
+        </div>
+        <div class="inline-item inline-item-dir">
+          <label>탐색방식:</label>
+          <select id="dir2">
+            <option value="self">기준단어 검색값</option>
+            <option value="after" selected>기준 단어 뒤</option>
+            <option value="before">기준 단어 앞</option>
+            <option value="nextLine">다음 줄 전체</option>
+          </select>
         </div>
       </div>
       <div class="rule-card-row">
         <div class="rule-card-title-spacer"></div>
         <div class="rule-sub-fields">
-          <div class="inline-item">
-            <label>탐색방식:</label>
-            <select id="dir2">
-              <option value="self">기준단어 검색값</option>
-              <option value="after" selected>기준 단어 뒤</option>
-              <option value="before">기준 단어 앞</option>
-              <option value="nextLine">다음 줄 전체</option>
-            </select>
-          </div>
           <div class="inline-item">
             <label>순번:</label>
             <select id="idx2">
@@ -471,11 +480,47 @@
       </div>
     </div>
 
-    <!-- 추출 위치 3, 4는 화면에서 제거하되, 스크립트가 참조하는 값이라 숨김 입력으로 유지 -->
-    <input type="hidden" id="key3" value="">
-    <input type="hidden" id="dir3" value="after">
-    <input type="hidden" id="idx3" value="1">
-    <input type="hidden" id="range3" value="word">
+    <div class="card-box rule-card">
+      <div class="rule-card-row">
+        <h4 class="rule-card-title">📍 추출 위치 3</h4>
+        <div class="inline-item inline-item-grow">
+          <label>기준단어:</label>
+          <input type="text" id="key3" value="" placeholder="예: 정림사지, 관북리 유적">
+        </div>
+        <div class="inline-item inline-item-dir">
+          <label>탐색방식:</label>
+          <select id="dir3">
+            <option value="self">기준단어 검색값</option>
+            <option value="after" selected>기준 단어 뒤</option>
+            <option value="before">기준 단어 앞</option>
+            <option value="nextLine">다음 줄 전체</option>
+          </select>
+        </div>
+      </div>
+      <div class="rule-card-row">
+        <div class="rule-card-title-spacer"></div>
+        <div class="rule-sub-fields">
+          <div class="inline-item">
+            <label>순번:</label>
+            <select id="idx3">
+              <option value="1" selected>첫 번째</option>
+              <option value="2">두 번째</option>
+              <option value="last">마지막</option>
+            </select>
+          </div>
+          <div class="inline-item">
+            <label>범위:</label>
+            <select id="range3">
+              <option value="word" selected>1단어(공백전까지)</option>
+              <option value="word2">2단어(공백전까지)</option>
+              <option value="line">해당 줄 끝까지</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 추출 위치 4는 화면에서 제거하되, 스크립트가 참조하는 값이라 숨김 입력으로 유지 -->
     <input type="hidden" id="key4" value="">
     <input type="hidden" id="dir4" value="after">
     <input type="hidden" id="idx4" value="1">
