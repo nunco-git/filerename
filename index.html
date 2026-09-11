@@ -430,13 +430,15 @@
           </div>
           <div class="inline-item">
             <label>범위:</label>
-            <select id="range1">
+            <select id="range1" onchange="toggleCharsInput(1)">
               <option value="word" selected>1단어(공백전까지)</option>
               <option value="word2">2단어(공백전까지)</option>
               <option value="word3">3단어(공백전까지)</option>
               <option value="word4">4단어(공백전까지)</option>
               <option value="line">해당 줄 끝까지</option>
+              <option value="chars">N글자(직접입력)</option>
             </select>
+            <input type="number" id="charsNum1" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(1)">
           </div>
         </div>
       </div>
@@ -472,13 +474,15 @@
           </div>
           <div class="inline-item">
             <label>범위:</label>
-            <select id="range2">
+            <select id="range2" onchange="toggleCharsInput(2)">
               <option value="word">1단어(공백전까지)</option>
               <option value="word2">2단어(공백전까지)</option>
               <option value="word3">3단어(공백전까지)</option>
               <option value="word4">4단어(공백전까지)</option>
               <option value="line" selected>해당 줄 끝까지</option>
+              <option value="chars">N글자(직접입력)</option>
             </select>
+            <input type="number" id="charsNum2" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(2)">
           </div>
         </div>
       </div>
@@ -514,13 +518,15 @@
           </div>
           <div class="inline-item">
             <label>범위:</label>
-            <select id="range3">
+            <select id="range3" onchange="toggleCharsInput(3)">
               <option value="word" selected>1단어(공백전까지)</option>
               <option value="word2">2단어(공백전까지)</option>
               <option value="word3">3단어(공백전까지)</option>
               <option value="word4">4단어(공백전까지)</option>
               <option value="line">해당 줄 끝까지</option>
+              <option value="chars">N글자(직접입력)</option>
             </select>
+            <input type="number" id="charsNum3" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(3)">
           </div>
         </div>
       </div>
@@ -570,8 +576,14 @@
     </div>
   </div>
 
-  <h3 style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+  <h3 style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 10px;">
     <span>업로드 파일 목록 및 실행 결과</span>
+    <span style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:normal;">
+      <label for="bulkRemoveWord" style="color:#334155;">🧹 결과값에서 삭제할 단어:</label>
+      <input type="text" id="bulkRemoveWord" placeholder="예: 이상하게 낀 글자·공백" style="font-size:12.5px; padding:4px 8px; width:180px;">
+      <button class="btn-sm-outline" onclick="applyBulkRemoveWord()">적용</button>
+      <button class="btn-sm-outline" id="btnExportExcel" onclick="downloadResultsExcel()">📊 결과 엑셀 다운로드</button>
+    </span>
     <span style="font-size: 12px; font-weight: normal; color: #64748b;">💡 마우스로 행을 끌어서 순서를 변경할 수 있습니다.</span>
   </h3>
   
@@ -656,16 +668,26 @@
   for (let i = 1; i <= pdf.numPages; i++) {
     const page = await pdf.getPage(i);
     const content = await page.getTextContent();
-    let lastY = null;
+    let prevItem = null;
     content.items.forEach(item => {
-      const y = item.transform[5];
-      if (lastY !== null && Math.abs(y - lastY) > 1) {
-        fullText += '\n';
-      } else if (lastY !== null) {
-        fullText += ' ';
+      if (!item.str) { return; }
+      if (prevItem) {
+        const sameLine = Math.abs(item.transform[5] - prevItem.transform[5]) < 1;
+        if (!sameLine) {
+          fullText += '\n';
+        } else {
+          // 이전 글자가 끝나는 x좌표와 현재 글자가 시작하는 x좌표 사이의
+          // 실제 간격이 글자 높이(대략 폰트 크기)의 25%보다 클 때만 "진짜 띄어쓰기"로 보고 공백을 넣는다.
+          // (한글 PDF는 글자 하나하나가 별도 아이템으로 붙어 있는 경우가 많아,
+          //  무조건 공백을 넣으면 "김관석"이 "김 관 석"으로 쪼개지는 문제가 있었음)
+          const prevEndX = prevItem.transform[4] + (prevItem.width || 0);
+          const gap = item.transform[4] - prevEndX;
+          const threshold = (prevItem.height || 10) * 0.25;
+          if (gap > threshold) fullText += ' ';
+        }
       }
       fullText += item.str;
-      lastY = y;
+      prevItem = item;
     });
     fullText += '\n';
   }
@@ -676,6 +698,9 @@
 (function () {
   function extractRangeText(text, matchStart, matchLen, dir, range) {
     const WORD_COUNTS = { word: 1, word2: 2, word3: 3, word4: 4 };
+    // "N글자(직접입력)" 옵션: range 값이 "chars:숫자" 형태로 들어온다.
+    const charsMatch = typeof range === 'string' && range.match(/^chars:(\d+)$/);
+    const charsCount = charsMatch ? parseInt(charsMatch[1], 10) : null;
     if (dir === 'self') {
       const matched = text.substring(matchStart, matchStart + matchLen);
       return matched ? cleanValue(matched) : '미확인';
@@ -685,7 +710,9 @@
       return lines.length > 0 ? cleanValue(lines[0]) : '미확인';
     } else if (dir === 'after') {
       const after = text.substring(matchStart + matchLen).replace(/^[\s:]+/, '');
-      if (WORD_COUNTS[range]) {
+      if (charsCount) {
+        return after.length > 0 ? cleanValue(after.substring(0, charsCount)) : '미확인';
+      } else if (WORD_COUNTS[range]) {
         const n = WORD_COUNTS[range];
         const re = new RegExp('^[^\\s]+(?:\\s+[^\\s]+){0,' + (n - 1) + '}');
         const m = after.match(re);
@@ -696,7 +723,10 @@
       }
     } else {
       const before = text.substring(0, matchStart);
-      if (WORD_COUNTS[range]) {
+      if (charsCount) {
+        const trimmedBefore = before.replace(/[\r\n]+$/, '');
+        return trimmedBefore.length > 0 ? cleanValue(trimmedBefore.slice(-charsCount)) : '미확인';
+      } else if (WORD_COUNTS[range]) {
         const n = WORD_COUNTS[range];
         const words = before.trim().split(/\s+/).filter(w => w.length > 0);
         return words.length > 0 ? cleanValue(words.slice(-n).join(' ')) : '미확인';
@@ -1098,5 +1128,159 @@
 })();
 </script>
 
+<script>
+  // =========================================================================
+  // 🧹 결과값 일괄 삭제 + 📏 N글자(직접입력) 범위 옵션
+  // 기존 코드는 그대로 두고, 이미 선언된 전역 변수(fileQueue 등)와
+  // 전역 함수(renderTable, trimFileName, cleanValue)를 그대로 재사용한다.
+  // =========================================================================
+
+  // "범위" 드롭다운에서 "N글자(직접입력)"을 고르면 숫자 입력칸을 보여주고,
+  // 반대로 다른 항목을 고르면 다시 숨긴다.
+  function toggleCharsInput(n) {
+    const sel = document.getElementById('range' + n);
+    const numInput = document.getElementById('charsNum' + n);
+    if (!sel || !numInput) return;
+    if (sel.value.indexOf('chars') === 0) {
+      numInput.style.display = 'inline-block';
+      syncCharsRangeValue(n);
+    } else {
+      numInput.style.display = 'none';
+    }
+  }
+  window.toggleCharsInput = toggleCharsInput;
+
+  // 숫자 입력칸의 값이 바뀔 때마다, 실제로 실행 시 읽히는 select의 값을
+  // "chars:3" 같은 형태로 갱신해준다. (extractRangeText가 이 값을 해석함)
+  function syncCharsRangeValue(n) {
+    const sel = document.getElementById('range' + n);
+    const numInput = document.getElementById('charsNum' + n);
+    if (!sel || !numInput) return;
+    const count = Math.max(1, parseInt(numInput.value, 10) || 1);
+    const opt = sel.options[sel.selectedIndex];
+    if (opt && opt.value.indexOf('chars') === 0) {
+      opt.value = 'chars:' + count;
+    }
+  }
+  window.syncCharsRangeValue = syncCharsRangeValue;
+
+  // 이미 추출된 결과값(vals) 중에서 특정 단어/글자를 전부 지우고,
+  // "변경될 파일명"도 같은 규칙(공통단어, 파일명 다듬기)으로 다시 계산한다.
+  function applyBulkRemoveWord() {
+    const input = document.getElementById('bulkRemoveWord');
+    const word = input.value.trim();
+    if (!word) { alert('삭제할 단어를 입력해주세요.'); return; }
+    if (typeof fileQueue === 'undefined') return;
+
+    let affected = 0;
+    fileQueue.forEach(item => {
+      if (!item.vals) return;
+      let changed = false;
+      item.vals = item.vals.map(v => {
+        if (!v || v === '미확인') return v;
+        if (v.indexOf(word) !== -1) {
+          changed = true;
+          return v.split(word).join('').trim();
+        }
+        return v;
+      });
+      if (changed) {
+        affected++;
+        rebuildNewNameFromVals(item);
+      }
+    });
+
+    if (typeof renderTable === 'function') renderTable();
+
+    if (affected === 0) alert('"' + word + '"이(가) 포함된 결과값이 없습니다.');
+    else alert(affected + '개 파일의 결과값에서 "' + word + '"을(를) 삭제하고, 파일명을 다시 계산했습니다.');
+  }
+  window.applyBulkRemoveWord = applyBulkRemoveWord;
+
+  // runBatchProcess 안의 "변경될 파일명 만들기" 로직과 동일한 규칙으로
+  // vals 배열을 이용해 newName을 다시 만든다.
+  function rebuildNewNameFromVals(item) {
+    const commonWordEl = document.getElementById('commonWord');
+    const commonPosEl = document.getElementById('commonPos');
+    const fnKeyEl = document.getElementById('fnKey');
+    const fnModeEl = document.getElementById('fnMode');
+    if (!commonWordEl || !commonPosEl || !fnKeyEl || !fnModeEl) return;
+
+    const commonWord = commonWordEl.value.trim();
+    const commonPos = commonPosEl.value;
+    const fnKey = fnKeyEl.value.trim();
+    const fnMode = fnModeEl.value;
+
+    const originalName = item.file.name;
+    const dotIdx = originalName.lastIndexOf('.');
+    const ext = dotIdx === -1 ? '' : originalName.substring(dotIdx);
+    const baseNoExt = dotIdx === -1 ? originalName : originalName.slice(0, dotIdx);
+    const trimmedBase = (typeof trimFileName === 'function')
+      ? trimFileName(baseNoExt, fnKey, fnMode)
+      : baseNoExt;
+
+    let valsClean = item.vals
+      .map(v => v ? v.trim().replace(/^[_]+|[_]+$/g, '') : '')
+      .filter(v => v !== '' && v !== '미확인');
+
+    if (commonWord !== '') {
+      const trimmedCommon = commonWord.replace(/^[_]+|[_]+$/g, '');
+      if (commonPos === 'prefix') valsClean.unshift(trimmedCommon);
+      else valsClean.push(trimmedCommon);
+    }
+
+    if (valsClean.length > 0) {
+      const joined = valsClean.join('_');
+      item.newName = trimmedBase ? '[' + joined + ']_' + trimmedBase + ext : '[' + joined + ']' + ext;
+    } else {
+      item.newName = trimmedBase ? trimmedBase + ext : originalName;
+    }
+  }
+  function statusLabelKo(status) {
+    if (status === 'ready') return '대기중';
+    if (status === 'processing') return '처리중';
+    if (status === 'ocr') return 'OCR 인식중';
+    if (status === 'error') return '실패';
+    if (status === 'success') return '완료';
+    return status || '-';
+  }
+
+  // "원본 파일명 / 추출값1~4 / 변경될 파일명 / 상태"를 그대로 엑셀(xlsx)로 내려받는다.
+  function downloadResultsExcel() {
+    if (typeof fileQueue === 'undefined' || fileQueue.length === 0) {
+      alert('먼저 파일을 업로드하고 실행해주세요.');
+      return;
+    }
+    if (!window.XLSX) {
+      alert('엑셀 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인 후 새로고침 해주세요.');
+      return;
+    }
+
+    const header = ['번호', '원본 파일명', '추출값1', '추출값2', '추출값3', '추출값4', '변경될 파일명', '상태'];
+    const rows = fileQueue.map((item, idx) => {
+      const vals = item.vals || [];
+      return [
+        idx + 1,
+        item.file.name,
+        vals[0] || '-',
+        vals[1] || '-',
+        vals[2] || '-',
+        vals[3] || '-',
+        item.newName || '-',
+        statusLabelKo(item.status)
+      ];
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+    ws['!cols'] = [
+      { wch: 6 }, { wch: 30 }, { wch: 16 }, { wch: 16 },
+      { wch: 16 }, { wch: 16 }, { wch: 40 }, { wch: 10 }
+    ];
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '파일명변경결과');
+    XLSX.writeFile(wb, '파일명변경결과.xlsx');
+  }
+  window.downloadResultsExcel = downloadResultsExcel;
+</script>
 </body>
 </html>
