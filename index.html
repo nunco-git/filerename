@@ -2,186 +2,363 @@
 <html lang="ko">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>스마트 엑셀 병합기</title>
-
+  <title>스마트 파일명 관리자</title>
   <!-- 제목/본문에 쓰이는 Pretendard 폰트를 실제로 불러온다 -->
   <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
   <!-- 제목 전용 폰트: Jua (둥글고 귀여운 스타일) -->
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
-  
-  <!-- 엑셀 암호 해독 및 바이너리 파싱을 위한 전용 모듈 모음 -->
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/shim.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/cpexcel@1.0.0/dist/cpexcel.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/jszip.js"></script>
+  <!-- CDN 스크립트 로드 -->
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-  <!-- 실제 파일 암호화(MS-OFFCRYPTO Agile Encryption) 해독을 위한 저수준 암호화 라이브러리 -->
+  <!-- 엑셀 열기암호(AES) 해독용 저수준 암호화 라이브러리 (엑셀병합기와 동일 방식) -->
   <script src="https://cdn.jsdelivr.net/npm/node-forge@1.3.1/dist/forge.min.js"></script>
 
   <style>
     * { box-sizing: border-box; }
 
-    /* 클릭 가능한 요소는 전부 부드럽게 반응하도록 기본 트랜지션을 깔아준다 */
-    button, .btn-reset, .btn-del-x, .btn-action, .merge-btn,
-    .top-col-title, .security-banner, .file-list-container, .preview-panel, .option-box {
+    /* 클릭 가능한 요소는 전부 부드럽게 반응하도록 기본 트랜지션을 깔아준다 (.btn은 자체 hover/active 효과가 이미 있어 제외) */
+    .btn-sm, .btn-sm-outline, .top-col-title, .login-banner, .card-box, .drop-zone {
       transition: background-color 0.18s ease, color 0.18s ease, border-color 0.18s ease,
-                  box-shadow 0.18s ease, transform 0.12s ease;
+                  box-shadow 0.18s ease, transform 0.12s ease, filter 0.15s ease;
     }
-    button:active, .btn-reset:active, .btn-action:active, .merge-btn:not(:disabled):active {
-      transform: scale(0.96);
-    }
-    body { font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif; background: #f8fafc; margin: 0; padding: 40px 20px; color: #334155; display: flex; justify-content: center; align-items: flex-start; min-height: 100vh; }
+    .btn-sm:active, .btn-sm-outline:active { transform: scale(0.96); }
 
-    .app-container { display: grid; grid-template-columns: 1fr; gap: 30px; max-width: 1900px; width: 100%; margin: 0 auto; align-items: start; animation: app-fade-in 0.4s ease; }
+    body {
+      font-family: 'Pretendard Variable', 'Pretendard', -apple-system, BlinkMacSystemFont, system-ui, Roboto, 'Segoe UI', sans-serif;
+      background: #f8fafc;
+      margin: 0;
+      padding: 24px;
+      color: #334155;
+    }
+
+    .app-container { max-width: 1900px; margin: 0 auto; animation: app-fade-in 0.4s ease; }
 
     @keyframes app-fade-in {
       from { opacity: 0; transform: translateY(8px); }
       to { opacity: 1; transform: translateY(0); }
     }
+    .main-content {
+      background: white;
+      border: 1px solid #e2e8f0;
+      border-radius: 16px;
+      padding: 32px;
+      box-shadow: 0 6px 20px rgba(0,0,0,0.05);
+    }
 
-    .main-content { width: 100%; background: white; border: 1px solid #e2e8f0; border-radius: 16px; padding: 36px; box-shadow: 0 6px 20px rgba(0,0,0,0.05); display: flex; flex-direction: column; min-height: 88vh; }
+    /* 상단 3분할: 제목(주황) / 클라우드 안내(초록) / 업로드(파랑) - 한글병합기와 동일한 톤 */
+    .top-section { display: flex; gap: 14px; margin-bottom: 20px; align-items: stretch; }
 
-    h2 { margin: 0; color: #0f172a; font-size: 1.5rem; line-height: 1.3; display: flex; align-items: center; gap: 8px; justify-content: center; }
-    .title-security-badge { background: #dcfce7; color: #166534; font-size: 0.8rem; padding: 4px 8px; border-radius: 4px; font-weight: 600; }
+    .top-col-title {
+      flex: 0 0 22%;
+      display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px;
+      text-align: center;
+      background: linear-gradient(160deg, #fff7ed 0%, #ffedd5 100%);
+      border: 1px solid #fed7aa; border-radius: 12px; padding: 18px 12px;
+      box-shadow: 0 1px 3px rgba(194,65,12,0.06);
+    }
+    .top-col-title:hover { border-color: #fdba74; box-shadow: 0 6px 16px rgba(194,65,12,0.12); transform: translateY(-1px); }
+    .title-icon {
+      font-size: 2.2rem; line-height: 1;
+      filter: drop-shadow(0 2px 2px rgba(194,65,12,0.18));
+    }
+    .title-main {
+      margin: 0; color: #9a3412; font-size: 1.8rem; font-weight: 400;
+      font-family: 'Jua', 'Pretendard Variable', sans-serif;
+      line-height: 1.25; letter-spacing: -0.1px;
+    }
+    .title-badge {
+      background: #dcfce7; color: #166534; font-size: 0.75rem;
+      padding: 4px 10px; border-radius: 100px; font-weight: 700;
+    }
 
-    .security-banner {
+    .top-col-guide { flex: 1 1 auto; display: flex; min-width: 0; }
+    .login-banner {
+      width: 100%;
       background: linear-gradient(180deg, #f0fdf4 0%, #ecfdf5 100%);
       border: 1px solid #bbf7d0;
       border-radius: 14px;
-      padding: 18px 20px;
-      color: #166534;
-      font-size: 15px;
-      font-weight: 700;
-      line-height: 1.55;
-      overflow-y: auto;
-      width: 100%;
-      box-shadow: 0 1px 3px rgba(16, 24, 40, 0.04), 0 1px 2px rgba(16, 24, 40, 0.03);
+      padding: 16px 18px;
+      display: flex; flex-direction: column; gap: 8px; justify-content: center;
+      box-shadow: 0 1px 3px rgba(16,24,40,0.04);
     }
-    .security-banner:hover { border-color: #86efac; box-shadow: 0 6px 16px rgba(22,163,74,0.12); transform: translateY(-1px); }
-    .security-banner-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; margin-bottom: 12px; }
-    .security-banner-header strong { margin-bottom: 0; }
-    .security-banner strong { font-size: 16px; display: block; margin-bottom: 6px; color: #15803d; letter-spacing: -0.2px; }
+    .login-banner:hover { border-color: #86efac; box-shadow: 0 6px 16px rgba(22,163,74,0.12); transform: translateY(-1px); }
+    .login-banner-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; flex-wrap: wrap; }
+    .login-banner-header strong { font-size: 0.95rem; color: #15803d; letter-spacing: -0.2px; }
+    .login-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    #loginStatusDiv { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; }
+    #userProfileInfo { font-size: 12.5px; color: #166534; font-weight: 700; }
 
-    .security-features { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
-    .security-features li {
+    .login-features { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 6px; }
+    .login-features li {
       display: flex; align-items: center; gap: 10px;
-      background: rgba(255, 255, 255, 0.55);
-      border: 1px solid rgba(187, 247, 208, 0.7);
+      background: rgba(255,255,255,0.55);
+      border: 1px solid rgba(187,247,208,0.7);
       border-radius: 10px;
       padding: 8px 12px;
       font-size: 0.83rem;
+      min-width: 0;
     }
-    .security-features .feat-icon {
+    .login-features li > span:not(.feat-icon) { min-width: 0; overflow: hidden; }
+    .login-features .feat-icon {
       flex-shrink: 0; width: 26px; height: 26px; border-radius: 50%;
       background: #16a34a; color: white; display: flex; align-items: center; justify-content: center;
-      font-size: 13px; box-shadow: 0 2px 4px rgba(22, 163, 74, 0.25);
+      font-size: 13px; box-shadow: 0 2px 4px rgba(22,163,74,0.25);
     }
-    .security-features strong { display: inline; font-size: 0.83rem; margin: 0; color: #14532d; }
-    .security-features .feat-desc { color: #15803d; font-weight: 700; }
-
-    /* 상단 20% : 하단 80% 영역 분할 (PDF 병합기와 동일 구조) */
-    .top-section { flex: 0 0 20%; min-height: 150px; display: flex; align-items: stretch; gap: 14px; margin-bottom: 20px; }
-    .top-col-title { flex: 0 0 22%; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; text-align: center; background: linear-gradient(160deg, #fff7ed 0%, #ffedd5 100%); border: 1px solid #fed7aa; border-radius: 12px; padding: 14px 10px; box-shadow: 0 1px 3px rgba(194,65,12,0.06); }
-    .top-col-title:hover { border-color: #fdba74; box-shadow: 0 6px 16px rgba(194,65,12,0.12); transform: translateY(-1px); }
-    .title-icon { font-size: 2rem; line-height: 1; filter: drop-shadow(0 1px 1px rgba(194,65,12,0.15)); }
-    .title-main { margin: 0; color: #9a3412; font-size: 1.8rem; font-weight: 400; font-family: 'Jua', 'Pretendard Variable', sans-serif; line-height: 1.25; letter-spacing: -0.1px; display: block; }
-    .btn-reset { padding: 5px 14px; background: white; border: 1.5px solid #ef4444; color: #ef4444; border-radius: 20px; font-size: 0.78rem; font-weight: 700; cursor: pointer; white-space: nowrap; flex-shrink: 0; transition: background 0.15s, color 0.15s; }
-    .btn-reset:hover { background: #ef4444; color: white; }
-    .btn-reset:disabled { border-color: #cbd5e1; color: #94a3b8; cursor: not-allowed; background: white; }
-    .top-col-guide { flex: 1 1 46%; display: flex; min-width: 0; }
-    .top-col-drop { flex: 0 0 32%; display: flex; }
-    .top-col-drop .drop-zone { flex: 1; margin-bottom: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; }
-
-    .drop-zone { border: 2px dashed #3b82f6; border-radius: 12px; padding: 24px; text-align: center; background-color: #eff6ff; cursor: pointer; margin-bottom: 20px; font-size: 16px; transition: background-color 0.2s, border-color 0.2s; }
-    .drop-zone:hover, .drop-zone.highlight { background-color: #dbeafe; border-color: #1d4ed8; }
-
-    .option-box { background: #f1f5f9; border: 1px solid #cbd5e1; padding: 14px 18px; border-radius: 8px; margin-bottom: 20px; display: flex; align-items: center; gap: 20px; flex-wrap: wrap; }
-    .option-box:hover { border-color: #94a3b8; box-shadow: 0 6px 16px rgba(15,23,42,0.08); transform: translateY(-1px); }
-    .option-box label { font-size: 0.95rem; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 6px; }
-
-    /* 필수 입력 열 지정 UI */
-    .rc-summary { font-size: 0.95rem; font-weight: 600; color: #64748b; }
-    .last-col-control { display: flex; align-items: center; gap: 8px; }
-    .last-col-text {
-      width: 56px; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px;
-      text-transform: uppercase; text-align: center; font-weight: 600; font-size: 0.9rem;
+    .login-features strong {
+      font-size: 0.83rem;
+      color: #14532d;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      display: block;
+      min-width: 0;
     }
-    .last-col-text:disabled { background: #f1f5f9; color: #94a3b8; cursor: not-allowed; }
-    .last-col-text:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
-    .bulk-password-row { display: flex; gap: 8px; margin-bottom: 12px; }
-    .bulk-password-row input[type="password"] { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 0.85rem; }
-    .bulk-password-row input[type="password"]:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
-    .bulk-password-row .btn-action { padding: 8px 14px; font-size: 0.85rem; flex-shrink: 0; }
-    #required-col-list { display: none; flex-direction: column; gap: 10px; width: 100%; margin-top: 4px; padding-top: 12px; border-top: 1px dashed #cbd5e1; }
-    #required-col-list.open { display: flex; }
-    .required-col-row { display: flex; align-items: center; gap: 10px; font-size: 0.88rem; flex-wrap: wrap; }
-    .required-col-row .rc-label { min-width: 170px; color: #334155; font-weight: 500; }
-    .required-col-row input[type="text"] {
-      width: 64px; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px;
-      text-transform: uppercase; text-align: center; font-weight: 600;
+
+    .top-col-drop { flex: 0 0 clamp(200px, 25%, 320px); display: flex; }
+    .drop-zone {
+      flex: 1;
+      border: 2px dashed #3b82f6;
+      background-color: #eff6ff;
+      border-radius: 12px;
+      padding: 16px;
+      text-align: center;
+      cursor: pointer;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      transition: background-color 0.2s, border-color 0.2s;
     }
-    .required-col-row input[type="text"]:focus { outline: none; border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,0.15); }
-    .required-col-empty { color: #94a3b8; font-size: 0.85rem; }
+    .drop-zone:hover, .drop-zone.dragover { background-color: #dbeafe; border-color: #1d4ed8; }
+    .drop-icon { font-size: 1.7rem; margin-bottom: 6px; }
+    .drop-zone strong { display: block; font-size: 0.9rem; font-weight: 700; color: #1e3a8a; line-height: 1.5; }
+    .drop-sub { font-size: 11px; color: #64748b; margin-top: 4px; }
 
-    /* 하단 80% : 목록/미리보기 편집 영역 (개별 리사이즈 가능, PDF 병합기와 동일 방식) */
-    .editor-layout { display: flex; flex-wrap: nowrap; align-items: stretch; gap: 0; margin-bottom: 8px; flex: 1 1 80%; min-height: 0; }
-    .editor-resizer { flex: 0 0 14px; width: 14px; background: #f1f5f9; cursor: col-resize; margin: 0 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; transition: background 0.2s; user-select: none; align-self: stretch; }
-    .editor-resizer::before { content: '⋮'; color: #94a3b8; font-size: 14px; font-weight: bold; }
-    .editor-resizer:hover, .editor-resizer.resizing { background: #2563eb; }
-    .editor-resizer:hover::before, .editor-resizer.resizing::before { color: white; }
+    /* 중앙 영역 배치 그리드 */
+    .middle-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
 
-    .file-list-container { flex: 0 0 calc(20% - 7px); min-width: 340px; max-width: 80%; border: 1px solid #e2e8f0; border-radius: 10px; background: #fafafa; height: 100%; min-height: 300px; max-height: 90vh; overflow: auto; padding: 12px; resize: vertical; }
-    .file-list-container:hover { border-color: #93c5fd; box-shadow: 0 6px 16px rgba(37,99,235,0.1); }
-    .file-name-cell { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-    .file-table-wrapper { overflow-x: auto; max-height: none; overflow-y: visible; border: 1px solid #e2e8f0; border-radius: 6px; }
-    table { width: 100%; table-layout: fixed; border-collapse: collapse; font-size: 0.875rem; text-align: left; }
-    th { background: #f8fafc; padding: 10px 12px; border-bottom: 1px solid #e2e8f0; color: #64748b; font-weight: 600; position: sticky; top: 0; white-space: nowrap; }
-    td { padding: 8px 12px; border-bottom: 1px solid #f1f5f9; vertical-align: middle; }
+    .card-box { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 10px; padding: 16px; box-shadow: 0 1px 3px rgba(0,0,0,0.03); }
+    .card-box:hover { border-color: #cbd5e1; box-shadow: 0 6px 16px rgba(15,23,42,0.08); transform: translateY(-1px); }
 
-    tr.draggable-row { cursor: grab; user-select: none; }
+    .preset-card { background: #fafafa; border: 1px solid #e2e8f0; }
+    .fn-card { background: #fafafa; border: 1px solid #e2e8f0; }
+    .fn-card h4 { color: #15803d; }
+    .fn-row-inline { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+    .rule-card { background: #fafafa; border: 1px solid #e2e8f0; }
+
+    h2 { color: #0f172a; margin-top: 0; font-size: 1.3rem; }
+    h4 { margin: 0 0 10px 0; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between; color: #334155; }
+
+    /* 동일한 정렬 비율을 보장하는 프로필 컨트롤 레이아웃 */
+    .preset-controls { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    .preset-controls input[type="text"], .preset-controls select { flex: 1; width: 100%; }
+
+    /* 두 줄 간의 우측 버튼 영역 넓이 동일화 */
+    .preset-btn-group-top { display: flex; gap: 8px; }
+    .preset-btn-group-bottom { display: flex; gap: 8px; }
+
+    /* 추출위치 카드: 3개씩 그리드 배치 */
+    .rule-cards-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 12px;
+      margin-bottom: 15px;
+    }
+    .rule-card h4 {
+      margin: 0;
+      color: #2563eb;
+      font-size: 0.92rem;
+    }
+    /* 1번째 줄: 제목 + 기준단어 입력창 + 탐색방식 / 2번째 줄: 순번 + 범위
+       - 제목과, 2번째 줄 맨 앞의 빈 칸(rule-card-title-spacer)의 너비를 동일하게 맞춰서
+         2번째 줄 시작 위치가 기준단어 입력창 시작 위치와 정렬되도록 함 */
+    .rule-card-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .rule-card-row + .rule-card-row {
+      margin-top: 10px;
+    }
+    .rule-card-title, .rule-card-title-spacer {
+      flex: 0 0 96px;
+      white-space: nowrap;
+    }
+    /* 1번째 줄의 탐색방식: 2번째 줄 범위와 같은 비율로 우측 폭을 맞춤 */
+    .inline-item-dir {
+      flex: 1 1 0;
+      min-width: 128px;
+    }
+    .rule-sub-fields {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex: 1;
+      min-width: 0;
+    }
+    .rule-fields-grid {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      flex-wrap: nowrap;
+      overflow-x: auto;
+    }
+    .inline-item {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      flex: 1;
+      min-width: 0;
+    }
+    .inline-item input, .inline-item select { min-width: 0; }
+    /* 기준단어 입력창: 2번째 줄 순번과 같은 비율로 좌측 폭만 차지 (하단 범위 시작 위치까지만) */
+    .inline-item-grow { flex: 1 1 0; min-width: 60px; }
+    /* 탐색방식/순번/범위: 2번째 줄에서 남는 가로 공간을 넓게 채움 */
+    .rule-sub-fields .inline-item { flex: 1 1 0; }
+    .rule-sub-fields .inline-item select { width: 100%; }
+    .inline-item label {
+      font-size: 12px;
+      font-weight: bold;
+      color: #475569;
+      white-space: nowrap;
+      margin-bottom: 0;
+    }
+
+    input[type="text"], select { width: 100%; padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 6px; font-size: 13px; background: #fff; }
+    input[type="text"]:focus, select:focus { outline: 2px solid #3b82f6; outline-offset: 0; }
+
+    .action-bar { display: flex; justify-content: space-between; align-items: center; margin-top: 15px; gap: 10px; flex-wrap: wrap; }
+    .btn-group { display: flex; gap: 8px; flex-wrap: wrap; }
+    .btn { padding: 8px 14px; border: none; border-radius: 8px; font-weight: 700; cursor: pointer; font-size: 13px; transition: filter 0.15s; white-space: nowrap; }
+    .btn:hover { filter: brightness(1.08); }
+    .btn:active { transform: translateY(1px); }
+
+    .btn-google { background: #4285f4; color: white; display: inline-flex; align-items: center; gap: 6px; }
+    .btn-logout { background: #6b7280; color: white; }
+
+    .btn-indigo { background: #2563eb; color: white; }
+    .btn-dark { background: #334155; color: white; }
+    .btn-outline-danger { background: transparent; color: #ef4444; border: 1px solid #ef4444; }
+    .btn-outline-indigo { background: transparent; color: #2563eb; border: 1px solid #2563eb; }
+
+    .btn-run { background: #10b981; color: white; }
+    .btn-re { background: #0ea5e9; color: white; }
+    .btn-sel-re { background: #a21caf; color: white; }
+    .btn-clear { background: #ef4444; color: white; }
+    .btn-zip { background: #16a34a; color: white; }
+    .btn:disabled { background: #cbd5e1 !important; border-color: #cbd5e1 !important; color: #64748b !important; cursor: not-allowed; filter: none; }
+    .btn-outline-indigo:disabled { background: transparent !important; border-color: #2563eb !important; color: #2563eb !important; opacity: 0.55; cursor: not-allowed; filter: none; }
+
+    /* 테이블 스타일 및 행 드래그 관련 스타일 */
+    .file-table-wrapper { overflow-x: auto; border: 1px solid #e2e8f0; border-radius: 8px; margin-top: 15px; }
+    table { width: 100%; border-collapse: collapse; }
+    th, td { border-bottom: 1px solid #f1f5f9; padding: 8px 10px; text-align: left; font-size: 13px; }
+    th { background-color: #f8fafc; color: #64748b; font-weight: 600; }
+
+    tr.draggable-row { cursor: grab; }
+    tr.draggable-row:hover { background: #f8fafc; }
     tr.draggable-row:active { cursor: grabbing; }
-    tr.dragging { opacity: 0.4; background: #e2e8f0; }
-    tr.drag-over { border-top: 2px solid #2563eb; }
-    tr.selected-row { background: #eff6ff; }
-    tr.selected-row td { box-shadow: inset 0 1px 0 #bfdbfe, inset 0 -1px 0 #bfdbfe; }
-    tr.draggable-row:hover { background: #f8fafc; cursor: pointer; }
-    .drag-handle { color: #94a3b8; font-weight: bold; cursor: grab; text-align: center; width: 30px; }
-    .num-col { font-weight: 600; color: #64748b; text-align: center; width: 55px; }
-    .num-col-inner { display: flex; align-items: center; justify-content: center; gap: 5px; }
-    .btn-del-x { border: none; background: transparent; color: #cbd5e1; font-weight: 800; font-size: 0.85rem; line-height: 1; padding: 2px 5px; border-radius: 4px; cursor: pointer; transition: background 0.15s, color 0.15s; }
-    .btn-del-x:hover { background: #fee2e2; color: #ef4444; }
+    tr.dragging { opacity: 0.4; background-color: #e2e8f0; }
+    .drag-handle { cursor: grab; font-weight: bold; color: #94a3b8; user-select: none; }
 
-    input[type="password"], select { padding: 6px 8px; border: 1px solid #cbd5e1; border-radius: 4px; font-size: 0.85rem; }
-    .pass-container { display: flex; gap: 4px; align-items: center; }
-    .pass-container input { width: 90px; }
+    .status-badge { display: inline-block; padding: 4px 8px; border-radius: 100px; font-size: 12px; font-weight: 700; }
+    .status-ready { background: #e2e8f0; color: #475569; }
+    .status-working { background: #fef3c7; color: #92400e; }
+    .status-success { background: #dcfce7; color: #166534; }
+    .status-error { background: #fee2e2; color: #b91c1c; }
 
-    .btn-action { padding: 6px 10px; background: #2563eb; color: white; border: none; border-radius: 4px; cursor: pointer; font-size: 0.8rem; white-space: nowrap; }
-    .btn-action:hover { background: #1d4ed8; }
-    .btn-pass { background: #475569; }
-    .btn-pass:hover { background: #334155; }
-    .btn-del { background: #ef4444; }
-    .btn-del:hover { background: #dc2626; }
+    .btn-sm { padding: 4px 8px; font-size: 12px; border: none; border-radius: 6px; cursor: pointer; background: #16a34a; color: white; }
+    .default-tag { font-size: 11px; background: #16a34a; color: white; padding: 2px 8px; border-radius: 100px; margin-left: 6px; }
 
-    .preview-panel { flex: 0 0 calc(80% - 7px); min-width: 320px; max-width: 85%; border: 1px solid #e2e8f0; border-radius: 10px; background: #fafafa; padding: 16px; display: flex; flex-direction: column; height: 100%; min-height: 300px; max-height: 90vh; overflow: auto; resize: both; }
-    .preview-panel:hover { border-color: #cbd5e1; box-shadow: 0 6px 16px rgba(15,23,42,0.08); }
-    .preview-table-wrapper { flex: 1; overflow: auto; max-height: none; background: white; border: 1px solid #cbd5e1; margin-top: 10px; }
-    .preview-table th, .preview-table td { border: 1px solid #cbd5e1; padding: 4px 6px; font-size: 0.75rem; white-space: nowrap; }
-    .preview-table th { background: #f1f5f9; }
+    /* 파일 목록 -> 엑셀 변환기 */
+    .excel-card {
+      margin-top: 24px;
+      background: linear-gradient(180deg, #faf5ff 0%, #f5f3ff 100%);
+      border: 1px solid #ddd6fe;
+      display: flex;
+      flex-direction: column;
+    }
+    .excel-card.expanded { height: 88vh; }
+    .excel-card-header { display: flex; align-items: center; gap: 14px; }
+    .excel-header-col { min-width: 0; }
+    .excel-header-info { flex: 0 0 26%; display: flex; align-items: center; gap: 12px; }
+    .excel-header-paste { flex: 1 1 32%; font-size: 12.5px; font-weight: 700; color: #6d28d9; }
+    .excel-header-result {
+      flex: 1 1 42%; display: flex; align-items: center; justify-content: space-between;
+      font-size: 12.5px; font-weight: 700; color: #6d28d9; flex-wrap: wrap; gap: 8px;
+    }
+    .excel-card h4 { color: #6d28d9; font-size: 1rem; margin: 0; white-space: nowrap; }
+    .excel-body {
+      display: none;
+      flex-direction: column;
+      margin-top: 14px;
+      flex: 1;
+      min-height: 0;
+    }
+    .excel-body.open { display: flex; }
+    .excel-help {
+      background: white; border: 1px solid #e9d5ff; border-radius: 10px;
+      padding: 12px 16px; margin-bottom: 12px; font-size: 12.5px; color: #4c1d95; line-height: 1.65;
+    }
+    .excel-help strong { color: #6d28d9; font-size: 13px; display: block; margin-bottom: 6px; }
+    .excel-help code {
+      background: #f3e8ff; color: #6d28d9; padding: 1px 6px; border-radius: 4px; font-size: 12px;
+    }
 
-    .merge-btn { width: 100%; padding: 16px; background: #10b981; color: white; border: none; border-radius: 10px; font-size: 1.1rem; font-weight: 700; cursor: pointer; margin-top: 20px; box-shadow: 0 2px 6px rgba(16,185,129,0.25); }
-    .merge-btn:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 6px 14px rgba(0,0,0,0.18); }
-    .merge-btn:disabled { background: #cbd5e1; cursor: not-allowed; }
+    .excel-options { display: flex; flex-direction: column; gap: 8px; font-size: 12.5px; color: #4c1d95; font-weight: 600; }
+    .excel-options label { display: flex; align-items: center; gap: 6px; cursor: pointer; }
+    .excel-options input[type="checkbox"] { width: auto; }
 
-    @media (max-width: 1180px) {
-      .app-container { display: flex; flex-direction: column; align-items: center; }
-      .main-content { min-height: auto; }
-      .top-section { flex-direction: column; flex-basis: auto; height: auto; }
-      .top-col-title, .top-col-guide, .top-col-drop { flex-basis: auto; width: 100%; }
-      .editor-layout { flex-direction: column; flex-basis: auto; }
-      .file-list-container, .preview-panel { flex-basis: auto; width: 100%; max-width: 100%; }
-      .file-list-container { height: 320px; }
-      .preview-panel { height: 480px; }
-      .editor-resizer { display: none; }
+    /* 가로 3분할: 안내/옵션(좌) · 붙여넣기(가운데) · 결과(우) - 열렸을 때 카드 높이의 대부분을 차지 */
+    .excel-layout { display: flex; gap: 14px; align-items: stretch; flex: 1; min-height: 0; }
+    .excel-col { flex: 1; min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+    .excel-col-info { flex: 0 0 26%; overflow-y: auto; }
+    .excel-col-paste { flex: 1 1 32%; }
+    .excel-col-result { flex: 1 1 42%; }
+
+    .excel-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+    .btn-sm-outline {
+      background: white; color: #6d28d9; border: 1px solid #c4b5fd;
+      padding: 4px 10px; border-radius: 6px; font-size: 11.5px; font-weight: 700; cursor: pointer;
+    }
+    .btn-sm-outline:hover { background: #f5f3ff; }
+
+    #excelPasteArea {
+      width: 100%; flex: 1; min-height: 0; resize: vertical;
+      border: 1px solid #ddd6fe; border-radius: 8px; padding: 10px 12px;
+      font-size: 13px; font-family: inherit; line-height: 1.6; background: white; overflow: auto;
+    }
+    #excelPasteArea:focus { outline: 2px solid #a78bfa; outline-offset: 0; }
+
+    .excel-table-wrapper {
+      border: 1px solid #ddd6fe; border-radius: 8px; background: white;
+      flex: 1; min-height: 0; overflow: auto;
+    }
+    .excel-table-wrapper table { width: 100%; border-collapse: collapse; }
+    .excel-table-wrapper th { background: #f5f3ff; color: #6d28d9; padding: 8px 10px; font-size: 12px; border-bottom: 1px solid #e9d5ff; white-space: nowrap; }
+    .excel-table-wrapper td { padding: 6px 10px; font-size: 13px; border-bottom: 1px solid #f3f0ff; }
+    .excel-table-wrapper tr:last-child td { border-bottom: none; }
+    .excel-empty { text-align: center; color: #a78bfa; padding: 30px 10px !important; font-size: 12.5px; }
+
+    @media (max-width: 1100px) {
+      .excel-layout { flex-direction: column; }
+      .excel-col-info, .excel-col-paste, .excel-col-result { flex-basis: auto; }
+      .excel-card-header { flex-direction: column; align-items: stretch; }
+      .excel-header-info, .excel-header-paste, .excel-header-result { flex-basis: auto; }
+    }
+
+    @media (max-width: 1400px) {
+      .rule-cards-grid { grid-template-columns: 1fr 1fr; }
+    }
+
+    @media (max-width: 992px) {
+      .top-section { flex-direction: column; }
+      .top-col-title, .top-col-guide, .top-col-drop { flex-basis: auto; }
+      .middle-grid { grid-template-columns: 1fr; }
+      .fn-row-inline { flex-direction: column; align-items: stretch; }
+      .rule-cards-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -189,397 +366,1207 @@
 
 <div class="app-container">
   <div class="main-content">
+
+  <!-- 0. 상단 3분할: 제목(주황) / 클라우드 안내+로그인(초록) / 파일 업로드(파랑) -->
   <div class="top-section">
     <div class="top-col-title">
-      <div class="title-icon">📊</div>
-      <h2 class="title-main">스마트 엑셀<br>병합기</h2>
-      <span class="title-security-badge">🔒 100% 메모리 보안 처리</span>
+      <div class="title-icon">🗂️</div>
+      <h2 class="title-main">스마트 파일명 관리자</h2>
+      <span class="title-badge">🔒 브라우저에서 안전하게 처리</span>
     </div>
 
     <div class="top-col-guide">
-      <div class="security-banner">
-        <div class="security-banner-header">
-          <strong>🔒 개인정보 유출 걱정 없음</strong>
-          <button class="btn-reset" id="reset-btn" onclick="resetAll()" disabled>🗑️ 초기화</button>
-        </div>
-        <ul class="security-features">
-          <li><span class="feat-icon">🌐</span><span><strong>외부 서버 전송 ZERO</strong> <span class="feat-desc">: 엑셀 파일이 외부로 전송되지 않고 브라우저 안에서만 처리</span></span></li>
-          <li><span class="feat-icon">🔑</span><span><strong>암호 걸린 파일도 지원</strong> <span class="feat-desc">: AES 암호화된 파일도 브라우저에서 직접 해독하여 병합</span></span></li>
+      <div class="login-banner">
+        <ul class="login-features">
+          <li style="justify-content: space-between;">
+            <span style="display:flex; align-items:center; gap:10px; min-width:0;"><span class="feat-icon">📄</span><span style="min-width:0;"><strong title="PDF,이미지,HWPX,엑셀 파일 내용의 특정 위치 단어로 파일 이름 자동 설정">PDF,이미지,HWPX,엑셀 파일 내용의 특정 위치 단어로 파일 이름 자동 설정</strong></span></span>
+            <button class="btn btn-outline-indigo" id="btnClear" onclick="clearAllFiles()" style="padding: 5px 10px; font-size: 0.78rem; flex-shrink:0;">💥 전체 초기화</button>
+          </li>
+          <li><span class="feat-icon">⬇️</span><span style="min-width:0;"><strong title="인터넷에서 다운받아 자동생성되는 파일명 관리에 편리">인터넷에서 다운받아 자동생성되는 파일명 관리에 편리</strong></span></li>
+          <li><span class="feat-icon">🎯</span><span style="min-width:0;"><strong title="윈도우 탐색기의 파일 목록을 엑셀 리스트로 변환">윈도우 탐색기의 파일 목록을 엑셀 리스트로 변환</strong></span></li>
         </ul>
       </div>
     </div>
 
     <div class="top-col-drop">
-      <div class="drop-zone" id="drop-zone">
-        📁 <strong>클릭하거나 엑셀 파일들을 이곳으로 끌어다 놓으세요</strong>
-        <input type="file" id="file-input" multiple accept=".xlsx, .xls, .csv" style="display:none;">
+      <div class="drop-zone" id="dropZone">
+        <div class="drop-icon">📂</div>
+        <strong>파일을 마우스로 끌어다 놓거나<br>클릭하여 선택하세요</strong>
+        <div class="drop-sub">PDF, HWPX, 이미지(JPG·PNG 등), 엑셀(XLSX) 파일 지원</div>
+        <input type="file" id="fileInput" multiple accept=".pdf,.hwpx,.jpg,.jpeg,.png,.webp,.bmp,.xlsx" style="display:none;">
       </div>
     </div>
   </div>
 
-  <div class="option-box">
-    <span>📌 <strong>취합 방식 선택:</strong></span>
-    <label>
-      <input type="radio" name="merge-mode" value="single" checked onchange="toggleModeUI()">
-      지정한 시트들을 하나의 시트로 합치기
-    </label>
-    <label>
-      <input type="radio" name="merge-mode" value="multi" onchange="toggleModeUI()">
-      시트명이 같은 것끼리 시트별로 각각 합치기 (모든 시트 자동 취합)
-    </label>
-  </div>
-
-  <div class="option-box" id="required-col-box" style="align-items: flex-start;">
-    <label style="margin: 0;">
-      <input type="checkbox" id="required-col-enable" onchange="onRequiredColToggle()">
-      📌 필수 입력 열 지정
-      <span class="rc-summary">(값이 비면 소계·합계로 간주해 제외)</span>
-    </label>
-
-    <span class="last-col-control">
-      <label style="margin: 0;" title="마지막 열 우측의 안내문 등은 취합에서 제외">
-        <input type="checkbox" id="last-col-enable" onchange="onLastColToggle()">
-        ✂️ 마지막 열 지정
-      </label>
-      <input type="text" id="last-col-input" class="last-col-text" maxlength="3" placeholder="예: F" disabled
-        title="마지막 열 우측의 안내문 등은 취합에서 제외">
-    </span>
-
-    <label style="margin: 0;" title="해당 행이 어느 파일에서 취합된 값인지 확인해서 오류를 찾아낼 수 있음">
-      <input type="checkbox" id="include-source-file" checked>
-      🗂️ 출처파일명 포함 <span class="rc-summary">(행마다 출처 파일명이 맨 우측 열에 추가됨)</span>
-    </label>
-
-    <div id="required-col-list"></div>
-  </div>
-
-  <div class="editor-layout">
-    <div class="file-list-container" id="left-panel">
-      <h3 style="margin-top: 0;">📋 업로드 목록 (<span id="file-count">0</span>) <small style="font-size:0.8rem; font-weight:normal; color:#64748b;">(☰ 핸들로 순서 변경 · 모서리를 드래그하여 크기 조절)</small></h3>
-      <div class="bulk-password-row">
-        <input type="password" id="bulk-password-input" placeholder="비밀번호가 같은 파일이 있으면 여기에 한 번만 입력" title="암호가 걸린 파일들의 비밀번호가 서로 같다면, 여기에 한 번만 입력하고 '전체 적용'을 누르세요. 아직 해독되지 않은 모든 파일에 같은 비밀번호가 한꺼번에 적용됩니다.">
-        <button type="button" class="btn-action" id="bulk-password-btn" onclick="applyPasswordToAll()">전체 적용</button>
-      </div>
-      <div class="file-table-wrapper">
-        <table>
-          <thead>
-            <tr>
-              <th style="width: 55px; text-align: center;">No.</th>
-              <th style="width: 30px;"></th>
-              <th>파일명</th>
-              <th style="width: 150px;">암호 입력</th>
-              <th style="width: 120px;" class="sheet-col">대상 시트</th>
-            </tr>
-          </thead>
-          <tbody id="file-list-body">
-            <tr><td colspan="5" style="text-align: center; color: #94a3b8; padding: 20px;">첨부된 파일이 없습니다.</td></tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
-
-    <div class="editor-resizer" id="editor-resizer"></div>
-
-    <div class="preview-panel" id="right-panel">
-        <h3 style="margin-top:0; font-size: 1.1rem;">👁️ 시트 데이터 미리보기 <br><small id="preview-title" style="font-weight:normal; font-size:0.8rem; color:#64748b;"></small></h3>
-        <div class="preview-table-wrapper" id="preview-wrapper">
-          <p style="text-align:center; color:#94a3b8; margin-top: 50px; font-size:0.85rem;">목록에서 파일을 클릭하면 표시됩니다.</p>
+  <!-- 1. 추출 위치 설정 (3개씩 배치) -->
+  <div class="rule-cards-grid">
+    <div class="card-box rule-card">
+      <div class="rule-card-row">
+        <h4 class="rule-card-title">📍 추출 위치 1</h4>
+        <div class="inline-item inline-item-grow">
+          <label>기준단어:</label>
+          <input type="text" id="key1" value="" placeholder="예: 관북리 유적, 부소산성, 정림사지">
         </div>
+        <div class="inline-item inline-item-dir">
+          <label>탐색방식:</label>
+          <select id="dir1">
+            <option value="self">기준단어 검색값</option>
+            <option value="after" selected>기준 단어 뒤</option>
+            <option value="before">기준 단어 앞</option>
+            <option value="nextLine">다음 줄 전체</option>
+          </select>
+        </div>
+      </div>
+      <div class="rule-card-row">
+        <div class="rule-card-title-spacer"></div>
+        <div class="rule-sub-fields">
+          <div class="inline-item">
+            <label>순번:</label>
+            <select id="idx1">
+              <option value="1" selected>첫 번째</option>
+              <option value="2">두 번째</option>
+              <option value="last">마지막</option>
+            </select>
+          </div>
+          <div class="inline-item">
+            <label>범위:</label>
+            <select id="range1" onchange="toggleCharsInput(1)">
+              <option value="word" selected>1단어(공백전까지)</option>
+              <option value="word2">2단어(공백전까지)</option>
+              <option value="word3">3단어(공백전까지)</option>
+              <option value="word4">4단어(공백전까지)</option>
+              <option value="line">해당 줄 끝까지</option>
+              <option value="chars">N글자(직접입력)</option>
+            </select>
+            <input type="number" id="charsNum1" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(1)">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-box rule-card">
+      <div class="rule-card-row">
+        <h4 class="rule-card-title">📍 추출 위치 2</h4>
+        <div class="inline-item inline-item-grow">
+          <label>기준단어:</label>
+          <input type="text" id="key2" value="" placeholder="예: 백제왕릉원, 나성">
+        </div>
+        <div class="inline-item inline-item-dir">
+          <label>탐색방식:</label>
+          <select id="dir2">
+            <option value="self">기준단어 검색값</option>
+            <option value="after" selected>기준 단어 뒤</option>
+            <option value="before">기준 단어 앞</option>
+            <option value="nextLine">다음 줄 전체</option>
+          </select>
+        </div>
+      </div>
+      <div class="rule-card-row">
+        <div class="rule-card-title-spacer"></div>
+        <div class="rule-sub-fields">
+          <div class="inline-item">
+            <label>순번:</label>
+            <select id="idx2">
+              <option value="1" selected>첫 번째</option>
+              <option value="2">두 번째</option>
+              <option value="last">마지막</option>
+            </select>
+          </div>
+          <div class="inline-item">
+            <label>범위:</label>
+            <select id="range2" onchange="toggleCharsInput(2)">
+              <option value="word">1단어(공백전까지)</option>
+              <option value="word2">2단어(공백전까지)</option>
+              <option value="word3">3단어(공백전까지)</option>
+              <option value="word4">4단어(공백전까지)</option>
+              <option value="line" selected>해당 줄 끝까지</option>
+              <option value="chars">N글자(직접입력)</option>
+            </select>
+            <input type="number" id="charsNum2" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(2)">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-box rule-card">
+      <div class="rule-card-row">
+        <h4 class="rule-card-title">📍 추출 위치 3</h4>
+        <div class="inline-item inline-item-grow">
+          <label>기준단어:</label>
+          <input type="text" id="key3" value="" placeholder="예: 정림사지, 관북리 유적">
+        </div>
+        <div class="inline-item inline-item-dir">
+          <label>탐색방식:</label>
+          <select id="dir3">
+            <option value="self">기준단어 검색값</option>
+            <option value="after" selected>기준 단어 뒤</option>
+            <option value="before">기준 단어 앞</option>
+            <option value="nextLine">다음 줄 전체</option>
+          </select>
+        </div>
+      </div>
+      <div class="rule-card-row">
+        <div class="rule-card-title-spacer"></div>
+        <div class="rule-sub-fields">
+          <div class="inline-item">
+            <label>순번:</label>
+            <select id="idx3">
+              <option value="1" selected>첫 번째</option>
+              <option value="2">두 번째</option>
+              <option value="last">마지막</option>
+            </select>
+          </div>
+          <div class="inline-item">
+            <label>범위:</label>
+            <select id="range3" onchange="toggleCharsInput(3)">
+              <option value="word" selected>1단어(공백전까지)</option>
+              <option value="word2">2단어(공백전까지)</option>
+              <option value="word3">3단어(공백전까지)</option>
+              <option value="word4">4단어(공백전까지)</option>
+              <option value="line">해당 줄 끝까지</option>
+              <option value="chars">N글자(직접입력)</option>
+            </select>
+            <input type="number" id="charsNum3" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(3)">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 추출 위치 4~6: 기본은 숨김, "➕ 추출위치 추가" 버튼을 누르면 하나씩 나타남 -->
+    <div class="card-box rule-card" id="ruleSlot4" style="display:none;">
+      <div class="rule-card-row">
+        <h4 class="rule-card-title">📍 추출 위치 4</h4>
+        <div class="inline-item inline-item-grow">
+          <label>기준단어:</label>
+          <input type="text" id="key4" value="" placeholder="예: 능산리사지, 궁남지">
+        </div>
+        <div class="inline-item inline-item-dir">
+          <label>탐색방식:</label>
+          <select id="dir4">
+            <option value="self">기준단어 검색값</option>
+            <option value="after" selected>기준 단어 뒤</option>
+            <option value="before">기준 단어 앞</option>
+            <option value="nextLine">다음 줄 전체</option>
+          </select>
+        </div>
+      </div>
+      <div class="rule-card-row">
+        <div class="rule-card-title-spacer"></div>
+        <div class="rule-sub-fields">
+          <div class="inline-item">
+            <label>순번:</label>
+            <select id="idx4">
+              <option value="1" selected>첫 번째</option>
+              <option value="2">두 번째</option>
+              <option value="last">마지막</option>
+            </select>
+          </div>
+          <div class="inline-item">
+            <label>범위:</label>
+            <select id="range4" onchange="toggleCharsInput(4)">
+              <option value="word" selected>1단어(공백전까지)</option>
+              <option value="word2">2단어(공백전까지)</option>
+              <option value="word3">3단어(공백전까지)</option>
+              <option value="word4">4단어(공백전까지)</option>
+              <option value="line">해당 줄 끝까지</option>
+              <option value="chars">N글자(직접입력)</option>
+            </select>
+            <input type="number" id="charsNum4" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(4)">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-box rule-card" id="ruleSlot5" style="display:none;">
+      <div class="rule-card-row">
+        <h4 class="rule-card-title">📍 추출 위치 5</h4>
+        <div class="inline-item inline-item-grow">
+          <label>기준단어:</label>
+          <input type="text" id="key5" value="" placeholder="예: 궁남지, 왕흥사지">
+        </div>
+        <div class="inline-item inline-item-dir">
+          <label>탐색방식:</label>
+          <select id="dir5">
+            <option value="self">기준단어 검색값</option>
+            <option value="after" selected>기준 단어 뒤</option>
+            <option value="before">기준 단어 앞</option>
+            <option value="nextLine">다음 줄 전체</option>
+          </select>
+        </div>
+      </div>
+      <div class="rule-card-row">
+        <div class="rule-card-title-spacer"></div>
+        <div class="rule-sub-fields">
+          <div class="inline-item">
+            <label>순번:</label>
+            <select id="idx5">
+              <option value="1" selected>첫 번째</option>
+              <option value="2">두 번째</option>
+              <option value="last">마지막</option>
+            </select>
+          </div>
+          <div class="inline-item">
+            <label>범위:</label>
+            <select id="range5" onchange="toggleCharsInput(5)">
+              <option value="word" selected>1단어(공백전까지)</option>
+              <option value="word2">2단어(공백전까지)</option>
+              <option value="word3">3단어(공백전까지)</option>
+              <option value="word4">4단어(공백전까지)</option>
+              <option value="line">해당 줄 끝까지</option>
+              <option value="chars">N글자(직접입력)</option>
+            </select>
+            <input type="number" id="charsNum5" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(5)">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-box rule-card" id="ruleSlot6" style="display:none;">
+      <div class="rule-card-row">
+        <h4 class="rule-card-title">📍 추출 위치 6</h4>
+        <div class="inline-item inline-item-grow">
+          <label>기준단어:</label>
+          <input type="text" id="key6" value="" placeholder="예: 왕흥사지, 정림사지">
+        </div>
+        <div class="inline-item inline-item-dir">
+          <label>탐색방식:</label>
+          <select id="dir6">
+            <option value="self">기준단어 검색값</option>
+            <option value="after" selected>기준 단어 뒤</option>
+            <option value="before">기준 단어 앞</option>
+            <option value="nextLine">다음 줄 전체</option>
+          </select>
+        </div>
+      </div>
+      <div class="rule-card-row">
+        <div class="rule-card-title-spacer"></div>
+        <div class="rule-sub-fields">
+          <div class="inline-item">
+            <label>순번:</label>
+            <select id="idx6">
+              <option value="1" selected>첫 번째</option>
+              <option value="2">두 번째</option>
+              <option value="last">마지막</option>
+            </select>
+          </div>
+          <div class="inline-item">
+            <label>범위:</label>
+            <select id="range6" onchange="toggleCharsInput(6)">
+              <option value="word" selected>1단어(공백전까지)</option>
+              <option value="word2">2단어(공백전까지)</option>
+              <option value="word3">3단어(공백전까지)</option>
+              <option value="word4">4단어(공백전까지)</option>
+              <option value="line">해당 줄 끝까지</option>
+              <option value="chars">N글자(직접입력)</option>
+            </select>
+            <input type="number" id="charsNum6" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(6)">
+          </div>
+        </div>
+      </div>
     </div>
   </div>
 
-  <button class="merge-btn" id="merge-btn" disabled>중복 목차/무의미한 빈 행 제외 후 엑셀 병합 및 다운로드</button>
+  <!-- 2. 파일 이름 수정 (좌) / 실행 버튼 (우) -->
+  <div class="middle-grid">
+    <div class="card-box fn-card">
+      <h4>
+        <span style="display:flex; align-items:center; gap:10px;">
+          <button class="btn-sm-outline" id="btnAddRule" onclick="addExtractionRule()">➕ 추출위치 추가</button>
+          <span>✂️ 파일 이름 수정</span>
+        </span>
+        <span style="font-size: 12px; font-weight: 600; color: #b91c1c;">⚠️ 기존 파일명은 전체 삭제됩니다. 원하는 파일명을 입력하세요.</span>
+      </h4>
+      <div style="display: flex; flex-direction: column; gap: 10px;">
+        <input type="hidden" id="fnKey" value="">
+        <input type="hidden" id="fnMode" value="removeAll">
+        <div class="fn-row-inline">
+          <div class="inline-item">
+            <label>추가 공통단어:</label>
+            <input type="text" id="commonWord" value="" placeholder="예: 세계문화유산, 백제역사유적지구">
+          </div>
+          <div class="inline-item">
+            <label>공통단어 위치:</label>
+            <select id="commonPos">
+              <option value="prefix" selected>추출값 맨 앞 (접두어)</option>
+              <option value="suffix">추출값 맨 뒤 (접미어)</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-box run-card" style="display:flex; flex-direction:column; justify-content:center;">
+      <div class="btn-group" style="width:100%; flex-wrap:wrap;">
+        <button class="btn btn-outline-indigo" id="btnRun" onclick="runBatchProcess('all')" disabled style="flex:1 1 0; min-width:120px;">▶ 전체 분석 및 실행</button>
+        <button class="btn btn-outline-indigo" id="btnSelRe" onclick="runBatchProcess('selected')" disabled style="flex:1 1 0; min-width:120px;">🎯 선택한 파일만 재실행</button>
+        <button class="btn btn-outline-indigo" id="btnRe" onclick="runBatchProcess('reAll')" disabled style="display:none;">🔄 전체 재실행</button>
+        <button class="btn btn-outline-indigo" id="btnDeleteSelected" onclick="deleteSelectedFiles()" disabled style="flex:1 1 0; min-width:120px;">🗑️ 선택 파일 삭제</button>
+        <button class="btn btn-outline-indigo" id="btnZip" onclick="downloadAllZip()" disabled style="flex:1 1 0; min-width:120px;">📥 전체 파일 다운로드</button>
+      </div>
+    </div>
   </div>
-</div>
 
-<script>
-const _0x5a7655=_0x1dba;(function(_0x5d5e59,_0xc2a1d2){const _0x93b26e=_0x1dba,_0x15b2ee=_0x5d5e59();while(!![]){try{const _0x16c93e=parseInt(_0x93b26e(0x132))/0x1+parseInt(_0x93b26e(0x16e))/0x2*(-parseInt(_0x93b26e(0x13f))/0x3)+-parseInt(_0x93b26e(0x197))/0x4*(parseInt(_0x93b26e(0x1d6))/0x5)+-parseInt(_0x93b26e(0x143))/0x6+-parseInt(_0x93b26e(0x126))/0x7*(parseInt(_0x93b26e(0x157))/0x8)+parseInt(_0x93b26e(0x172))/0x9+parseInt(_0x93b26e(0x1ef))/0xa;if(_0x16c93e===_0xc2a1d2)break;else _0x15b2ee['push'](_0x15b2ee['shift']());}catch(_0x25ee6b){_0x15b2ee['push'](_0x15b2ee['shift']());}}}(_0x1f39,0xe04dc));const dropZone=document[_0x5a7655(0x1e1)](_0x5a7655(0x140)),fileInput=document[_0x5a7655(0x1e1)](_0x5a7655(0x171)),fileListBody=document[_0x5a7655(0x1e1)](_0x5a7655(0x1bc)),fileCountUI=document['getElementById'](_0x5a7655(0x1f1)),mergeBtn=document[_0x5a7655(0x1e1)](_0x5a7655(0x15f)),previewWrapper=document[_0x5a7655(0x1e1)](_0x5a7655(0x135)),previewTitle=document[_0x5a7655(0x1e1)](_0x5a7655(0x17b));function _0x1dba(_0x54c8b0,_0x15daf0){_0x54c8b0=_0x54c8b0-0x124;const _0x472050=_0x1f39();let _0x4e78e8=_0x472050[_0x54c8b0];if(_0x1dba['BMYCJM']===undefined){var _0x582efe=function(_0x471128){const _0x2a8cef='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';let _0x5817f6='',_0x2a1a23='',_0x37018b=_0x5817f6+_0x582efe,_0x553df4=(''+function(){return 0x0;})['indexOf']('\x0a')!==-0x1;for(let _0x1663cd=0x0,_0x4c94ca,_0xfabdf3,_0x3b74ff=0x0;_0xfabdf3=_0x471128['charAt'](_0x3b74ff++);~_0xfabdf3&&(_0x4c94ca=_0x1663cd%0x4?_0x4c94ca*0x40+_0xfabdf3:_0xfabdf3,_0x1663cd++%0x4)?_0x5817f6+=_0x553df4||_0x37018b['charCodeAt'](_0x3b74ff+0xa)-0xa!==0x0?String['fromCharCode'](0xff&_0x4c94ca>>(-0x2*_0x1663cd&0x6)):_0x1663cd:0x0){_0xfabdf3=_0x2a8cef['indexOf'](_0xfabdf3);}for(let _0xe9b097=0x0,_0x8f86e2=_0x5817f6['length'];_0xe9b097<_0x8f86e2;_0xe9b097++){_0x2a1a23+='%'+('00'+_0x5817f6['charCodeAt'](_0xe9b097)['toString'](0x10))['slice'](-0x2);}return decodeURIComponent(_0x2a1a23);};_0x1dba['yrILUY']=_0x582efe,_0x1dba['wgIDfz']={},_0x1dba['BMYCJM']=!![];}const _0x1f3954=_0x472050[0x0];_0x1dba['UOIieg']!==_0x1f3954&&(_0x1dba['wgIDfz']={},_0x1dba['UOIieg']=_0x1f3954);const _0x1dba31=_0x1dba['wgIDfz'][_0x54c8b0];if(_0x1dba31===undefined){const _0x3e2b04=function(_0x37961d){this['nORQKE']=_0x37961d,this['NnOOBj']=[0x1,0x0,0x0],this['aAEpXY']=function(){return'newState';},this['YwYuVN']='\x5c\x77\x2b\x20\x2a\x5c\x28\x5c\x29\x20\x2a\x7b\x5c\x77\x2b\x20\x2a',this['keifvH']='\x5b\x27\x7c\x22\x5d\x2e\x2b\x5b\x27\x7c\x22\x5d\x3b\x3f\x20\x2a\x7d';};_0x3e2b04['prototype']['mzGZhf']=function(){const _0x28ef5b=new RegExp(this['YwYuVN']+this['keifvH']),_0x40940f=_0x28ef5b['test'](this['aAEpXY']['toString']())?--this['NnOOBj'][0x1]:--this['NnOOBj'][0x0];return this['wTAIFr'](_0x40940f);},_0x3e2b04['prototype']['wTAIFr']=function(_0x57d2f6){if(!Boolean(~_0x57d2f6))return _0x57d2f6;return this['NNCYjU'](this['nORQKE']);},_0x3e2b04['prototype']['NNCYjU']=function(_0x3e5a1f){for(let _0x411423=0x0,_0x283a7a=this['NnOOBj']['length'];_0x411423<_0x283a7a;_0x411423++){this['NnOOBj']['push'](Math['round'](Math['random']())),_0x283a7a=this['NnOOBj']['length'];}return _0x3e5a1f(this['NnOOBj'][0x0]);},(''+function(){return 0x0;})['indexOf']('\x0a')===-0x1&&new _0x3e2b04(_0x1dba)['mzGZhf'](),_0x4e78e8=_0x1dba['yrILUY'](_0x4e78e8),_0x1dba['wgIDfz'][_0x54c8b0]=_0x4e78e8;}else _0x4e78e8=_0x1dba31;return _0x4e78e8;}let fileDataList=[],draggedIndex=null,selectedPreviewIndex=null;(function initEditorResizer(){const _0x4064f8=_0x5a7655,_0x1663cd=document[_0x4064f8(0x1e1)](_0x4064f8(0x1d5)),_0x4c94ca=document['getElementById'](_0x4064f8(0x1cb)),_0xfabdf3=document[_0x4064f8(0x1e1)](_0x4064f8(0x1e2)),_0x3b74ff=document[_0x4064f8(0x18b)](_0x4064f8(0x1b4));if(!_0x1663cd||!_0x4c94ca||!_0xfabdf3||!_0x3b74ff)return;let _0xe9b097=![];_0x1663cd['addEventListener'](_0x4064f8(0x165),_0x8f86e2=>{const _0x4d9549=_0x4064f8;_0xe9b097=!![],_0x1663cd['classList'][_0x4d9549(0x1ae)](_0x4d9549(0x199)),document['body'][_0x4d9549(0x1c0)][_0x4d9549(0x16a)]=_0x4d9549(0x1a2),document[_0x4d9549(0x185)][_0x4d9549(0x1c0)][_0x4d9549(0x1b6)]='none',_0x8f86e2[_0x4d9549(0x14b)]();}),document[_0x4064f8(0x128)](_0x4064f8(0x1e5),_0x3e2b04=>{const _0x281432=_0x4064f8;if(!_0xe9b097)return;const _0x37961d=_0x3b74ff[_0x281432(0x1eb)](),_0x28ef5b=_0x3e2b04['clientX']-_0x37961d[_0x281432(0x178)],_0x40940f=0x140,_0x57d2f6=_0x37961d[_0x281432(0x191)]-_0x40940f-_0x1663cd[_0x281432(0x1dc)];if(_0x57d2f6<=_0x40940f)return;let _0x3e5a1f=Math[_0x281432(0x14d)](_0x40940f,Math[_0x281432(0x175)](_0x28ef5b,_0x57d2f6));_0x4c94ca[_0x281432(0x1c0)][_0x281432(0x1d4)]=_0x281432(0x1b7)+_0x3e5a1f+'px',_0xfabdf3[_0x281432(0x1c0)][_0x281432(0x1d4)]=_0x281432(0x12d);}),document[_0x4064f8(0x128)](_0x4064f8(0x1ce),()=>{const _0x560068=_0x4064f8;_0xe9b097&&(_0xe9b097=![],_0x1663cd[_0x560068(0x192)][_0x560068(0x1e0)](_0x560068(0x199)),document[_0x560068(0x185)][_0x560068(0x1c0)][_0x560068(0x16a)]='',document[_0x560068(0x185)]['style'][_0x560068(0x1b6)]='');});}(),dropZone[_0x5a7655(0x128)](_0x5a7655(0x190),()=>fileInput[_0x5a7655(0x190)]()),fileInput[_0x5a7655(0x128)](_0x5a7655(0x188),_0x411423=>handleFiles(Array[_0x5a7655(0x137)](_0x411423[_0x5a7655(0x1d7)][_0x5a7655(0x198)]))),[_0x5a7655(0x162),_0x5a7655(0x1cc),_0x5a7655(0x168),_0x5a7655(0x14c)]['forEach'](_0x283a7a=>{const _0x4a8653=_0x5a7655;dropZone[_0x4a8653(0x128)](_0x283a7a,_0x29e794=>{const _0x14991e=_0x4a8653;_0x29e794[_0x14991e(0x14b)](),_0x29e794[_0x14991e(0x134)]();});}),dropZone['addEventListener'](_0x5a7655(0x162),()=>dropZone[_0x5a7655(0x192)][_0x5a7655(0x1ae)](_0x5a7655(0x141))),dropZone[_0x5a7655(0x128)](_0x5a7655(0x1cc),()=>dropZone[_0x5a7655(0x192)][_0x5a7655(0x1ae)](_0x5a7655(0x141))),dropZone[_0x5a7655(0x128)](_0x5a7655(0x168),()=>dropZone[_0x5a7655(0x192)][_0x5a7655(0x1e0)](_0x5a7655(0x141))),dropZone[_0x5a7655(0x128)](_0x5a7655(0x14c),_0x433f63=>{const _0x4591bd=_0x5a7655;dropZone[_0x4591bd(0x192)][_0x4591bd(0x1e0)]('highlight'),handleFiles(Array[_0x4591bd(0x137)](_0x433f63[_0x4591bd(0x1a8)][_0x4591bd(0x198)]));}));async function handleFiles(_0x2056ab){const _0x116d60=_0x5a7655,_0x23c6f4=(function(){let _0x4230fe=!![];return function(_0x4fee5a,_0x457099){const _0x126c42=_0x4230fe?function(){const _0x40ee4e=_0x1dba;if(_0x457099){const _0x15643a=_0x457099[_0x40ee4e(0x12b)](_0x4fee5a,arguments);return _0x457099=null,_0x15643a;}}:function(){};return _0x4230fe=![],_0x126c42;};}()),_0x119b1d=_0x23c6f4(this,function(){const _0x5d0f97=_0x1dba;if(_0x119b1d[_0x5d0f97(0x15c)]()[_0x5d0f97(0x124)]()[_0x5d0f97(0x1de)]('\x0a')!==-0x1)return;return _0x119b1d[_0x5d0f97(0x124)]()[_0x5d0f97(0x131)](_0x5d0f97(0x1c2))[_0x5d0f97(0x124)]()[_0x5d0f97(0x1b5)](_0x119b1d)[_0x5d0f97(0x131)](_0x5d0f97(0x1c2));});_0x119b1d();const _0x357e42=_0x2056ab['filter'](_0x45b804=>_0x45b804['name'][_0x116d60(0x1a3)](/\.(xlsx|xls|csv)$/i));for(const _0x3f09b8 of _0x357e42){const _0x4393a5={'id':Math[_0x116d60(0x194)]()['toString'](0x24)[_0x116d60(0x180)](0x2,0x9),'file':_0x3f09b8,'workbook':null,'password':'','selectedSheet':''};await parseWorkbook(_0x4393a5),fileDataList[_0x116d60(0x1a1)](_0x4393a5);}updateUI();}function resetAll(){const _0x6cba6e=_0x5a7655;if(fileDataList[_0x6cba6e(0x1e7)]===0x0)return;fileDataList=[],draggedIndex=null,selectedPreviewIndex=null,fileInput[_0x6cba6e(0x170)]='',previewTitle[_0x6cba6e(0x1c6)]='',previewWrapper[_0x6cba6e(0x17a)]=_0x6cba6e(0x16c),updateUI();}const AGILE_BLOCK_KEYS={'key':Uint8Array[_0x5a7655(0x137)]([0x14,0x6e,0xb,0xe7,0xab,0xac,0xd0,0xd6]),'verifierInput':Uint8Array[_0x5a7655(0x137)]([0xfe,0xa7,0xd2,0x76,0x3b,0x4b,0x9e,0x79]),'verifierValue':Uint8Array[_0x5a7655(0x137)]([0xd7,0xaa,0xf,0x6d,0x30,0x61,0x34,0x4e])};function u8ToBinStr(_0x54e80b){const _0x4b7ffc=_0x5a7655;let _0x2bd783='';for(let _0xc72c1e=0x0;_0xc72c1e<_0x54e80b[_0x4b7ffc(0x1e7)];_0xc72c1e++)_0x2bd783+=String[_0x4b7ffc(0x1db)](_0x54e80b[_0xc72c1e]);return _0x2bd783;}function binStrToU8(_0xc9d0c0){const _0x356811=_0x5a7655,_0x340505=new Uint8Array(_0xc9d0c0[_0x356811(0x1e7)]);for(let _0x28dbe1=0x0;_0x28dbe1<_0xc9d0c0['length'];_0x28dbe1++)_0x340505[_0x28dbe1]=_0xc9d0c0[_0x356811(0x139)](_0x28dbe1);return _0x340505;}function base64ToU8(_0x10577e){return binStrToU8(atob(_0x10577e));}function uint32LEBytes(_0x3f81dd){const _0x21f479=_0x5a7655;return Uint8Array[_0x21f479(0x137)]([_0x3f81dd&0xff,_0x3f81dd>>>0x8&0xff,_0x3f81dd>>>0x10&0xff,_0x3f81dd>>>0x18&0xff]);}function passwordToUtf16LEBytes(_0x30c177){const _0x2a11d5=_0x5a7655,_0x527af2=new Uint8Array(_0x30c177[_0x2a11d5(0x1e7)]*0x2);for(let _0x2823e1=0x0;_0x2823e1<_0x30c177[_0x2a11d5(0x1e7)];_0x2823e1++){const _0x350f45=_0x30c177['charCodeAt'](_0x2823e1);_0x527af2[_0x2823e1*0x2]=_0x350f45&0xff,_0x527af2[_0x2823e1*0x2+0x1]=_0x350f45>>0x8&0xff;}return _0x527af2;}function hashConcat(_0x3fdf2c,_0x33a262){const _0x1e6cbc=_0x5a7655,_0x429eff=_0x3fdf2c[_0x1e6cbc(0x1ed)]();if(!forge['md'][_0x429eff])throw new Error(_0x1e6cbc(0x152));const _0x7f8bd4=forge['md'][_0x429eff][_0x1e6cbc(0x1c8)]();return _0x33a262[_0x1e6cbc(0x189)](_0x16f7e7=>_0x7f8bd4[_0x1e6cbc(0x17f)](u8ToBinStr(_0x16f7e7))),binStrToU8(_0x7f8bd4[_0x1e6cbc(0x186)]()[_0x1e6cbc(0x187)]());}function aesCbcDecryptNoPad(_0x5245b0,_0x1262d4,_0x14f040){const _0x3541d3=_0x5a7655,_0x357359=forge[_0x3541d3(0x1da)][_0x3541d3(0x144)](_0x3541d3(0x1c5),u8ToBinStr(_0x5245b0));return _0x357359[_0x3541d3(0x13b)]({'iv':u8ToBinStr(_0x1262d4)}),_0x357359[_0x3541d3(0x17f)](forge[_0x3541d3(0x149)][_0x3541d3(0x1bd)](u8ToBinStr(_0x14f040))),_0x357359[_0x3541d3(0x1ec)](()=>!![]),binStrToU8(_0x357359['output'][_0x3541d3(0x187)]());}function convertPasswordToKey(_0x39c106,_0x14e966,_0x5f48e8,_0x101271,_0x146b25,_0x495b17){const _0x3788b2=_0x5a7655,_0x717c7d=passwordToUtf16LEBytes(_0x39c106);let _0x241f95=hashConcat(_0x14e966,[_0x5f48e8,_0x717c7d]);for(let _0x4834dc=0x0;_0x4834dc<_0x101271;_0x4834dc++){_0x241f95=hashConcat(_0x14e966,[uint32LEBytes(_0x4834dc),_0x241f95]);}_0x241f95=hashConcat(_0x14e966,[_0x241f95,_0x495b17]);const _0x11768b=_0x146b25/0x8;if(_0x241f95[_0x3788b2(0x1e7)]<_0x11768b){const _0x1f55f2=new Uint8Array(_0x11768b)[_0x3788b2(0x14e)](0x36);_0x1f55f2[_0x3788b2(0x161)](_0x241f95),_0x241f95=_0x1f55f2;}else _0x241f95[_0x3788b2(0x1e7)]>_0x11768b&&(_0x241f95=_0x241f95['slice'](0x0,_0x11768b));return _0x241f95;}function createAgileIV(_0x271660,_0x11943a,_0x48d23e,_0x40b59d){const _0x55d9ce=_0x5a7655,_0x105ff3=typeof _0x40b59d===_0x55d9ce(0x1f5)?uint32LEBytes(_0x40b59d):_0x40b59d;let _0x5c12a8=hashConcat(_0x271660,[_0x11943a,_0x105ff3]);if(_0x5c12a8[_0x55d9ce(0x1e7)]<_0x48d23e){const _0x2aaa85=new Uint8Array(_0x48d23e)[_0x55d9ce(0x14e)](0x36);_0x2aaa85[_0x55d9ce(0x161)](_0x5c12a8),_0x5c12a8=_0x2aaa85;}else _0x5c12a8[_0x55d9ce(0x1e7)]>_0x48d23e&&(_0x5c12a8=_0x5c12a8[_0x55d9ce(0x1b8)](0x0,_0x48d23e));return _0x5c12a8;}function decryptAgilePackage(_0x1805c5,_0xa7ee7c,_0x501ee5,_0x25ca3a,_0x525d02){const _0x4a80d7=_0x5a7655,_0x1fc3ed=0x1000,_0x4d66de=0x8,_0x175ba6=[];let _0x404fe2=0x0,_0x32a98c=0x0,_0x5a4dd0=0x0;while(_0x5a4dd0<_0x525d02[_0x4a80d7(0x1e7)]){_0x32a98c=_0x5a4dd0,_0x5a4dd0=_0x32a98c+_0x1fc3ed;if(_0x5a4dd0>_0x525d02[_0x4a80d7(0x1e7)])_0x5a4dd0=_0x525d02[_0x4a80d7(0x1e7)];let _0x117bb0=_0x525d02[_0x4a80d7(0x1b8)](_0x32a98c+_0x4d66de,_0x5a4dd0+_0x4d66de);const _0x390d68=_0x117bb0[_0x4a80d7(0x1e7)]%_0xa7ee7c;if(_0x390d68){const _0x464a45=new Uint8Array(_0x117bb0[_0x4a80d7(0x1e7)]+(_0xa7ee7c-_0x390d68));_0x464a45[_0x4a80d7(0x161)](_0x117bb0),_0x117bb0=_0x464a45;}if(_0x117bb0[_0x4a80d7(0x1e7)]>0x0){const _0x40e0a2=createAgileIV(_0x501ee5,_0x1805c5,_0xa7ee7c,_0x404fe2);_0x175ba6[_0x4a80d7(0x1a1)](aesCbcDecryptNoPad(_0x25ca3a,_0x40e0a2,_0x117bb0));}_0x404fe2++;}let _0x3563cf=_0x175ba6[_0x4a80d7(0x179)]((_0x14da66,_0xb4948e)=>_0x14da66+_0xb4948e[_0x4a80d7(0x1e7)],0x0),_0x453757=new Uint8Array(_0x3563cf),_0x5682e1=0x0;for(const _0x2301b9 of _0x175ba6){_0x453757[_0x4a80d7(0x161)](_0x2301b9,_0x5682e1),_0x5682e1+=_0x2301b9[_0x4a80d7(0x1e7)];}const _0x1ea512=_0x525d02[0x0]|_0x525d02[0x1]<<0x8|_0x525d02[0x2]<<0x10|_0x525d02[0x3]<<0x18;return _0x453757[_0x4a80d7(0x1b8)](0x0,_0x1ea512>>>0x0);}function decryptAgileXlsx(_0x36ee9b,_0x1b1927){const _0x5202f5=_0x5a7655,_0x8805f=new Uint8Array(_0x36ee9b);let _0x2bae4f;try{_0x2bae4f=XLSX[_0x5202f5(0x174)][_0x5202f5(0x182)](_0x8805f,{'type':_0x5202f5(0x12f)});}catch(_0x28b2ad){throw new Error(_0x5202f5(0x193));}const _0x23a9c0=XLSX[_0x5202f5(0x174)][_0x5202f5(0x1ee)](_0x2bae4f,_0x5202f5(0x195)),_0xe4f4da=XLSX[_0x5202f5(0x174)][_0x5202f5(0x1ee)](_0x2bae4f,_0x5202f5(0x1e8));if(!_0x23a9c0||!_0xe4f4da)throw new Error(_0x5202f5(0x193));let _0x152837=_0x23a9c0[_0x5202f5(0x19a)],_0xe4ec9=_0xe4f4da[_0x5202f5(0x19a)];if(!(_0x152837 instanceof Uint8Array))_0x152837=new Uint8Array(_0x152837);if(!(_0xe4ec9 instanceof Uint8Array))_0xe4ec9=new Uint8Array(_0xe4ec9);const _0x1b1a2c=_0x152837[0x0]|_0x152837[0x1]<<0x8,_0x17a1ed=_0x152837[0x2]|_0x152837[0x3]<<0x8;if(!(_0x1b1a2c===0x4&&_0x17a1ed===0x4))throw new Error(_0x5202f5(0x152));const _0xea09d2=new TextDecoder('utf-8')[_0x5202f5(0x13c)](_0x152837[_0x5202f5(0x1b8)](0x8)),_0x55cbe5=new DOMParser()[_0x5202f5(0x19e)](_0xea09d2,_0x5202f5(0x17e));if(_0x55cbe5[_0x5202f5(0x17d)](_0x5202f5(0x1a7))[_0x5202f5(0x1e7)]>0x0)throw new Error(_0x5202f5(0x152));const _0xc146cc=_0x55cbe5[_0x5202f5(0x17d)](_0x5202f5(0x1e4))[0x0],_0xfa4339=_0x55cbe5[_0x5202f5(0x17d)](_0x5202f5(0x18a))[0x0]||_0x55cbe5[_0x5202f5(0x17d)](_0x5202f5(0x15d))[0x0];if(!_0xc146cc||!_0xfa4339)throw new Error(_0x5202f5(0x152));const _0x4f75ec={'saltValue':base64ToU8(_0xc146cc[_0x5202f5(0x1a9)](_0x5202f5(0x16f))),'hashAlgorithm':_0xc146cc[_0x5202f5(0x1a9)]('hashAlgorithm'),'blockSize':parseInt(_0xc146cc[_0x5202f5(0x1a9)]('blockSize'),0xa)},_0x5af9fe={'encryptedKeyValue':base64ToU8(_0xfa4339[_0x5202f5(0x1a9)](_0x5202f5(0x17c))),'saltValue':base64ToU8(_0xfa4339[_0x5202f5(0x1a9)](_0x5202f5(0x16f))),'hashAlgorithm':_0xfa4339[_0x5202f5(0x1a9)]('hashAlgorithm'),'spinCount':parseInt(_0xfa4339['getAttribute'](_0x5202f5(0x1c3)),0xa),'keyBits':parseInt(_0xfa4339['getAttribute'](_0x5202f5(0x177)),0xa),'encryptedVerifierHashInput':base64ToU8(_0xfa4339[_0x5202f5(0x1a9)](_0x5202f5(0x16d))),'encryptedVerifierHashValue':base64ToU8(_0xfa4339[_0x5202f5(0x1a9)](_0x5202f5(0x19d)))},_0x49039a=convertPasswordToKey(_0x1b1927,_0x5af9fe[_0x5202f5(0x147)],_0x5af9fe[_0x5202f5(0x16f)],_0x5af9fe[_0x5202f5(0x1c3)],_0x5af9fe[_0x5202f5(0x177)],AGILE_BLOCK_KEYS[_0x5202f5(0x125)]),_0x3bb513=aesCbcDecryptNoPad(_0x49039a,_0x5af9fe[_0x5202f5(0x16f)],_0x5af9fe[_0x5202f5(0x16d)]),_0x5199cc=convertPasswordToKey(_0x1b1927,_0x5af9fe[_0x5202f5(0x147)],_0x5af9fe[_0x5202f5(0x16f)],_0x5af9fe[_0x5202f5(0x1c3)],_0x5af9fe[_0x5202f5(0x177)],AGILE_BLOCK_KEYS[_0x5202f5(0x13e)]),_0x59213c=aesCbcDecryptNoPad(_0x5199cc,_0x5af9fe[_0x5202f5(0x16f)],_0x5af9fe[_0x5202f5(0x19d)]),_0x434c19=hashConcat(_0x5af9fe[_0x5202f5(0x147)],[_0x3bb513]);let _0x21f808=_0x434c19[_0x5202f5(0x1e7)]>0x0;for(let _0x401553=0x0;_0x401553<_0x434c19[_0x5202f5(0x1e7)];_0x401553++){if(_0x434c19[_0x401553]!==_0x59213c[_0x401553]){_0x21f808=![];break;}}if(!_0x21f808)throw new Error(_0x5202f5(0x1f2));const _0x52e074=convertPasswordToKey(_0x1b1927,_0x5af9fe[_0x5202f5(0x147)],_0x5af9fe[_0x5202f5(0x16f)],_0x5af9fe['spinCount'],_0x5af9fe[_0x5202f5(0x177)],AGILE_BLOCK_KEYS[_0x5202f5(0x12c)]),_0x1c7b5e=aesCbcDecryptNoPad(_0x52e074,_0x5af9fe[_0x5202f5(0x16f)],_0x5af9fe[_0x5202f5(0x17c)]);return decryptAgilePackage(_0x4f75ec[_0x5202f5(0x16f)],_0x4f75ec[_0x5202f5(0x1b3)],_0x4f75ec[_0x5202f5(0x147)],_0x1c7b5e,_0xe4ec9);}async function parseWorkbook(_0x75fbfc){const _0x2c7abe=_0x5a7655;_0x75fbfc[_0x2c7abe(0x1d3)]=null;try{const _0x1d868d=await _0x75fbfc[_0x2c7abe(0x14a)]['arrayBuffer'](),_0x7e2409=!!(_0x75fbfc['password']&&_0x75fbfc[_0x2c7abe(0x1f3)][_0x2c7abe(0x1b0)]()!=='');let _0x41b7f5=null;try{const _0x1d5393={'type':_0x2c7abe(0x12f)};if(_0x7e2409)_0x1d5393[_0x2c7abe(0x1f3)]=_0x75fbfc[_0x2c7abe(0x1f3)][_0x2c7abe(0x1b0)]();_0x41b7f5=XLSX[_0x2c7abe(0x182)](_0x1d868d,_0x1d5393);}catch(_0x7a0317){_0x41b7f5=null;}if(!_0x41b7f5&&_0x7e2409)try{const _0x527fc5=decryptAgileXlsx(_0x1d868d,_0x75fbfc['password'][_0x2c7abe(0x1b0)]());_0x41b7f5=XLSX[_0x2c7abe(0x182)](_0x527fc5,{'type':'array'});}catch(_0x147a00){return _0x75fbfc[_0x2c7abe(0x19f)]=null,_0x75fbfc[_0x2c7abe(0x1d3)]=_0x147a00&&_0x147a00[_0x2c7abe(0x1b9)]?_0x147a00[_0x2c7abe(0x1b9)]:_0x2c7abe(0x127),![];}if(_0x41b7f5&&_0x41b7f5[_0x2c7abe(0x1cf)]&&_0x41b7f5[_0x2c7abe(0x1cf)][_0x2c7abe(0x1e7)]>0x0)return _0x75fbfc['workbook']=_0x41b7f5,(!_0x75fbfc[_0x2c7abe(0x1e6)]||!_0x41b7f5['SheetNames'][_0x2c7abe(0x133)](_0x75fbfc[_0x2c7abe(0x1e6)]))&&(_0x75fbfc[_0x2c7abe(0x1e6)]=_0x41b7f5[_0x2c7abe(0x1cf)][0x0]),!![];else{_0x75fbfc[_0x2c7abe(0x19f)]=null;if(!_0x75fbfc['lastError'])_0x75fbfc[_0x2c7abe(0x1d3)]=_0x7e2409?_0x2c7abe(0x1f2):_0x2c7abe(0x1a4);return![];}}catch(_0x2f8d5f){return _0x75fbfc[_0x2c7abe(0x19f)]=null,_0x75fbfc[_0x2c7abe(0x1d3)]=_0x2f8d5f&&_0x2f8d5f['message']?_0x2f8d5f['message']:_0x2c7abe(0x127),![];}}function toggleModeUI(){const _0x511ecb=_0x5a7655,_0x402132=document[_0x511ecb(0x18b)](_0x511ecb(0x159))[_0x511ecb(0x170)]===_0x511ecb(0x1ad);document[_0x511ecb(0x19b)](_0x511ecb(0x167))[_0x511ecb(0x189)](_0x202275=>{const _0x8d33d6=_0x511ecb;_0x202275[_0x8d33d6(0x1c0)][_0x8d33d6(0x1ab)]=_0x402132?'none':'';});}function _0x1f39(){const _0x37e74c=['C3rVCfbYB3bHz2f0Aw9U','ChjLDMLLDY13CMfWCgvY','BNvTlwnVBc1PBM5LCG','zNjVBq','B25JBgLJAW','y2HHCKnVzgvbDa','y2XHC3noyw1L','C3rHCNq','zgvJB2rL','C2vSzwn0zwqTCM93','DMvYAwzPzxjwywX1zq','m3bzrLHVCG','zhjVCc16B25L','AgLNAgXPz2H0','DgL0Bgu','ndCWmJu2mejMuvvAsG','y3jLyxrLrgvJAxbOzxi','C2HLzxrFDg9FAhrTBa','7jwu7zI4ioYEHEUGPq','AgfZAefSz29YAxrOBq','yNrUlwfJDgLVBIbIDg4TCgfZCW','DxrPBa','zMLSzq','ChjLDMvUDerLzMf1Bhq','zhjVCa','Bwf4','zMLSBa','CgfZCY1JB250ywLUzxi','B25JAgfUz2u','yNrUlwrLBc14','vu5tvvbqt1jururFru5duLLqveLptG','DhLWzq','y3jLyxrLrwXLBwvUDa','DxrPBhm','y2XVC2vZDa','mJq5ndq4ogvzBfvsqG','BNvTlwnVBa','Aw5WDxrBBMfTzt0IBwvYz2uTBw9KzsjDoMnOzwnRzwq','yMX1CG','ihnLBgvJDgvKlxjVDW','yMLUza','zw5JCNLWDgvKs2v5','B25IBhvY','BwvYz2uTyNrU','C2HLzxqTy29S','C2v0','zhjHz2vUDgvY','phnWyw4GC3r5Bgu9iMnVBg9YoInLzJq0ndq7igzVBNqTC2L6ztOWlJC1CMvToYbMB250lxDLAwDODdO2mda7iJ4','zhjHzY1Oyw5KBgu','Bw91C2vKB3DU','i2zPBguTBgLZDc1IB2r5ihrY','lNnOzwv0lwnVBa','zhjHz2XLyxzL','BM9Uzq','y3vYC29Y','CgXHy2vOB2XKzxi','phaGC3r5Bgu9iNrLEhqTywXPz246y2vUDgvYoYbJB2XVCJOJotrHm2i4oYbTyxjNAw4TDg9WoIa1mhb4oYbMB250lxnPEMu6mc44nxjLBtSIpUUQQEUHNEYxKoYeNcdTJiZSNBZSNyqG7yg066AT7zwy66M0io2rNoYlNoUqQEUlIoUlPc48l3a+','zw5JCNLWDgvKvMvYAwzPzxjiyxnOsw5WDxq','mty5mZC4nhL1yxbqta','C2fSDfzHBhvL','DMfSDwu','zMLSzs1PBNb1Da','ntu1mJK4mLP1B0XHAa','A2v5CW','q0zc','BwLU','yxbWzw5Kq2HPBgq','A2v5qML0CW','BgvMDa','CMvKDwnL','Aw5Uzxjive1m','ChjLDMLLDY10AxrSzq','zw5JCNLWDgvKs2v5vMfSDwu','z2v0rwXLBwvUDhncEvrHz05HBwu','yxbWBgLJyxrPB24VEg1S','DxbKyxrL','C3vIC3rY','DgfIBgu','CMvHza','4PQG77IpioUVUoYNGoYBKcdSLztTMlJTMzqG67cP7iUD','yw9Hx3rVx3nOzwv0','yM9KEq','zgLNzxn0','z2v0qNL0zxm','y2HHBMDL','zM9YrwfJAa','CdPLBMnYExb0zwrlzxK','CxvLCNLtzwXLy3rVCG','zMLSzs1Uyw1LlwnLBgW','7lAC7lkyio2mJoYDVoUQHq','B25PBNb1Da','4PQG77Ipio2mJoYDVcdQTAZSOBaG7jIK66wy','y2XPy2S','D2LKDgG','y2XHC3nmAxn0','tK9ux0voq1jzufrfra','CMfUzg9T','rw5JCNLWDgLVBKLUzM8','ChjLDMLLDY10ywjSzq','mJiWotzHs2zoAuq','zMLSzxm','CMvZAxPPBMC','y29UDgvUDa','CxvLCNLtzwXLy3rVCKfSBa','C2vSzwn0','zw5JCNLWDgvKvMvYAwzPzxjiyxnOvMfSDwu','CgfYC2vgCM9Tu3rYAw5N','D29YA2jVB2S','C2LUz2XL','ChvZAa','y29SlxjLC2L6zq','Bwf0y2G','ueftu1DpuKrFuKvrvuLsruq','7j20io2mJoYDVcdSGQ3SOjW','lMrYywCTB3zLCG','CgfYC2vYzxjYB3i','zgf0yvrYyw5ZzMvY','z2v0qxr0CMLIDxrL','Aw5WDxq','zgLZCgXHEq','C3bSAwnL','BxvSDgK','ywrK','B3b0Aw9U','DhjPBq','zhjHzY1VDMvY','rw50zxi','yMXVy2TtAxPL','lMvKAxrVCI1SyxLVDxq','y29UC3rYDwn0B3i','DxnLCLnLBgvJDa','mcaWia','C2XPy2u','BwvZC2fNzq','zhjHz3n0yxj0','67or7zwP7zwGioYCOo2AQo2vNcdRJBdSNBtTHldQSiaG7jEg7iQ164Ui64UKlG','zMLSzs1SAxn0lwjVzhK','y3jLyxrLqNvMzMvY','zMLSDgvY','yM9VA19HChbLBMrFC2HLzxq','C3r5Bgu','yNv0Dg9U','kcGOlISPkYKRksSK','C3bPBKnVDw50','zgLZywjSzwq','quvtluncqW','Dgv4DenVBNrLBNq','8j+uKIdSLztTMlGG7zwe7jQu','y3jLyxrL','u2HLzxrZ','yM9VA19UzxC','BgvMDc1Wyw5LBa','zhjHz292zxi','7yA17zwPx+QYSoQZVa','Bw91C2v1Ca','u2HLzxroyw1LCW','x2j1C3K','Aw5KzxG','zxzLCNK','BgfZDevYCM9Y','zMXLEa','zwrPDg9YlxjLC2L6zxi','ntyWzwHQt2rY','DgfYz2v0','zhjHz2DPBMC','B25RzxLKB3DU','y2LWAgvY','zNjVBunOyxjdB2rL','B2zMC2v0v2LKDgG','zhjHz2DHyMXL','Aw5KzxHpzG','zhjHz2vUza','CMvTB3zL','z2v0rwXLBwvUDej5swq','CMLNAhqTCgfUzwW','CMvZzxqTyNrU','A2v5rgf0yq','Bw91C2vTB3zL','C2vSzwn0zwrtAgvLDa','BgvUz3rO','rw5JCNLWDgvKugfJA2fNzq','D3jPDgvgAwXL','BMfTzq','z2v0qM91BMrPBMDdBgLLBNrszwn0','zMLUAxnO','Dg9mB3DLCKnHC2u','zMLUza','mZaWmtu4ntbLrunjDNC','zgf0yxnLDa','zMLSzs1JB3vUDa','v1jptKDFueftu1DpuKq','CgfZC3DVCMq','Aw5WDxqSihnLBgvJDcWGyNv0Dg9U','BNvTyMvY','C2vSzwn0zwq','C3bHBG','Dg9tDhjPBMC','DMvYAwzPzxjjBNb1Da','mJfTtxHUAee','vu5ltK9xtG','ywrKrxzLBNrmAxn0zw5LCG','zhjHz2DHyMXLlxjVDW','C2HLzxrFDg9FANnVBG','yxbWBhK','A2v5','msaXigf1Dg8','7jEr7iwax+2gTE2vQv/QSRdQS7WUEgXZEa','yxjYyxK','zgL2','C2vHCMnO','ndG0otm4BNztu2j4','Aw5JBhvKzxm'];_0x1f39=function(){return _0x37e74c;};return _0x1f39();}function updateUI(){const _0x3af375=_0x5a7655,_0x319410=document[_0x3af375(0x1e1)](_0x3af375(0x1e3));if(fileDataList[_0x3af375(0x1e7)]===0x0){fileListBody[_0x3af375(0x17a)]='<tr><td\x20colspan=\x226\x22\x20style=\x22text-align:\x20center;\x20color:\x20#94a3b8;\x20padding:\x2020px;\x22>첨부된\x20파일이\x20없습니다.</td></tr>',mergeBtn[_0x3af375(0x1c4)]=!![],fileCountUI[_0x3af375(0x1c6)]='0';if(_0x319410)_0x319410['disabled']=!![];return;}if(_0x319410)_0x319410[_0x3af375(0x1c4)]=![];fileListBody[_0x3af375(0x17a)]='',fileCountUI[_0x3af375(0x1c6)]=fileDataList['length'];const _0x33d8f4=document[_0x3af375(0x18b)](_0x3af375(0x159))[_0x3af375(0x170)]===_0x3af375(0x1ad);fileDataList[_0x3af375(0x189)]((_0x396279,_0x59702c)=>{const _0x5e91cf=_0x3af375,_0x1ef2f5=document[_0x5e91cf(0x154)]('tr');_0x1ef2f5['className']=_0x5e91cf(0x129)+(selectedPreviewIndex===_0x59702c?_0x5e91cf(0x15b):''),_0x1ef2f5[_0x5e91cf(0x1dd)]=!![],_0x1ef2f5[_0x5e91cf(0x1f0)][_0x5e91cf(0x1d1)]=_0x59702c,_0x1ef2f5[_0x5e91cf(0x128)](_0x5e91cf(0x1ba),handleDragStart),_0x1ef2f5['addEventListener'](_0x5e91cf(0x1cc),handleDragOver),_0x1ef2f5[_0x5e91cf(0x128)]('dragleave',handleDragLeave),_0x1ef2f5[_0x5e91cf(0x128)](_0x5e91cf(0x14c),handleDrop),_0x1ef2f5[_0x5e91cf(0x128)](_0x5e91cf(0x1df),handleDragEnd),_0x1ef2f5[_0x5e91cf(0x128)](_0x5e91cf(0x190),_0x561bdd=>{const _0x510b38=_0x5e91cf;if(_0x561bdd[_0x510b38(0x1d7)][_0x510b38(0x156)](_0x510b38(0x1f4)))return;_0x396279[_0x510b38(0x19f)]&&(selectedPreviewIndex=_0x59702c,renderPreview(_0x59702c),document[_0x510b38(0x19b)](_0x510b38(0x166))[_0x510b38(0x189)](_0x53c093=>_0x53c093[_0x510b38(0x192)][_0x510b38(0x1e0)](_0x510b38(0x13d))),_0x1ef2f5[_0x510b38(0x192)][_0x510b38(0x1ae)](_0x510b38(0x13d)));});const _0x2c24c2=document[_0x5e91cf(0x154)]('td');_0x2c24c2['className']=_0x5e91cf(0x158);const _0x572b92=document[_0x5e91cf(0x154)](_0x5e91cf(0x130));_0x572b92[_0x5e91cf(0x13a)]=_0x5e91cf(0x136);const _0xda0c13=document[_0x5e91cf(0x154)](_0x5e91cf(0x1f7));_0xda0c13[_0x5e91cf(0x1c6)]=_0x59702c+0x1;const _0x1c17e2=document[_0x5e91cf(0x154)](_0x5e91cf(0x1c1));_0x1c17e2[_0x5e91cf(0x13a)]=_0x5e91cf(0x151),_0x1c17e2[_0x5e91cf(0x1c6)]='✕',_0x1c17e2[_0x5e91cf(0x142)]=_0x5e91cf(0x1a5),_0x1c17e2[_0x5e91cf(0x138)]=_0x65a86f=>{const _0x5ddfa5=_0x5e91cf;_0x65a86f['stopPropagation'](),fileDataList[_0x5ddfa5(0x1ac)](_0x59702c,0x1);if(selectedPreviewIndex===_0x59702c)selectedPreviewIndex=null;updateUI();},_0x572b92[_0x5e91cf(0x176)](_0xda0c13),_0x572b92['appendChild'](_0x1c17e2),_0x2c24c2[_0x5e91cf(0x176)](_0x572b92),_0x1ef2f5[_0x5e91cf(0x176)](_0x2c24c2);const _0x339fa=document['createElement']('td');_0x339fa[_0x5e91cf(0x13a)]=_0x5e91cf(0x164),_0x339fa[_0x5e91cf(0x17a)]='☰',_0x1ef2f5[_0x5e91cf(0x176)](_0x339fa);const _0xea0531=document[_0x5e91cf(0x154)]('td');_0xea0531[_0x5e91cf(0x13a)]=_0x5e91cf(0x18c),_0xea0531[_0x5e91cf(0x1c6)]=_0x396279['file'][_0x5e91cf(0x1ea)],_0xea0531[_0x5e91cf(0x142)]=_0x396279[_0x5e91cf(0x14a)]['name'],_0x1ef2f5[_0x5e91cf(0x176)](_0xea0531);const _0x4cd3f7=document[_0x5e91cf(0x154)]('td'),_0x28cf82=document[_0x5e91cf(0x154)](_0x5e91cf(0x130));_0x28cf82[_0x5e91cf(0x13a)]=_0x5e91cf(0x14f);const _0x51e8ef=document[_0x5e91cf(0x154)](_0x5e91cf(0x1aa));_0x51e8ef[_0x5e91cf(0x153)]=_0x5e91cf(0x1f3),_0x51e8ef[_0x5e91cf(0x16b)]=_0x5e91cf(0x146),_0x51e8ef['value']=_0x396279[_0x5e91cf(0x1f3)],_0x51e8ef[_0x5e91cf(0x18e)]=_0x43f77c=>{const _0x5096b0=_0x5e91cf;_0x396279[_0x5096b0(0x1f3)]=_0x43f77c[_0x5096b0(0x1d7)][_0x5096b0(0x170)];},_0x51e8ef[_0x5e91cf(0x1d9)]=_0x256063=>{const _0x17e9f9=_0x5e91cf;_0x256063[_0x17e9f9(0x12c)]===_0x17e9f9(0x1b2)&&(_0x256063[_0x17e9f9(0x14b)](),_0x51e8ef[_0x17e9f9(0x15a)]());},_0x51e8ef[_0x5e91cf(0x15e)]=async()=>{const _0x59f770=_0x5e91cf;_0x396279[_0x59f770(0x1f3)]&&_0x396279[_0x59f770(0x1f3)][_0x59f770(0x1b0)]()!==''&&!_0x396279[_0x59f770(0x19f)]&&await applyPassword(_0x396279);};const _0x53cdb9=document[_0x5e91cf(0x154)](_0x5e91cf(0x1c1));_0x53cdb9[_0x5e91cf(0x13a)]=_0x5e91cf(0x148),_0x53cdb9[_0x5e91cf(0x1c6)]='적용',_0x53cdb9[_0x5e91cf(0x138)]=async()=>{await applyPassword(_0x396279);},_0x28cf82[_0x5e91cf(0x176)](_0x51e8ef),_0x28cf82[_0x5e91cf(0x176)](_0x53cdb9),_0x4cd3f7[_0x5e91cf(0x176)](_0x28cf82),_0x1ef2f5[_0x5e91cf(0x176)](_0x4cd3f7);const _0x116154=document[_0x5e91cf(0x154)]('td');_0x116154[_0x5e91cf(0x13a)]=_0x5e91cf(0x160);if(_0x33d8f4)_0x116154[_0x5e91cf(0x1c0)][_0x5e91cf(0x1ab)]=_0x5e91cf(0x169);if(_0x396279[_0x5e91cf(0x19f)]){const _0x1f5ac1=document[_0x5e91cf(0x154)](_0x5e91cf(0x19c));_0x396279[_0x5e91cf(0x19f)][_0x5e91cf(0x1cf)][_0x5e91cf(0x189)](_0x18f1dc=>{const _0x5e8d98=_0x5e91cf,_0x4d3ba2=document[_0x5e8d98(0x154)](_0x5e8d98(0x1af));_0x4d3ba2[_0x5e8d98(0x170)]=_0x18f1dc,_0x4d3ba2[_0x5e8d98(0x1c6)]=_0x18f1dc;if(_0x18f1dc===_0x396279[_0x5e8d98(0x1e6)])_0x4d3ba2[_0x5e8d98(0x1f6)]=!![];_0x1f5ac1[_0x5e8d98(0x176)](_0x4d3ba2);}),_0x1f5ac1[_0x5e91cf(0x150)]=_0x18c7a7=>{const _0x4a74da=_0x5e91cf;_0x396279[_0x4a74da(0x1e6)]=_0x18c7a7[_0x4a74da(0x1d7)][_0x4a74da(0x170)];if(selectedPreviewIndex===_0x59702c)renderPreview(_0x59702c);},_0x116154[_0x5e91cf(0x176)](_0x1f5ac1);}else{const _0x102c62={'WRONG_PASSWORD':'❌\x20암호가\x20틀렸습니다','UNSUPPORTED_ENCRYPTION':_0x5e91cf(0x183),'NOT_ENCRYPTED':_0x5e91cf(0x18f),'PASSWORD_REQUIRED':_0x5e91cf(0x1c7)},_0x3f026e=_0x102c62[_0x396279[_0x5e91cf(0x1d3)]]||_0x5e91cf(0x1c7);_0x116154[_0x5e91cf(0x17a)]=_0x5e91cf(0x163)+_0x3f026e+'</span>';}_0x1ef2f5[_0x5e91cf(0x176)](_0x116154),fileListBody[_0x5e91cf(0x176)](_0x1ef2f5);});const _0xbc2e6a=fileDataList[_0x3af375(0x1be)](_0x541870=>_0x541870[_0x3af375(0x19f)]!==null)[_0x3af375(0x1e7)];mergeBtn[_0x3af375(0x1c4)]=_0xbc2e6a<0x1;}async function applyPassword(_0x3938b9){const _0x5e3467=_0x5a7655;if(!_0x3938b9['password']||_0x3938b9[_0x5e3467(0x1f3)]['trim']()==='')return;if(_0x3938b9[_0x5e3467(0x1d0)])return;_0x3938b9[_0x5e3467(0x1d0)]=!![];try{await parseWorkbook(_0x3938b9);}finally{_0x3938b9[_0x5e3467(0x1d0)]=![];}updateUI();}function handleDragStart(_0x49bc15){const _0x5c6068=_0x5a7655;draggedIndex=Number(this[_0x5c6068(0x1f0)][_0x5c6068(0x1d1)]),this[_0x5c6068(0x192)][_0x5c6068(0x1ae)](_0x5c6068(0x1d8));}function handleDragOver(_0x31ef04){const _0x5a20d7=_0x5a7655;_0x31ef04[_0x5a20d7(0x14b)](),this[_0x5a20d7(0x192)][_0x5a20d7(0x1ae)](_0x5a20d7(0x1b1));}function handleDragLeave(){const _0x342714=_0x5a7655;this[_0x342714(0x192)][_0x342714(0x1e0)](_0x342714(0x1b1));}function handleDrop(_0x1b5a5a){const _0x27a3d5=_0x5a7655;_0x1b5a5a[_0x27a3d5(0x14b)](),this[_0x27a3d5(0x192)][_0x27a3d5(0x1e0)](_0x27a3d5(0x1b1));const _0x3b89ca=Number(this['dataset'][_0x27a3d5(0x1d1)]);if(draggedIndex!==null&&draggedIndex!==_0x3b89ca){const _0x110a25=fileDataList[_0x27a3d5(0x1ac)](draggedIndex,0x1)[0x0];fileDataList[_0x27a3d5(0x1ac)](_0x3b89ca,0x0,_0x110a25),updateUI();}}function handleDragEnd(){const _0x363828=_0x5a7655;this[_0x363828(0x192)][_0x363828(0x1e0)](_0x363828(0x1d8)),document[_0x363828(0x19b)](_0x363828(0x1a6))[_0x363828(0x189)](_0x3e623f=>_0x3e623f['classList'][_0x363828(0x1e0)](_0x363828(0x1b1)));}function renderPreview(_0x17313b){const _0x5a2f58=_0x5a7655,_0x10dd4b=fileDataList[_0x17313b];if(!_0x10dd4b[_0x5a2f58(0x19f)])return;const _0x306bee=_0x10dd4b[_0x5a2f58(0x1e6)]||_0x10dd4b[_0x5a2f58(0x19f)]['SheetNames'][0x0],_0x1f6698=_0x10dd4b[_0x5a2f58(0x19f)][_0x5a2f58(0x1c9)][_0x306bee],_0x4f24a5=XLSX[_0x5a2f58(0x155)][_0x5a2f58(0x145)](_0x1f6698,{'header':'','footer':''});previewTitle[_0x5a2f58(0x1c6)]=_0x10dd4b[_0x5a2f58(0x14a)]['name']+'\x20['+_0x306bee+']',previewWrapper[_0x5a2f58(0x17a)]=_0x4f24a5;const _0x18b95d=previewWrapper[_0x5a2f58(0x18b)](_0x5a2f58(0x181));if(_0x18b95d)_0x18b95d['className']=_0x5a2f58(0x196);}const isEmptyOrMeaninglessRow=_0xe85000=>{const _0x5895ab=_0x5a7655;if(!_0xe85000||_0xe85000['length']===0x0)return!![];const _0x354a59=_0xe85000[_0x5895ab(0x1d2)](_0xd5ae2=>String(_0xd5ae2??'')[_0x5895ab(0x1b0)]()==='');if(_0x354a59)return!![];const _0x4e74e0=_0xe85000[_0x5895ab(0x1b8)](0x1),_0xbc046d=_0x4e74e0['every'](_0x5b5c03=>String(_0x5b5c03??'')[_0x5895ab(0x1b0)]()==='');if(_0xbc046d)return!![];return![];};mergeBtn[_0x5a7655(0x128)](_0x5a7655(0x190),()=>{const _0x4f5328=_0x5a7655,_0x475e09=document[_0x4f5328(0x18b)](_0x4f5328(0x159))[_0x4f5328(0x170)],_0x17b9af=XLSX[_0x4f5328(0x155)][_0x4f5328(0x1ca)]();if(_0x475e09===_0x4f5328(0x1a0)){let _0x2cb535=[],_0x53e6a9=!![],_0x2f448d=0x0;fileDataList[_0x4f5328(0x189)](_0x1c4ac4=>{const _0x291de9=_0x4f5328;if(!_0x1c4ac4[_0x291de9(0x19f)]||!_0x1c4ac4[_0x291de9(0x1e6)])return;const _0x4283dd=_0x1c4ac4[_0x291de9(0x19f)][_0x291de9(0x1c9)][_0x1c4ac4[_0x291de9(0x1e6)]],_0x4f966d=XLSX[_0x291de9(0x155)][_0x291de9(0x12a)](_0x4283dd,{'header':0x1,'defval':''});let _0x5bc7e3=!![];_0x4f966d[_0x291de9(0x189)](_0x1caf64=>{const _0x5f1d37=_0x291de9;if(isEmptyOrMeaninglessRow(_0x1caf64))return;const _0x4e7844=[..._0x1caf64];if(_0x5bc7e3){_0x5bc7e3=![];_0x53e6a9&&(_0x2f448d=_0x4e7844[_0x5f1d37(0x1e7)],_0x4e7844[_0x5f1d37(0x1a1)](_0x5f1d37(0x18d)),_0x2cb535[_0x5f1d37(0x1a1)](_0x4e7844),_0x53e6a9=![]);return;}while(_0x4e7844[_0x5f1d37(0x1e7)]<_0x2f448d)_0x4e7844[_0x5f1d37(0x1a1)]('');_0x4e7844[_0x5f1d37(0x1a1)](_0x1c4ac4[_0x5f1d37(0x14a)][_0x5f1d37(0x1ea)]),_0x2cb535[_0x5f1d37(0x1a1)](_0x4e7844);});});if(_0x2cb535[_0x4f5328(0x1e7)]===0x0){alert('병합할\x20유효한\x20데이터가\x20없습니다.');return;}const _0x4b0b04=XLSX[_0x4f5328(0x155)][_0x4f5328(0x184)](_0x2cb535);XLSX[_0x4f5328(0x155)][_0x4f5328(0x1bf)](_0x17b9af,_0x4b0b04,_0x4f5328(0x1cd));}else{const _0x5f33eb={},_0x2c6855={},_0x555c18={};fileDataList[_0x4f5328(0x189)](_0x4265dc=>{const _0x303398=_0x4f5328;if(!_0x4265dc[_0x303398(0x19f)])return;_0x4265dc['workbook'][_0x303398(0x1cf)]['forEach'](_0x54f462=>{const _0x161613=_0x303398;!_0x5f33eb[_0x54f462]&&(_0x5f33eb[_0x54f462]=[],_0x2c6855[_0x54f462]=!![],_0x555c18[_0x54f462]=0x0);const _0x46b98a=_0x4265dc[_0x161613(0x19f)]['Sheets'][_0x54f462],_0x1506f1=XLSX[_0x161613(0x155)][_0x161613(0x12a)](_0x46b98a,{'header':0x1,'defval':''});let _0x793dc=!![];_0x1506f1[_0x161613(0x189)](_0x26114c=>{const _0x27d62b=_0x161613;if(isEmptyOrMeaninglessRow(_0x26114c))return;const _0x211c6e=[..._0x26114c];if(_0x793dc){_0x793dc=![];_0x2c6855[_0x54f462]&&(_0x555c18[_0x54f462]=_0x211c6e[_0x27d62b(0x1e7)],_0x211c6e[_0x27d62b(0x1a1)](_0x27d62b(0x18d)),_0x5f33eb[_0x54f462][_0x27d62b(0x1a1)](_0x211c6e),_0x2c6855[_0x54f462]=![]);return;}while(_0x211c6e[_0x27d62b(0x1e7)]<_0x555c18[_0x54f462])_0x211c6e[_0x27d62b(0x1a1)]('');_0x211c6e[_0x27d62b(0x1a1)](_0x4265dc[_0x27d62b(0x14a)][_0x27d62b(0x1ea)]),_0x5f33eb[_0x54f462][_0x27d62b(0x1a1)](_0x211c6e);});});});const _0xc26a2f=Object[_0x4f5328(0x173)](_0x5f33eb);if(_0xc26a2f[_0x4f5328(0x1e7)]===0x0){alert(_0x4f5328(0x1bb));return;}_0xc26a2f[_0x4f5328(0x189)](_0x2a258e=>{const _0xd7f046=_0x4f5328,_0x435170=_0x5f33eb[_0x2a258e];if(_0x435170[_0xd7f046(0x1e7)]>0x0){const _0x7b26eb=XLSX[_0xd7f046(0x155)][_0xd7f046(0x184)](_0x435170);XLSX['utils'][_0xd7f046(0x1bf)](_0x17b9af,_0x7b26eb,_0x2a258e);}});}XLSX[_0x4f5328(0x1e9)](_0x17b9af,_0x4f5328(0x12e));});
-</script>
+  <h3 style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 10px;">
+    <span>업로드 파일 목록 및 실행 결과</span>
+    <span style="display:flex; align-items:center; gap:6px; font-size:13px; font-weight:normal;">
+      <label for="bulkRemoveWord" style="color:#334155;">🧹 결과값에서 삭제할 단어:</label>
+      <input type="text" id="bulkRemoveWord" placeholder="예: 이상하게 낀 글자·공백" style="font-size:12.5px; padding:4px 8px; width:180px;">
+      <button class="btn-sm-outline" onclick="applyBulkRemoveWord()">적용</button>
+      <button class="btn-sm-outline" id="btnExportExcel" onclick="downloadResultsExcel()">📊 결과 엑셀 다운로드</button>
+    </span>
+    <span style="font-size: 12px; font-weight: normal; color: #64748b;">💡 마우스로 행을 끌어서 순서를 변경할 수 있습니다.</span>
+  </h3>
+  
+  <div class="file-table-wrapper">
+    <table id="resultTable">
+      <thead>
+        <tr>
+          <th style="width: 3%; text-align: center;">이동</th>
+          <th style="width: 3%; text-align: center;"><input type="checkbox" id="selectAllCheckbox" onchange="toggleSelectAll(this)"></th>
+          <th style="width: 16%;">원본 파일명</th>
+          <th style="width: 9%;">추출값 1</th>
+          <th style="width: 9%;">추출값 2</th>
+          <th style="width: 9%;">추출값 3</th>
+          <th style="width: 9%; display:none;" id="thVal4">추출값 4</th>
+          <th style="width: 9%; display:none;" id="thVal5">추출값 5</th>
+          <th style="width: 9%; display:none;" id="thVal6">추출값 6</th>
+          <th style="width: 22%;">변경될 파일명</th>
+          <th style="width: 20%;">상태 / 개별 다운로드</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
 
-<script>
-  /* =========================================================================
-     필수 입력 열 지정 기능
-     - 지정한 열에 값이 없는 행은 병합 결과에서 제외한다. (소계/합계 등 요약 행 걸러내기용)
-     - "시트명이 같은 것끼리 합치기" 모드에서는 시트별로 각각 필수 열을 지정할 수 있다.
-     - 병합 버튼 클릭을 캡처 단계에서 가로채 자체적으로 병합을 수행하며, 기존 병합 로직은
-       실행되지 않도록 이벤트 전파를 막는다. (버튼 활성/비활성 로직 등 기존 동작은 그대로 유지)
-     ========================================================================= */
+  <!-- 4. 파일 목록 -> 엑셀 변환기 -->
+  <div class="card-box excel-card" id="excelCard">
+    <div class="excel-card-header">
+      <div class="excel-header-col excel-header-info">
+        <h4>📋 파일 목록 → 엑셀 리스트 변환기</h4>
+        <button class="btn-sm-outline" id="btnToggleExcelCard" onclick="toggleExcelCard()">열기 ▾</button>
+      </div>
+      <div class="excel-header-col excel-header-paste">① 여기에 붙여넣기</div>
+      <div class="excel-header-col excel-header-result">
+        <span>② 결과 (자동 변환됨)</span>
+        <span class="excel-actions">
+          <button class="btn-sm-outline" id="btnCopyExcel">📋 파일명만 복사</button>
+          <button class="btn-sm-outline" id="btnDownloadExcel">⬇️ xlsx</button>
+          <button class="btn-sm-outline" id="btnClearExcel">🗑️ 초기화</button>
+        </span>
+      </div>
+    </div>
 
-  // 시트별 필수 열 설정값 저장소. key: 'single' 모드에서는 '__single__', 'multi' 모드에서는 시트 이름
-  let requiredColumnSettings = {};
+    <div class="excel-body" id="excelBody">
+    <div class="excel-layout">
+      <div class="excel-col excel-col-info">
+        <div class="excel-help">
+          <strong>💡 파일 목록 복사 방법</strong>
+          탐색기에서 복사할 파일 선택(<code>Ctrl+A</code>) → 복사(<code>Ctrl+Shift+C</code>)<br>
+          <span style="font-size:11.5px; color:#7c3aed;">(안되는 경우 Shift 누른 채 마우스 오른쪽 클릭 → "경로로 복사" 선택)</span><br>
+          → 가운데 칸에 붙여넣기(<code>Ctrl+V</code>)
+        </div>
+        <div class="excel-options">
+          <label><input type="checkbox" id="optExtractName" checked> 전체 경로에서 파일명만 추출</label>
+          <label><input type="checkbox" id="optSplitExt" checked> 확장자 별도 열로 분리</label>
+        </div>
+      </div>
 
-  function getCurrentMergeMode() {
-    const el = document.querySelector('input[name="merge-mode"]:checked');
-    return el ? el.value : 'single';
-  }
+      <div class="excel-col excel-col-paste">
+        <textarea id="excelPasteArea" placeholder="탐색기에서 복사한 파일 목록을 여기에 붙여넣으세요..."></textarea>
+      </div>
 
-  function isRequiredColEnabled() {
-    const cb = document.getElementById('required-col-enable');
-    return !!(cb && cb.checked);
-  }
+      <div class="excel-col excel-col-result">
+        <div class="excel-table-wrapper">
+          <table id="excelResultTable">
+            <thead><tr id="excelResultHead"></tr></thead>
+            <tbody id="excelResultBody">
+              <tr><td class="excel-empty" colspan="3">왼쪽 안내를 참고해 가운데 칸에 파일 목록을 붙여넣으면 여기에 표시됩니다.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+    </div><!-- /excelBody -->
+  </div>
 
-  function isIncludeSourceFileEnabled() {
-    const cb = document.getElementById('include-source-file');
-    return !cb || cb.checked; // 체크박스가 없으면(방어적으로) 기존 기본 동작인 '포함'을 유지
-  }
+  </div><!-- /main-content -->
+</div><!-- /app-container -->
 
-  function isLastColEnabled() {
-    const cb = document.getElementById('last-col-enable');
-    return !!(cb && cb.checked);
-  }
-
-  function onLastColToggle() {
-    const input = document.getElementById('last-col-input');
-    if (input) input.disabled = !isLastColEnabled();
-  }
-
-  function onRequiredColToggle() {
-    const box = document.getElementById('required-col-list');
-    if (!box) return;
-    box.classList.toggle('open', isRequiredColEnabled());
-  }
-
-  // 엑셀 열 문자(A, B, ..., Z, AA, AB ...)를 0부터 시작하는 배열 인덱스로 변환
-  function colLetterToIndex(letter) {
-    letter = String(letter || '').trim().toUpperCase();
-    if (!/^[A-Z]+$/.test(letter)) return -1;
-    let idx = 0;
-    for (let i = 0; i < letter.length; i++) {
-      idx = idx * 26 + (letter.charCodeAt(i) - 64);
-    }
-    return idx - 1;
-  }
-
-  // 시트 순서를 보존하면서, 현재 업로드된 파일들에서 사용될 시트 키 목록을 만든다.
-  function collectSheetKeysInOrder() {
-    const mode = getCurrentMergeMode();
-    if (mode === 'single') {
-      return [{ key: '__single__', label: '병합 결과 시트 전체' }];
-    }
-    const seen = [];
-    const seenSet = new Set();
-    fileDataList.forEach(f => {
-      if (!f.workbook) return;
-      f.workbook.SheetNames.forEach(name => {
-        if (!seenSet.has(name)) {
-          seenSet.add(name);
-          seen.push(name);
+<script>const _0x5605d1=_0x375b;(function(_0x20e4f3,_0x25abd6){const _0x47916d=_0x375b,_0x19ebba=_0x20e4f3();while(!![]){try{const _0x325894=-parseInt(_0x47916d(0x196))/0x1+parseInt(_0x47916d(0x219))/0x2*(-parseInt(_0x47916d(0x1bb))/0x3)+parseInt(_0x47916d(0x1d6))/0x4*(parseInt(_0x47916d(0x19e))/0x5)+-parseInt(_0x47916d(0x18f))/0x6*(-parseInt(_0x47916d(0x1c3))/0x7)+-parseInt(_0x47916d(0x137))/0x8*(-parseInt(_0x47916d(0x182))/0x9)+-parseInt(_0x47916d(0x154))/0xa*(-parseInt(_0x47916d(0x1d3))/0xb)+-parseInt(_0x47916d(0x228))/0xc*(parseInt(_0x47916d(0x187))/0xd);if(_0x325894===_0x25abd6)break;else _0x19ebba['push'](_0x19ebba['shift']());}catch(_0x49ca80){_0x19ebba['push'](_0x19ebba['shift']());}}}(_0x1b8f,0x35f4e));window[_0x5605d1(0x17f)]&&(pdfjsLib[_0x5605d1(0x13b)][_0x5605d1(0x1e2)]=_0x5605d1(0x1aa));const dropZone=document[_0x5605d1(0x16d)](_0x5605d1(0x141)),fileInput=document[_0x5605d1(0x16d)](_0x5605d1(0x160)),btnRun=document[_0x5605d1(0x16d)](_0x5605d1(0x1e1)),btnRe=document[_0x5605d1(0x16d)](_0x5605d1(0x1a8)),btnSelRe=document[_0x5605d1(0x16d)](_0x5605d1(0x201)),btnDeleteSelected=document['getElementById'](_0x5605d1(0x13c)),btnZip=document[_0x5605d1(0x16d)](_0x5605d1(0x171)),tableBody=document[_0x5605d1(0x16d)](_0x5605d1(0x151));let fileQueue=[],draggedRowIndex=null;const STORAGE_KEY_PRESETS=_0x5605d1(0x1a6),STORAGE_KEY_DEFAULT=_0x5605d1(0x1f7);window[_0x5605d1(0x1b0)]=function(){const _0x3add2e=_0x5605d1;return{'commonWord':document[_0x3add2e(0x16d)](_0x3add2e(0x1e4))[_0x3add2e(0x1ec)],'commonPos':document[_0x3add2e(0x16d)](_0x3add2e(0x1af))[_0x3add2e(0x1ec)],'fnKey':document[_0x3add2e(0x16d)](_0x3add2e(0x1ee))[_0x3add2e(0x1ec)],'fnMode':document[_0x3add2e(0x16d)](_0x3add2e(0x15d))[_0x3add2e(0x1ec)],'rules':[0x1,0x2,0x3,0x4][_0x3add2e(0x1fd)](_0x115151=>({'key':document[_0x3add2e(0x16d)](_0x3add2e(0x1f3)+_0x115151)[_0x3add2e(0x1ec)],'dir':document[_0x3add2e(0x16d)](_0x3add2e(0x206)+_0x115151)[_0x3add2e(0x1ec)],'idx':document[_0x3add2e(0x16d)](_0x3add2e(0x14e)+_0x115151)[_0x3add2e(0x1ec)],'range':document[_0x3add2e(0x16d)](_0x3add2e(0x157)+_0x115151)[_0x3add2e(0x1ec)]}))};},window[_0x5605d1(0x152)]=function(_0xb16956){const _0x3b9ab6=_0x5605d1;if(!_0xb16956)return;if(_0xb16956['commonWord']!==undefined)document[_0x3b9ab6(0x16d)](_0x3b9ab6(0x1e4))[_0x3b9ab6(0x1ec)]=_0xb16956[_0x3b9ab6(0x1e4)];if(_0xb16956[_0x3b9ab6(0x1af)]!==undefined)document[_0x3b9ab6(0x16d)](_0x3b9ab6(0x1af))[_0x3b9ab6(0x1ec)]=_0xb16956[_0x3b9ab6(0x1af)];if(_0xb16956['fnKey']!==undefined)document[_0x3b9ab6(0x16d)](_0x3b9ab6(0x1ee))[_0x3b9ab6(0x1ec)]=_0xb16956[_0x3b9ab6(0x1ee)];if(_0xb16956[_0x3b9ab6(0x15d)]!==undefined)document[_0x3b9ab6(0x16d)](_0x3b9ab6(0x15d))['value']=_0xb16956['fnMode'];if(_0xb16956[_0x3b9ab6(0x237)]&&_0xb16956[_0x3b9ab6(0x237)][_0x3b9ab6(0x190)]){const _0x1d4617=[{'dir':_0x3b9ab6(0x142),'idx':'1','range':_0x3b9ab6(0x13a)},{'dir':_0x3b9ab6(0x142),'idx':'1','range':_0x3b9ab6(0x18d)},{'dir':_0x3b9ab6(0x142),'idx':'1','range':_0x3b9ab6(0x13a)},{'dir':_0x3b9ab6(0x142),'idx':'1','range':_0x3b9ab6(0x13a)}];for(let _0x5eed59=0x0;_0x5eed59<0x4;_0x5eed59++){const _0x30deec=_0xb16956[_0x3b9ab6(0x237)][_0x5eed59],_0x11b4ca=_0x1d4617[_0x5eed59];document[_0x3b9ab6(0x16d)](_0x3b9ab6(0x1f3)+(_0x5eed59+0x1))[_0x3b9ab6(0x1ec)]=_0x30deec?_0x30deec[_0x3b9ab6(0x1f3)]||'':'',document[_0x3b9ab6(0x16d)](_0x3b9ab6(0x206)+(_0x5eed59+0x1))[_0x3b9ab6(0x1ec)]=_0x30deec?_0x30deec[_0x3b9ab6(0x206)]||_0x11b4ca[_0x3b9ab6(0x206)]:_0x11b4ca[_0x3b9ab6(0x206)],document[_0x3b9ab6(0x16d)](_0x3b9ab6(0x14e)+(_0x5eed59+0x1))[_0x3b9ab6(0x1ec)]=_0x30deec?_0x30deec[_0x3b9ab6(0x14e)]||_0x11b4ca[_0x3b9ab6(0x14e)]:_0x11b4ca['idx'],document[_0x3b9ab6(0x16d)](_0x3b9ab6(0x157)+(_0x5eed59+0x1))['value']=_0x30deec?_0x30deec[_0x3b9ab6(0x157)]||_0x11b4ca[_0x3b9ab6(0x157)]:_0x11b4ca[_0x3b9ab6(0x157)];}const _0x2f2c04=_0xb16956[_0x3b9ab6(0x237)][0x2]&&_0xb16956[_0x3b9ab6(0x237)][0x2][_0x3b9ab6(0x1f3)]||_0xb16956[_0x3b9ab6(0x237)][0x3]&&_0xb16956[_0x3b9ab6(0x237)][0x3]['key'];if(_0x2f2c04&&window[_0x3b9ab6(0x1eb)])window[_0x3b9ab6(0x1eb)](!![]);}},window[_0x5605d1(0x1eb)]=function(_0x48489b){const _0x5b9b5f=_0x5605d1,_0x144beb=document[_0x5b9b5f(0x16d)]('extraRulesWrap'),_0x5aaaf1=document[_0x5b9b5f(0x16d)](_0x5b9b5f(0x22d));if(!_0x144beb||!_0x5aaaf1)return;_0x144beb[_0x5b9b5f(0x1dd)][_0x5b9b5f(0x17a)]=_0x48489b?_0x5b9b5f(0x174):_0x5b9b5f(0x1ab),_0x5aaaf1[_0x5b9b5f(0x21b)]=_0x48489b?_0x5b9b5f(0x1a4):'➕\x20추출\x20위치\x20추가\x20(3,\x204)';},window[_0x5605d1(0x202)]=function(){const _0x110a1f=_0x5605d1,_0x21648d=document[_0x110a1f(0x16d)](_0x110a1f(0x15a)),_0x3b12a6=!_0x21648d||_0x21648d[_0x110a1f(0x1dd)][_0x110a1f(0x17a)]===_0x110a1f(0x1ab)||_0x21648d[_0x110a1f(0x1dd)][_0x110a1f(0x17a)]==='';window['setExtraRulesVisible'](_0x3b12a6);};function getLocalSavedPresets(){const _0x3949a8=_0x5605d1;return JSON[_0x3949a8(0x221)](localStorage[_0x3949a8(0x217)](STORAGE_KEY_PRESETS)||'{}');}async function savePresetByName(_0x544329,_0x20b5e2){const _0x3a2081=_0x5605d1;if(window[_0x3a2081(0x1cc)]&&window[_0x3a2081(0x1dc)])return await window[_0x3a2081(0x1dc)](_0x544329,_0x20b5e2,![]);else{const _0x46c8f2=getLocalSavedPresets();return _0x46c8f2[_0x544329]=_0x20b5e2,localStorage[_0x3a2081(0x188)](STORAGE_KEY_PRESETS,JSON[_0x3a2081(0x183)](_0x46c8f2)),window[_0x3a2081(0x216)](_0x544329),!![];}}window[_0x5605d1(0x16b)]=async function(){const _0x45b592=_0x5605d1,_0x16d1a8=document[_0x45b592(0x16d)](_0x45b592(0x19b)),_0x2e8319=_0x16d1a8[_0x45b592(0x1ec)][_0x45b592(0x175)]();if(!_0x2e8319){alert(_0x45b592(0x239));return;}const _0x3ef3e7=window[_0x45b592(0x1b0)](),_0xb1ec61=await savePresetByName(_0x2e8319,_0x3ef3e7);_0xb1ec61!==![]&&alert('\x27'+_0x2e8319+_0x45b592(0x147)),_0x16d1a8[_0x45b592(0x1ec)]='';},window[_0x5605d1(0x1a9)]=async function(){const _0x62a763=_0x5605d1,_0x389384=document[_0x62a763(0x16d)](_0x62a763(0x1ac)),_0x3612b9=_0x389384[_0x62a763(0x1ec)];if(!_0x3612b9){alert(_0x62a763(0x21d));return;}if(!confirm('\x27'+_0x3612b9+_0x62a763(0x149)))return;const _0x233b8f=window[_0x62a763(0x1b0)](),_0x19d936=await savePresetByName(_0x3612b9,_0x233b8f);_0x19d936!==![]&&alert('\x27'+_0x3612b9+'\x27\x20프로필이\x20수정되었습니다.');},window[_0x5605d1(0x191)]=async function(){const _0x263ad1=_0x5605d1,_0x33e348=window[_0x263ad1(0x1b0)]();if(window[_0x263ad1(0x1cc)]&&window[_0x263ad1(0x1dc)]){const _0x20ee47=await window[_0x263ad1(0x1dc)](null,_0x33e348,!![]);_0x20ee47!==![]&&alert(_0x263ad1(0x19a));}else localStorage['setItem'](STORAGE_KEY_DEFAULT,JSON[_0x263ad1(0x183)](_0x33e348)),alert(_0x263ad1(0x1cf));window[_0x263ad1(0x1bc)](!![]);},window['loadDefaultPresetOnStart']=function(){const _0x2568a8=_0x5605d1;if(window[_0x2568a8(0x1cc)])return;const _0x544186=localStorage['getItem'](STORAGE_KEY_DEFAULT);if(_0x544186)try{window[_0x2568a8(0x152)](JSON[_0x2568a8(0x221)](_0x544186)),window[_0x2568a8(0x1bc)](!![]);}catch(_0x53f445){console['error'](_0x53f445);}},window[_0x5605d1(0x1bc)]=function(_0x409439=![]){const _0x2324a2=_0x5605d1,_0x1ed378=document[_0x2324a2(0x16d)](_0x2324a2(0x195));_0x1ed378[_0x2324a2(0x22c)]=_0x409439?_0x2324a2(0x192):'';},window[_0x5605d1(0x216)]=function(_0x41d263=''){const _0x4f68f4=_0x5605d1,_0x1a85ea=getLocalSavedPresets();window[_0x4f68f4(0x1c9)](_0x1a85ea,_0x41d263);},window['refreshPresetDropdownFromData']=function(_0x4373b5,_0x3c7ab1=''){const _0x4b4339=_0x5605d1,_0x39b28b=document[_0x4b4339(0x16d)](_0x4b4339(0x1ac));_0x39b28b[_0x4b4339(0x22c)]=_0x4b4339(0x14f);for(let _0x106fb0 in _0x4373b5){const _0x23c64e=document[_0x4b4339(0x210)](_0x4b4339(0x215));_0x23c64e[_0x4b4339(0x1ec)]=_0x106fb0,_0x23c64e[_0x4b4339(0x158)]=_0x106fb0;if(_0x106fb0===_0x3c7ab1)_0x23c64e[_0x4b4339(0x23e)]=!![];_0x39b28b[_0x4b4339(0x224)](_0x23c64e);}window[_0x4b4339(0x1c6)]=_0x4373b5;},window[_0x5605d1(0x13d)]=function(){const _0x5ba4f4=_0x5605d1,_0x277a5c=document[_0x5ba4f4(0x16d)](_0x5ba4f4(0x1ac)),_0x125eee=_0x277a5c[_0x5ba4f4(0x1ec)];if(!_0x125eee)return;const _0x52c8b3=window[_0x5ba4f4(0x1c6)]||getLocalSavedPresets();_0x52c8b3[_0x125eee]&&(window[_0x5ba4f4(0x152)](_0x52c8b3[_0x125eee]),document[_0x5ba4f4(0x16d)](_0x5ba4f4(0x19b))[_0x5ba4f4(0x1ec)]=_0x125eee);},window[_0x5605d1(0x148)]=async function(){const _0x15b846=_0x5605d1,_0x5e4672=document['getElementById']('presetSelect'),_0xf42bc0=_0x5e4672[_0x15b846(0x1ec)];if(!_0xf42bc0){alert(_0x15b846(0x14a));return;}if(confirm('\x27'+_0xf42bc0+_0x15b846(0x205))){if(window[_0x15b846(0x1cc)]&&window[_0x15b846(0x1ef)])await window[_0x15b846(0x1ef)](_0xf42bc0);else{const _0x46f990=getLocalSavedPresets();delete _0x46f990[_0xf42bc0],localStorage[_0x15b846(0x188)](STORAGE_KEY_PRESETS,JSON[_0x15b846(0x183)](_0x46f990)),window[_0x15b846(0x216)]();}alert('삭제되었습니다.');}},dropZone[_0x5605d1(0x159)](_0x5605d1(0x227),()=>fileInput[_0x5605d1(0x227)]()),fileInput[_0x5605d1(0x159)](_0x5605d1(0x21c),_0x2e3c3f=>{const _0x1783a6=_0x5605d1;if(_0x2e3c3f[_0x1783a6(0x1c5)][_0x1783a6(0x143)][_0x1783a6(0x190)]>0x0)handleFiles(_0x2e3c3f[_0x1783a6(0x1c5)][_0x1783a6(0x143)]);}),[_0x5605d1(0x1da),_0x5605d1(0x134),_0x5605d1(0x146),_0x5605d1(0x176)][_0x5605d1(0x1ce)](_0x5e0d4b=>{const _0x366460=_0x5605d1;dropZone[_0x366460(0x159)](_0x5e0d4b,preventDefaults,![]),document[_0x366460(0x1d5)][_0x366460(0x159)](_0x5e0d4b,preventDefaults,![]);});function preventDefaults(_0x2388ad){const _0xb174ae=_0x5605d1;_0x2388ad[_0xb174ae(0x14b)](),_0x2388ad[_0xb174ae(0x1e5)]();}[_0x5605d1(0x1da),_0x5605d1(0x134)][_0x5605d1(0x1ce)](_0x5d1e54=>{const _0xa837af=_0x5605d1;dropZone[_0xa837af(0x159)](_0x5d1e54,()=>dropZone[_0xa837af(0x1f4)][_0xa837af(0x18b)]('dragover'),![]);}),[_0x5605d1(0x146),_0x5605d1(0x176)][_0x5605d1(0x1ce)](_0x5c8b09=>{const _0x5f21a0=_0x5605d1;dropZone[_0x5f21a0(0x159)](_0x5c8b09,()=>dropZone[_0x5f21a0(0x1f4)][_0x5f21a0(0x1c0)](_0x5f21a0(0x134)),![]);}),dropZone[_0x5605d1(0x159)](_0x5605d1(0x176),_0x28cd3b=>{const _0x23acae=_0x5605d1,_0x214905=_0x28cd3b[_0x23acae(0x1df)],_0xb672d2=_0x214905[_0x23acae(0x143)];_0xb672d2&&_0xb672d2[_0x23acae(0x190)]>0x0&&handleFiles(_0xb672d2);},![]);function handleFiles(_0x57363f){const _0x14b437=_0x5605d1;for(let _0x1348a6 of _0x57363f){const _0x4849ca=_0x1348a6[_0x14b437(0x198)][_0x14b437(0x20e)]();if(!_0x4849ca[_0x14b437(0x185)](_0x14b437(0x21e))&&!_0x4849ca[_0x14b437(0x185)](_0x14b437(0x163)))continue;if(!fileQueue[_0x14b437(0x150)](_0xf6f39a=>_0xf6f39a[_0x14b437(0x1a2)][_0x14b437(0x198)]===_0x1348a6[_0x14b437(0x198)])){const _0x41a08b={'id':_0x14b437(0x207)+Math[_0x14b437(0x1d4)]()[_0x14b437(0x1d8)](0x24)[_0x14b437(0x222)](0x2,0x9),'file':_0x1348a6,'status':_0x14b437(0x194),'newName':'','extractedText':null,'selected':![]};fileQueue[_0x14b437(0x22b)](_0x41a08b);}}renderTable(),updateButtonStates();}function renderTable(){const _0x1f2341=_0x5605d1;tableBody[_0x1f2341(0x22c)]='',fileQueue[_0x1f2341(0x1ce)]((_0x525008,_0x3fd354)=>{const _0x371b9e=_0x1f2341,_0x188970=document[_0x371b9e(0x210)]('tr');_0x188970[_0x371b9e(0x223)]='draggable-row',_0x188970['draggable']=!![],_0x188970[_0x371b9e(0x1ae)][_0x371b9e(0x1fe)]=_0x3fd354,_0x188970[_0x371b9e(0x22c)]=_0x371b9e(0x17b)+(_0x525008[_0x371b9e(0x23e)]?_0x371b9e(0x220):'')+_0x371b9e(0x1a0)+_0x3fd354+_0x371b9e(0x20a)+_0x525008[_0x371b9e(0x1a2)][_0x371b9e(0x198)]+_0x371b9e(0x1b6)+(_0x525008[_0x371b9e(0x15b)]?_0x525008[_0x371b9e(0x15b)][0x0]:'-')+'</td>\x0a\x20\x20\x20\x20\x20\x20\x20\x20<td\x20class=\x22val-2\x22>'+(_0x525008[_0x371b9e(0x15b)]?_0x525008['vals'][0x1]:'-')+_0x371b9e(0x1bf)+(_0x525008[_0x371b9e(0x15b)]?_0x525008[_0x371b9e(0x15b)][0x2]:'-')+_0x371b9e(0x1f6)+(_0x525008[_0x371b9e(0x15b)]?_0x525008[_0x371b9e(0x15b)][0x3]:'-')+_0x371b9e(0x1f9)+(_0x525008[_0x371b9e(0x17d)]||'-')+_0x371b9e(0x1c2)+getStatusBadgeHtml(_0x525008)+_0x371b9e(0x1f0),_0x188970['addEventListener'](_0x371b9e(0x238),_0x388ebe=>{const _0x20a665=_0x371b9e;draggedRowIndex=_0x3fd354,_0x188970[_0x20a665(0x1f4)][_0x20a665(0x18b)](_0x20a665(0x23a)),_0x388ebe['dataTransfer'][_0x20a665(0x1b2)]=_0x20a665(0x178);}),_0x188970[_0x371b9e(0x159)]('dragend',()=>{const _0x2dc501=_0x371b9e;_0x188970['classList'][_0x2dc501(0x1c0)](_0x2dc501(0x23a)),draggedRowIndex=null;}),_0x188970[_0x371b9e(0x159)](_0x371b9e(0x134),_0xef3fe5=>{const _0x1ca61f=_0x371b9e;_0xef3fe5[_0x1ca61f(0x14b)](),_0xef3fe5[_0x1ca61f(0x1df)][_0x1ca61f(0x20f)]=_0x1ca61f(0x178);}),_0x188970[_0x371b9e(0x159)](_0x371b9e(0x176),_0x5c6b21=>{const _0x5139f8=_0x371b9e;_0x5c6b21[_0x5139f8(0x14b)]();if(draggedRowIndex!==null&&draggedRowIndex!==_0x3fd354){const _0x40f044=fileQueue[_0x5139f8(0x138)](draggedRowIndex,0x1)[0x0];fileQueue[_0x5139f8(0x138)](_0x3fd354,0x0,_0x40f044),renderTable();}}),tableBody[_0x371b9e(0x224)](_0x188970);}),updateSelectAllCheckboxState(),updateButtonStates();}function getStatusBadgeHtml(_0x81436f){const _0x273998=_0x5605d1;if(_0x81436f[_0x273998(0x1b8)]==='ready')return _0x273998(0x1d9);if(_0x81436f[_0x273998(0x1b8)]===_0x273998(0x1b1))return _0x273998(0x14c);if(_0x81436f[_0x273998(0x1b8)]===_0x273998(0x1ba))return _0x273998(0x1c1);if(_0x81436f[_0x273998(0x1b8)]===_0x273998(0x165))return'<span\x20class=\x22status-badge\x20status-error\x22>실패</span>';if(_0x81436f[_0x273998(0x1b8)]==='success')return _0x273998(0x229)+fileQueue[_0x273998(0x167)](_0x81436f)+_0x273998(0x20b);return'';}function toggleItemSelect(_0x3b1d36,_0x3cf5ea){const _0x349773=_0x5605d1;fileQueue[_0x3b1d36][_0x349773(0x23e)]=_0x3cf5ea,updateSelectAllCheckboxState(),updateButtonStates();}function _0x375b(_0x4db8bc,_0x538d08){_0x4db8bc=_0x4db8bc-0x134;const _0x1b8f38=_0x1b8f();let _0x375b14=_0x1b8f38[_0x4db8bc];if(_0x375b['LpCPPO']===undefined){var _0x35c6f2=function(_0x4fb917){const _0x19a9e8='abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+/=';let _0x3fa62c='',_0x115151='';for(let _0xb16956=0x0,_0x1d4617,_0x2f2c04,_0x5eed59=0x0;_0x2f2c04=_0x4fb917['charAt'](_0x5eed59++);~_0x2f2c04&&(_0x1d4617=_0xb16956%0x4?_0x1d4617*0x40+_0x2f2c04:_0x2f2c04,_0xb16956++%0x4)?_0x3fa62c+=String['fromCharCode'](0xff&_0x1d4617>>(-0x2*_0xb16956&0x6)):0x0){_0x2f2c04=_0x19a9e8['indexOf'](_0x2f2c04);}for(let _0x30deec=0x0,_0x11b4ca=_0x3fa62c['length'];_0x30deec<_0x11b4ca;_0x30deec++){_0x115151+='%'+('00'+_0x3fa62c['charCodeAt'](_0x30deec)['toString'](0x10))['slice'](-0x2);}return decodeURIComponent(_0x115151);};_0x375b['bBaJBi']=_0x35c6f2,_0x375b['OPUObA']={},_0x375b['LpCPPO']=!![];}const _0x29c6a5=_0x1b8f38[0x0];_0x375b['pwZiGz']!==_0x29c6a5&&(_0x375b['OPUObA']={},_0x375b['pwZiGz']=_0x29c6a5);const _0x166795=_0x375b['OPUObA'][_0x4db8bc];return _0x166795===undefined?(_0x375b14=_0x375b['bBaJBi'](_0x375b14),_0x375b['OPUObA'][_0x4db8bc]=_0x375b14):_0x375b14=_0x166795,_0x375b14;}function toggleSelectAll(_0x4681d6){const _0x521c99=_0x5605d1,_0x44f56e=_0x4681d6[_0x521c99(0x220)];fileQueue[_0x521c99(0x1ce)](_0x576482=>_0x576482['selected']=_0x44f56e),renderTable();}function updateSelectAllCheckboxState(){const _0x3d5ba6=_0x5605d1,_0x44daa5=document[_0x3d5ba6(0x16d)](_0x3d5ba6(0x14d));fileQueue[_0x3d5ba6(0x190)]===0x0?_0x44daa5[_0x3d5ba6(0x220)]=![]:_0x44daa5[_0x3d5ba6(0x220)]=fileQueue[_0x3d5ba6(0x172)](_0x3b5b4e=>_0x3b5b4e[_0x3d5ba6(0x23e)]);}function deleteSelectedFiles(){const _0x1da076=_0x5605d1,_0x3274cc=fileQueue[_0x1da076(0x23c)](_0x42e38b=>_0x42e38b[_0x1da076(0x23e)])[_0x1da076(0x190)];if(_0x3274cc===0x0)return;confirm(_0x1da076(0x20c)+_0x3274cc+_0x1da076(0x1bd))&&(fileQueue=fileQueue[_0x1da076(0x23c)](_0x5a9d50=>!_0x5a9d50[_0x1da076(0x23e)]),renderTable());}function clearAllFiles(){const _0x1ed4e7=_0x5605d1;fileQueue=[],renderTable(),fileInput[_0x1ed4e7(0x1ec)]='';}function updateButtonStates(){const _0x4b2764=_0x5605d1,_0x30aa82=fileQueue[_0x4b2764(0x190)]>0x0,_0x522599=fileQueue[_0x4b2764(0x150)](_0x2fbdf9=>_0x2fbdf9[_0x4b2764(0x23e)]);btnRun[_0x4b2764(0x23b)]=!_0x30aa82,btnRe[_0x4b2764(0x23b)]=!_0x30aa82,btnSelRe[_0x4b2764(0x23b)]=!_0x522599,btnDeleteSelected[_0x4b2764(0x23b)]=!_0x522599,btnZip[_0x4b2764(0x23b)]=!fileQueue[_0x4b2764(0x150)](_0x3392fa=>_0x3392fa[_0x4b2764(0x1b8)]===_0x4b2764(0x1cd));}async function runBatchProcess(_0x25bc00=_0x5605d1(0x1d1)){const _0x6456ca=_0x5605d1;btnRun[_0x6456ca(0x23b)]=!![],btnRe[_0x6456ca(0x23b)]=!![],btnSelRe[_0x6456ca(0x23b)]=!![],btnZip[_0x6456ca(0x23b)]=!![];const _0x42ea00=document[_0x6456ca(0x16d)](_0x6456ca(0x1e4))[_0x6456ca(0x1ec)][_0x6456ca(0x175)](),_0x29cea9=document[_0x6456ca(0x16d)](_0x6456ca(0x1af))[_0x6456ca(0x1ec)],_0x27a1c3=document[_0x6456ca(0x16d)](_0x6456ca(0x1ee))[_0x6456ca(0x1ec)][_0x6456ca(0x175)](),_0x1b76e8=document['getElementById'](_0x6456ca(0x15d))[_0x6456ca(0x1ec)],_0x54b49e=[0x1,0x2,0x3,0x4][_0x6456ca(0x1fd)](_0x2b37de=>({'key':document[_0x6456ca(0x16d)](_0x6456ca(0x1f3)+_0x2b37de)[_0x6456ca(0x1ec)][_0x6456ca(0x175)](),'dir':document[_0x6456ca(0x16d)](_0x6456ca(0x206)+_0x2b37de)[_0x6456ca(0x1ec)],'idx':document[_0x6456ca(0x16d)]('idx'+_0x2b37de)[_0x6456ca(0x1ec)],'range':document[_0x6456ca(0x16d)](_0x6456ca(0x157)+_0x2b37de)[_0x6456ca(0x1ec)]}));for(let _0x2c8c47 of fileQueue){if(_0x25bc00==='all'&&_0x2c8c47[_0x6456ca(0x1b8)]===_0x6456ca(0x1cd))continue;if(_0x25bc00===_0x6456ca(0x23e)&&!_0x2c8c47['selected'])continue;_0x2c8c47[_0x6456ca(0x1b8)]=_0x6456ca(0x1b1),renderTable();try{if(!_0x2c8c47[_0x6456ca(0x16c)]||_0x25bc00===_0x6456ca(0x135)||_0x25bc00===_0x6456ca(0x23e)){if(_0x2c8c47[_0x6456ca(0x1a2)][_0x6456ca(0x198)][_0x6456ca(0x20e)]()[_0x6456ca(0x185)](_0x6456ca(0x21e)))_0x2c8c47[_0x6456ca(0x16c)]=await extractPdfText(_0x2c8c47[_0x6456ca(0x1a2)]),_0x2c8c47[_0x6456ca(0x16c)][_0x6456ca(0x175)]()[_0x6456ca(0x190)]<0x14&&window[_0x6456ca(0x1db)]&&(_0x2c8c47[_0x6456ca(0x1b8)]=_0x6456ca(0x1ba),renderTable(),_0x2c8c47[_0x6456ca(0x16c)]=await extractPdfOCR(_0x2c8c47[_0x6456ca(0x1a2)]));else _0x2c8c47[_0x6456ca(0x1a2)][_0x6456ca(0x198)][_0x6456ca(0x20e)]()[_0x6456ca(0x185)](_0x6456ca(0x163))&&(_0x2c8c47[_0x6456ca(0x16c)]=await extractHwpxText(_0x2c8c47['file']));}const _0x1f17cf=_0x54b49e[_0x6456ca(0x1fd)](_0x491527=>parseTextByRule(_0x2c8c47['extractedText'],_0x491527));_0x2c8c47[_0x6456ca(0x15b)]=_0x1f17cf;const _0x310a15=_0x2c8c47[_0x6456ca(0x1a2)][_0x6456ca(0x198)][_0x6456ca(0x203)](_0x2c8c47[_0x6456ca(0x1a2)][_0x6456ca(0x198)][_0x6456ca(0x1d7)]('.')),_0x4640e7=_0x2c8c47[_0x6456ca(0x1a2)][_0x6456ca(0x198)][_0x6456ca(0x1c7)](_0x310a15,''),_0x29b9c1=trimFileName(_0x4640e7,_0x27a1c3,_0x1b76e8);let _0x59c864=_0x1f17cf[_0x6456ca(0x1fd)](_0x3d1bae=>_0x3d1bae?_0x3d1bae[_0x6456ca(0x175)]()[_0x6456ca(0x1c7)](/^[_]+|[_]+$/g,''):'')[_0x6456ca(0x23c)](_0x153e89=>_0x153e89!==''&&_0x153e89!==_0x6456ca(0x22f));if(_0x42ea00!==''){const _0x1c76b0=_0x42ea00[_0x6456ca(0x1c7)](/^[_]+|[_]+$/g,'');_0x29cea9==='prefix'?_0x59c864[_0x6456ca(0x1f1)](_0x1c76b0):_0x59c864[_0x6456ca(0x22b)](_0x1c76b0);}if(_0x59c864[_0x6456ca(0x190)]>0x0){const _0x17c11e=_0x59c864[_0x6456ca(0x161)]('_');_0x29b9c1?_0x2c8c47[_0x6456ca(0x17d)]='['+_0x17c11e+']_'+_0x29b9c1+_0x310a15:_0x2c8c47[_0x6456ca(0x17d)]='['+_0x17c11e+']'+_0x310a15;}else _0x2c8c47[_0x6456ca(0x17d)]=_0x29b9c1?''+_0x29b9c1+_0x310a15:_0x2c8c47[_0x6456ca(0x1a2)][_0x6456ca(0x198)];_0x2c8c47[_0x6456ca(0x1b8)]=_0x6456ca(0x1cd);}catch(_0x2a125e){console[_0x6456ca(0x165)](_0x2a125e),_0x2c8c47[_0x6456ca(0x1b8)]=_0x6456ca(0x165);}renderTable();}updateButtonStates();}function trimFileName(_0x3fa322,_0xe5e479,_0x17bdb6){const _0x140670=_0x5605d1;if(_0x17bdb6===_0x140670(0x1ab))return _0x3fa322;if(_0x17bdb6===_0x140670(0x1ff))return'';if(!_0xe5e479)return _0x3fa322;const _0x1ca39f=_0x3fa322[_0x140670(0x167)](_0xe5e479);if(_0x1ca39f===-0x1)return _0x3fa322;if(_0x17bdb6===_0x140670(0x142))return _0x3fa322[_0x140670(0x203)](0x0,_0x1ca39f+_0xe5e479[_0x140670(0x190)])[_0x140670(0x175)]()[_0x140670(0x1c7)](/^[_]+|[_]+$/g,'');else{if(_0x17bdb6===_0x140670(0x1b3))return _0x3fa322['substring'](_0x1ca39f)[_0x140670(0x175)]()[_0x140670(0x1c7)](/^[_]+|[_]+$/g,'');else{if(_0x17bdb6===_0x140670(0x15c))return _0x3fa322[_0x140670(0x1c7)](_0xe5e479,'')[_0x140670(0x175)]()[_0x140670(0x1c7)](/^[_]+|[_]+$/g,'');}}return _0x3fa322;}function escapeRegExpChar(_0x138be8){const _0xaa2c06=_0x5605d1;return _0x138be8[_0xaa2c06(0x1c7)](/[.*+?^${}()|[\]\\]/g,_0xaa2c06(0x1a3));}function parseTextByRule(_0x39a5c7,_0x50b8b8){const _0x320ac1=_0x5605d1;if(!_0x50b8b8['key']||!_0x39a5c7)return'';const _0xf0d549=_0x50b8b8[_0x320ac1(0x1f3)][_0x320ac1(0x179)]('')[_0x320ac1(0x1fd)](_0x2eb6cb=>{const _0x3bddfd=_0x320ac1,_0x2b9808=escapeRegExpChar(_0x2eb6cb);return/[a-zA-Z0-9가-힣]/[_0x3bddfd(0x1e8)](_0x2eb6cb)?_0x2b9808+_0x3bddfd(0x13e):_0x2b9808;})[_0x320ac1(0x161)]('')[_0x320ac1(0x1c7)](/\\s\*$/,''),_0x2356d7=[..._0x39a5c7[_0x320ac1(0x1be)](new RegExp(_0xf0d549,'gi'))];if(_0x2356d7[_0x320ac1(0x190)]===0x0)return _0x320ac1(0x22f);let _0x57c899=_0x50b8b8[_0x320ac1(0x14e)]===_0x320ac1(0x193)?_0x2356d7[_0x2356d7[_0x320ac1(0x190)]-0x1]:_0x2356d7[parseInt(_0x50b8b8[_0x320ac1(0x14e)])-0x1]||_0x2356d7[0x0];const _0x3f1259=_0x57c899[_0x320ac1(0x1fe)],_0x3014d6=_0x57c899[0x0][_0x320ac1(0x190)];if(_0x50b8b8[_0x320ac1(0x206)]===_0x320ac1(0x19d)){const _0x5d5ef0=_0x39a5c7[_0x320ac1(0x203)](_0x3f1259+_0x3014d6),_0x545dbe=_0x5d5ef0[_0x320ac1(0x179)](/[\r\n]+/)[_0x320ac1(0x1fd)](_0x5767ef=>_0x5767ef[_0x320ac1(0x175)]())[_0x320ac1(0x23c)](_0x28954d=>_0x28954d[_0x320ac1(0x190)]>0x0);return _0x545dbe['length']>0x0?cleanValue(_0x545dbe[0x0]):_0x320ac1(0x22f);}else{if(_0x50b8b8[_0x320ac1(0x206)]===_0x320ac1(0x142)){const _0x2629b4=_0x39a5c7[_0x320ac1(0x203)](_0x3f1259+_0x3014d6)[_0x320ac1(0x1c7)](/^[\s:]+/,'');if(_0x50b8b8[_0x320ac1(0x157)]===_0x320ac1(0x13a)){const _0x3e0f8e=_0x2629b4[_0x320ac1(0x1e7)](/^[^\s]+/);return _0x3e0f8e?cleanValue(_0x3e0f8e[0x0]):_0x320ac1(0x22f);}else{const _0x646d2c=_0x2629b4[_0x320ac1(0x1e7)](/^[^\r\n]+/);return _0x646d2c?cleanValue(_0x646d2c[0x0]):_0x320ac1(0x22f);}}else{const _0x34b885=_0x39a5c7[_0x320ac1(0x203)](0x0,_0x3f1259);if(_0x50b8b8[_0x320ac1(0x157)]===_0x320ac1(0x13a)){const _0xa183a8=_0x34b885[_0x320ac1(0x175)]()[_0x320ac1(0x179)](/\s+/);return _0xa183a8[_0x320ac1(0x190)]>0x0?cleanValue(_0xa183a8[_0xa183a8[_0x320ac1(0x190)]-0x1]):_0x320ac1(0x22f);}else{const _0x59517f=_0x34b885[_0x320ac1(0x179)](/[\r\n]+/);return _0x59517f[_0x320ac1(0x190)]>0x0?cleanValue(_0x59517f[_0x59517f[_0x320ac1(0x190)]-0x1]):_0x320ac1(0x22f);}}}}function cleanValue(_0x28e839){const _0x506de4=_0x5605d1;if(!_0x28e839)return'';return _0x28e839[_0x506de4(0x1c7)](/[\r\n\t]+/g,'\x20')[_0x506de4(0x1c7)](/[:;,"'`_]+/g,'')['replace'](/[\\/*?"<>|]+/g,'')[_0x506de4(0x1c7)](/^\s+|\s+$/g,'')[_0x506de4(0x175)]();}async function extractPdfText(file){
+  if (!window.pdfjsLib) return '';
+  const buf = await file.arrayBuffer();
+  const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+  let fullText = '';
+  for (let i = 1; i <= pdf.numPages; i++) {
+    const page = await pdf.getPage(i);
+    const content = await page.getTextContent();
+    let prevItem = null;
+    content.items.forEach(item => {
+      if (!item.str) { return; }
+      if (prevItem) {
+        const sameLine = Math.abs(item.transform[5] - prevItem.transform[5]) < 1;
+        if (!sameLine) {
+          fullText += '\n';
+        } else {
+          // 이전 글자가 끝나는 x좌표와 현재 글자가 시작하는 x좌표 사이의
+          // 실제 간격이 글자 높이(대략 폰트 크기)의 25%보다 클 때만 "진짜 띄어쓰기"로 보고 공백을 넣는다.
+          // (한글 PDF는 글자 하나하나가 별도 아이템으로 붙어 있는 경우가 많아,
+          //  무조건 공백을 넣으면 "김관석"이 "김 관 석"으로 쪼개지는 문제가 있었음)
+          const prevEndX = prevItem.transform[4] + (prevItem.width || 0);
+          const gap = item.transform[4] - prevEndX;
+          const threshold = (prevItem.height || 10) * 0.25;
+          if (gap > threshold) fullText += ' ';
         }
-      });
-    });
-    return seen.map((name, i) => ({ key: name, label: `${i + 1}번째 시트 (${name})` }));
-  }
-
-  // 필수 입력 열 지정 UI를 파일/모드 상태에 맞게 다시 그린다.
-  function renderRequiredColumnUI() {
-    const list = document.getElementById('required-col-list');
-    if (!list) return;
-    const items = collectSheetKeysInOrder();
-    list.innerHTML = '';
-
-    if (fileDataList.length === 0) {
-      list.innerHTML = '<div class="required-col-empty">파일을 먼저 첨부하면 시트별로 필수 입력 열을 지정할 수 있습니다.</div>';
-      return;
-    }
-
-    items.forEach(item => {
-      const row = document.createElement('div');
-      row.className = 'required-col-row';
-
-      const label = document.createElement('span');
-      label.className = 'rc-label';
-      label.textContent = item.label;
-      row.appendChild(label);
-
-      const input = document.createElement('input');
-      input.type = 'text';
-      input.maxLength = 3;
-      input.placeholder = '예: A';
-      input.title = `이 시트에서 값이 비어 있으면 행을 제외할 열을 엑셀 열 문자로 입력하세요. (예: A, B, C)`;
-      input.value = requiredColumnSettings[item.key] || '';
-      input.addEventListener('input', () => {
-        requiredColumnSettings[item.key] = input.value.trim().toUpperCase();
-      });
-      row.appendChild(input);
-
-      list.appendChild(row);
-    });
-  }
-
-  // 기존 updateUI / toggleModeUI 는 전역 함수 선언(var 성격)이라 재정의(override)가 가능하다.
-  // 원래 동작을 그대로 수행한 뒤, 필수 입력 열 UI만 추가로 갱신한다.
-  const _originalUpdateUI = updateUI;
-  updateUI = function () {
-    _originalUpdateUI();
-    renderRequiredColumnUI();
-  };
-
-  const _originalToggleModeUI = toggleModeUI;
-  toggleModeUI = function () {
-    _originalToggleModeUI();
-    renderRequiredColumnUI();
-  };
-
-  // 최초 1회 렌더링
-  renderRequiredColumnUI();
-
-  /* -------------------------------------------------------------------
-     비밀번호 일괄 적용
-     - 아직 해독되지 않은(비밀번호가 틀렸거나 아직 입력 전인) 파일들에 대해
-       공통 비밀번호를 한 번에 적용한다. (기존 applyPassword / parseWorkbook 재사용)
-     ------------------------------------------------------------------- */
-  async function applyPasswordToAll() {
-    const input = document.getElementById('bulk-password-input');
-    const btn = document.getElementById('bulk-password-btn');
-    const pw = input ? input.value : '';
-    if (!pw || pw.trim() === '') {
-      alert('공통으로 사용할 비밀번호를 입력해주세요.');
-      return;
-    }
-    const targets = fileDataList.filter(f => !f.workbook);
-    if (targets.length === 0) {
-      alert('일괄 적용할 파일이 없습니다. (이미 모든 파일이 해독되었거나 첨부된 파일이 없습니다)');
-      return;
-    }
-    if (btn) { btn.disabled = true; btn.textContent = '적용 중...'; }
-    try {
-      for (const f of targets) {
-        f.password = pw;
-        await applyPassword(f);
       }
-    } finally {
-      if (btn) { btn.disabled = false; btn.textContent = '전체 적용'; }
-    }
+      fullText += item.str;
+      prevItem = item;
+    });
+    fullText += '\n';
   }
+  return fullText;
+}async function extractPdfOCR(_0x50931c){const _0x14ce66=_0x5605d1;if(!window[_0x14ce66(0x17f)]||!window[_0x14ce66(0x1db)])return'';const _0x415651=await _0x50931c[_0x14ce66(0x1c4)](),_0x2db60c=await pdfjsLib[_0x14ce66(0x1b9)]({'data':_0x415651})[_0x14ce66(0x16a)],_0x4fd19e=await _0x2db60c[_0x14ce66(0x144)](0x1),_0x4bda15=_0x4fd19e[_0x14ce66(0x19c)]({'scale':1.5}),_0x3f44ea=document[_0x14ce66(0x210)](_0x14ce66(0x18e)),_0x397fbb=_0x3f44ea[_0x14ce66(0x225)]('2d');_0x3f44ea[_0x14ce66(0x22e)]=_0x4bda15[_0x14ce66(0x22e)],_0x3f44ea[_0x14ce66(0x233)]=_0x4bda15[_0x14ce66(0x233)],await _0x4fd19e['render']({'canvasContext':_0x397fbb,'viewport':_0x4bda15})[_0x14ce66(0x16a)];const _0x2fe4ad=await Tesseract[_0x14ce66(0x21f)](_0x14ce66(0x234)),_0x2bcf66=await _0x2fe4ad[_0x14ce66(0x168)](_0x3f44ea);return await _0x2fe4ad['terminate'](),_0x2bcf66[_0x14ce66(0x22a)][_0x14ce66(0x170)];}async function extractHwpxText(_0x163e12){const _0xdbb654=_0x5605d1;if(!window[_0xdbb654(0x186)])return'';const _0x276d2f=await JSZip[_0xdbb654(0x1ca)](_0x163e12);let _0x19f849='';for(let _0x4cae21 of Object[_0xdbb654(0x1b4)](_0x276d2f[_0xdbb654(0x143)])){if(_0x4cae21[_0xdbb654(0x1fc)](_0xdbb654(0x204))&&_0x4cae21[_0xdbb654(0x185)](_0xdbb654(0x1fa))){const _0x3389f8=await _0x276d2f[_0xdbb654(0x143)][_0x4cae21][_0xdbb654(0x1ea)](_0xdbb654(0x199)),_0x4fccb4=new DOMParser(),_0x4b0bde=_0x4fccb4[_0xdbb654(0x1f2)](_0x3389f8,_0xdbb654(0x1b7));_0x19f849+=_0x4b0bde[_0xdbb654(0x21b)]+'\x0a';}}return _0x19f849;}function triggerDownloadByIndex(_0xff4c72){const _0x568ca1=_0x5605d1,_0x19ffab=fileQueue[_0xff4c72];if(!_0x19ffab)return;const _0x42cabc=URL[_0x568ca1(0x162)](_0x19ffab[_0x568ca1(0x1a2)]),_0x269992=document[_0x568ca1(0x210)]('a');_0x269992['href']=_0x42cabc,_0x269992[_0x568ca1(0x1a1)]=_0x19ffab[_0x568ca1(0x17d)],document[_0x568ca1(0x1d5)][_0x568ca1(0x224)](_0x269992),_0x269992[_0x568ca1(0x227)](),_0x269992[_0x568ca1(0x1c0)](),setTimeout(()=>URL[_0x568ca1(0x226)](_0x42cabc),0x3e8);}async function downloadAllZip(){const _0x22ddc4=_0x5605d1;if(!window[_0x22ddc4(0x186)])return;const _0x40ccfe=new JSZip(),_0x335e64=fileQueue[_0x22ddc4(0x23c)](_0x2d7b34=>_0x2d7b34[_0x22ddc4(0x1b8)]==='success');for(let _0x432296 of _0x335e64){_0x40ccfe[_0x22ddc4(0x1a2)](_0x432296[_0x22ddc4(0x17d)],_0x432296[_0x22ddc4(0x1a2)]);}const _0x5306b6=await _0x40ccfe[_0x22ddc4(0x153)]({'type':_0x22ddc4(0x230)}),_0x49db38=URL[_0x22ddc4(0x162)](_0x5306b6),_0x6e2e88=document[_0x22ddc4(0x210)]('a');_0x6e2e88[_0x22ddc4(0x200)]=_0x49db38,_0x6e2e88[_0x22ddc4(0x1a1)]=_0x22ddc4(0x181),document[_0x22ddc4(0x1d5)][_0x22ddc4(0x224)](_0x6e2e88),_0x6e2e88[_0x22ddc4(0x227)](),_0x6e2e88[_0x22ddc4(0x1c0)](),setTimeout(()=>URL[_0x22ddc4(0x226)](_0x49db38),0x3e8);}const excelPasteArea=document[_0x5605d1(0x16d)](_0x5605d1(0x155)),optExtractName=document[_0x5605d1(0x16d)](_0x5605d1(0x164)),optSplitExt=document[_0x5605d1(0x16d)](_0x5605d1(0x156)),excelResultHead=document[_0x5605d1(0x16d)](_0x5605d1(0x1fb)),excelResultBody=document[_0x5605d1(0x16d)](_0x5605d1(0x180)),btnCopyExcel=document[_0x5605d1(0x16d)](_0x5605d1(0x17c)),btnDownloadExcel=document[_0x5605d1(0x16d)](_0x5605d1(0x177)),btnClearExcel=document[_0x5605d1(0x16d)]('btnClearExcel');let excelHeaders=[],excelRows=[];function _0x1b8f(){const _0x6c3a00=['7zIe7j6SioYePoYGLEYDTcdTGBtRNBZSMRdRK5WGw+Q4SoUZUoQWKL3SNlZROzWG65oX66gD65cy7jEi7iQ164Ui64UKlG','ChjLC2v0tMfTzuLUChv0','z2v0vMLLD3bVCNq','BMv4DeXPBMu','mZvNvfDmu2K','pc90CJ4','ig9Uy2HHBMDLpsj0B2DNBgvjDgvTu2vSzwn0ka','zg93BMXVywq','zMLSzq','xcqM','4P6wioY2LoY2NcdSNitSUzGGmYWGncdSIkJQUldQUla','phrKpG','zg9Jx3jLBMfTzxjFChjLC2v0CW','Dg9Nz2XLrxHJzwXdyxjK','yNrUuMu','DxbKyxrLu2vSzwn0zwrqCMvZzxq','Ahr0Chm6lY9Jzg4UANnKzwXPDNiUBMv0l25WBs9WzgzQCY1KAxn0qdmUmteUmtC0l2j1AwXKl3bKzI53B3jRzxiUBwLUlMPZ','BM9Uzq','ChjLC2v0u2vSzwn0','jMX0oW','zgf0yxnLDa','y29TBw9Uug9Z','z2v0q3vYCMvUDenVBMzPz0rHDge','D29YA2LUzW','zwzMzwn0qwXSB3DLza','yMvMB3jL','A2v5CW','Aw5JBhvKzxm','pc90zd4kicaGicaGica8DgqGy2XHC3m9iNzHBc0XiJ4','Dgv4Dc94BwW','C3rHDhvZ','z2v0rg9JDw1LBNq','B2nY','mJa4nZDzzxHSDuu','DxbKyxrLrgvMyxvSDe5VDgLJzvrLEhq','6RcCio2mJoYDVoYDHcdRQQNROz3SL5dSHjWG7ikT7kcC7zwy7iUC6RkG7iQ164Ui6RMmpW','Bwf0y2HbBgW','pc90zd4kicaGicaGica8DgqGy2XHC3m9iNzHBc0ZiJ4','CMvTB3zL','phnWyw4Gy2XHC3m9iNn0yxr1CY1IywrNzsbZDgf0DxmTD29YA2LUzYi+t0nsioYkPoY6LcdSPjeUlI48l3nWyw4+','pc90zd4kicaGicaGica8DgqGy2XHC3m9iNzHBc1ZDgf0DxmIpG','n1vTDKrqwG','yxjYyxLcDwzMzxi','DgfYz2v0','y2fJAgvKuhjLC2v0CW','CMvWBgfJzq','yM9VA19HChbLBMrFC2HLzxq','CMvMCMvZAfbYzxnLDerYB3bKB3DUrNjVBurHDge','Bg9HzefZEw5J','jMD0oW','y3vYCMvUDfvZzxi','C3vJy2vZCW','zM9YrwfJAa','7zIe7j6SioYePoYGLEYDTcdSNBqG7lU07zoO7ysW7j2yifVQUldRS7JQSjjD7jY866gCioUtSEUHNEUqMoYxIoYkTEUlIoUlPc4','pc90zd4','ywXS','CgfZDgu','mZuXmta1n1fcBe9NBG','CMfUzg9T','yM9KEq','mte5nJmYqu90t0ns','BgfZDeLUzgv4t2y','Dg9tDhjPBMC','phnWyw4Gy2XHC3m9iNn0yxr1CY1IywrNzsbZDgf0DxmTCMvHzhKIpUUmGoQ4ScdSPje8l3nWyw4+','zhjHz2vUDgvY','vgvZC2vYywn0','C2f2zvbYzxnLDfrVq2XVDwq','C3r5Bgu','zMLSBa','zgf0yvrYyw5ZzMvY','7yYm7j2866Qf','yNrUuNvU','D29YA2vYu3jJ','7zMv7j6L7j6q','y29TBw9Uv29Yza','C3rVCfbYB3bHz2f0Aw9U','phrYpJX0zcbJBgfZCZ0IzxHJzwWTzw1WDhKIignVBhnWyw49iJmIpUYzVoYQVEYxKcdTJiZSNBWG66QP66gD7j2eioU2MEYxRoUeO+YCVoUPTcdSL6ZQUldSL5aG7zgC7iUC65cP64Ui64UKlJWVDgq+pc90CJ4','Bwf0y2G','DgvZDa','phrYpG','yxn5BMm','C2v0rxH0CMfsDwXLC1zPC2LIBgu','DMfSDwu','7yYm7j2866Qfia','zM5lzxK','zgvSzxrLuhjLC2v0rNjVBunSB3vK','pc90zd4kicaGicaG','Dw5ZAgLMDa','CgfYC2vgCM9Tu3rYAw5N','A2v5','y2XHC3nmAxn0','7yYm7j2866QP66gDlNHSC3G','pc90zd4kicaGicaGica8DgqGy2XHC3m9iNzHBc00iJ4','zg9Jx3jLBMfTzxjFzgvMyxvSDf9WCMvZzxq','phrOpG','pc90zd4kicaGicaGica8DgqGy2XHC3m9iNzHBc1UzxCIpG','lNHTBa','zxHJzwXszxn1BhrizwfK','C3rHCNrZv2L0Aa','BwfW','Aw5KzxG','CMvTB3zLqwXS','AhjLzG','yNrUu2vSuMu','Dg9Nz2XLrxH0CMfsDwXLCW','C3vIC3rYAw5N','q29UDgvUDhmVC2vJDgLVBG','jYdSHktSOjuG7zse66gC7zwe7j2eioYGLEUNKcdSGQ3SOjZTLzJSI5ZQSQdSIRxRI4JQUyW/','zgLY','AxrLBv8','y2XPCgjVyxjK','Dg9Nz2XL','lcb0AgLZlMnOzwnRzwqPiJ4kicaGicaGica8l3rKpGOGicaGicaGidX0zd4','ksi+64UK7jQ066gC65oCpc9IDxr0B24+','7isG7yoD7zwCia','zxHJzwXcB2r5','Dg9mB3DLCKnHC2u','zhjVCevMzMvJDa','y3jLyxrLrwXLBwvUDa','yw9Hx3rVx3nOzwv0','64UK7jQ066gC65oC7zwGioUnSoYDTo2eSoQWGcdSL4BSIRxRI4JRI6qU','C3rY','7kcr6RIWiokwTa','B3b0Aw9U','CMvMCMvZAfbYzxnLDerYB3bKB3DU','z2v0sxrLBq','AxrLBxm','mtrrt3rxy3u','D3jPDgvgAwXL','Dgv4DenVBNrLBNq','y2HHBMDL','7iIy7kcv7zwGio2uHoUHNo2vHoYDHcdRQQNROz3SL5dSHjWG66I87kcaioYeOo2dNE2vToYJVoYeUoYALc4','lNbKzG','y3jLyxrLv29YA2vY','y2HLy2TLza','CgfYC2u','C3vIC3rY','y2XHC3noyw1L','yxbWzw5Kq2HPBgq','z2v0q29UDgv4Da','CMv2B2TLt2jQzwn0vvjm','y2XPy2S','mtq5odHXu1v4rvq','phnWyw4Gy2XHC3m9iNn0yxr1CY1IywrNzsbZDgf0DxmTC3vJy2vZCYi+7jMe66ompc9ZCgfUpIa8yNv0Dg9UignSyxnZpsjIDg4TC20Iig9Uy2XPy2S9iNrYAwDNzxjeB3DUBg9Hzej5sw5KzxGO','zgf0yq','ChvZAa','Aw5Uzxjive1m','yNrUvg9Nz2XLrxH0CMfsDwXLCW','AgvPz2H0','66+47zMv7j24','yMXVyG','6RcCko2zLEYEPEYEKcdSOjZSMBGP6RcaioUZTEYcRoUqMoYxIoYkTEUlIoUlPc4G7jUq7zwy64QuioQZS+YxKcbdDhjSk1BROzWG67Az7jES64sJ7jY87is47jQulG','yM9VA19UzxC','D2LKDgG','A29Yk2vUzW','Aw5WDxq','7jE06RIWiokwVG','CNvSzxm','zhjHz3n0yxj0','7isK7kcvio2uHoUHNo2vHcdSNBtRPOtSNyqG7j6f66cL7zw07ko87is47jQulG','zhjHz2DPBMC','zgLZywjSzwq','zMLSDgvY','7jEr7iwaioUZGo2zMcdRNBZSNBtRUiZRN6ZRPQZRPBWG67Ai65+S7jIK7kEaioUQU+2wIoYkTEUlIoUlPc4G7j6G7iUCio2BHcdRI6tSI5WG7iUC64+e7zw07ko87is47jQulG','C2vSzwn0zwq','zhjHz292zxi','CMvbBgW','7jUq67o4io2fJEYkPo2kUa','mtC2otKXmNPMEvn2yW','C3bSAwnL','C2XPy2u','D29Yza','r2XVyMfSv29YA2vYt3b0Aw9UCW','yNrUrgvSzxrLu2vSzwn0zwq','Bg9HzfnLBgvJDgvKuhjLC2v0','xhmQ','jMfTCdS','7yg066A967o065oCioUZTEYcRoYxKcdSI6tTJkJTLOJSIRxRI4JRI6qUio2rNoULVcdRP4JSMRdSIQtROzWG65oC656y6RE47zw07isCioYNGEYGKsdRS7xSGQZTLBtSO7ZSHlJSMPqU','zhjVCfPVBMu','ywz0zxi','zMLSzxm','z2v0ugfNzq','zNjVBq','zhjHz2XLyxzL','jYdTLitROzZTLytSNBqG7kca7j6L65cy7jEi7iQ164Ui64UKlG','zgvSzxrLu2vSzwn0zwrqCMvZzxq','jYdTLitROzZTLytSNyqG7zIe7j6Sio2zLoUPToYDMcdSHktSOjuG64k07jQP7jY866gCioUnRUYwToYtUoQ5JoYALd8','7ikT7kcC7zwGio2uHoUHNo2vHoYDHcdRQQNROz3SL5dSHjWG7isG7yoD7zw07ko87is47jQulG','ChjLDMvUDerLzMf1Bhq','phnWyw4Gy2XHC3m9iNn0yxr1CY1IywrNzsbZDgf0DxmTD29YA2LUzYi+67Ae7isDioYKKs4UlJWVC3bHBJ4','C2vSzwn0qwXSq2HLy2TIB3G','Awr4','pg9WDgLVBIb2ywX1zt0IiJ4TlsdSOidSNQxRKjWG7isK7kcvio2uHoUHNo2vHcdSHkdTG50Gls08l29WDgLVBJ4','C29Tzq','DgfIBgvcB2r5','yxbWBhLdB25MAwDeyxrH','z2vUzxjHDgvbC3LUyW','mtbYq2HitNy','zxHJzwXqyxn0zufYzwe','B3b0u3bSAxrfEhq','CMfUz2u','Aw5UzxjuzxH0','ywrKrxzLBNrmAxn0zw5LCG','zxH0CMfsDwXLC1DYyxa','DMfSCW','CMvTB3zLs2v5','zM5nB2rL','B3bLBG','7yYm7j2866QP66gD','zMLSzuLUChv0','AM9PBG','y3jLyxrLt2jQzwn0vvjm','lMH3ChG','B3b0rxH0CMfJDe5HBwu','zxjYB3i','tM8U','Aw5KzxHpzG','CMvJB2DUAxPL','weXtwa','ChjVBwLZzq','C2f2zun1CNjLBNrqCMvZzxq','zxH0CMfJDgvKvgv4Da','z2v0rwXLBwvUDej5swq','zxHWyw5Kzwq','y29UDgfPBNm','Dgv4Da','yNrUwMLW','zxzLCNK','BNvTugfNzxm','y29UDgvUDhm','DhjPBq','zhjVCa','yNrUrg93BMXVywrfEgnLBa','Bw92zq','C3bSAxq','zgLZCgXHEq','cIaGicaGicaGphrKihn0EwXLpsj0zxH0lwfSAwDUoIbJzw50zxi7iJ48C3bHBIbJBgfZCZ0IzhjHzY1Oyw5KBguIpUkySdWVC3bHBJ48l3rKpGOGicaGicaGidX0zcbZDhLSzt0IDgv4Dc1HBgLNBJOGy2vUDgvYoYi+cIaGicaGicaGica8Aw5WDxqGDhLWzt0Iy2HLy2TIB3GIignSyxnZpsjYB3CTy2HLy2TIB3GIia','yNrUq29WEuv4y2vS','BMv3tMfTzq','pc90Ad4','CgrMANnmAwi','zxHJzwXszxn1BhrcB2r5','7yYm7j2866Qfx+UZGoQYVv/SMytRO4XF66QP66gDlNPPCa','oujgtLHNEa','C3rYAw5NAwz5','jImZotS','zw5KC1DPDgG','sLnAAxa','mZy5mKXxqxvQrG','C2v0sxrLBq','zxHJzwXdyxjK','67o17ikS7zwGioUnSoYDTo2eSoQWGcdSL4BSIRxRI4JRI6qU','ywrK','DxrPBhm','BgLUzq','y2fUDMfZ','mtm5mJaZmefjqwftvW','BgvUz3rO','C2v0qxnezwzHDwX0uhjLC2v0','phnWyw4Gy2XHC3m9iMrLzMf1BhqTDgfNiJ7IRzaG6RIW67o4ioYePoYGLsdSOihSMQKG7ksrpc9ZCgfUpG','BgfZDa','CMvHzhK','zgvMyxvSDe5VDgLJzq','mZu3mZuYuKrUBuPg','jNf1B3q7','BMfTzq','C3rYAw5N'];_0x1b8f=function(){return _0x6c3a00;};return _0x1b8f();}window[_0x5605d1(0x1a7)]=function(){const _0x3bae6b=_0x5605d1,_0x3780ad=document[_0x3bae6b(0x16d)](_0x3bae6b(0x189)),_0x364ce3=document[_0x3bae6b(0x16d)](_0x3bae6b(0x20d)),_0x51f1e6=document[_0x3bae6b(0x16d)]('btnToggleExcelCard'),_0x1575a6=!_0x364ce3['classList'][_0x3bae6b(0x16f)](_0x3bae6b(0x15e));_0x364ce3[_0x3bae6b(0x1f4)]['toggle'](_0x3bae6b(0x15e),_0x1575a6),_0x3780ad[_0x3bae6b(0x1f4)][_0x3bae6b(0x209)](_0x3bae6b(0x16e),_0x1575a6),_0x51f1e6[_0x3bae6b(0x21b)]=_0x1575a6?_0x3bae6b(0x214):_0x3bae6b(0x236);};function extractFileNameFromPath(_0x4ed085){const _0x2abe00=_0x5605d1;let _0x154d73=_0x4ed085[_0x2abe00(0x175)]();_0x154d73=_0x154d73[_0x2abe00(0x1c7)](/^"+|"+$/g,'');const _0x36c632=_0x154d73[_0x2abe00(0x179)](/[\\/]/);return _0x36c632[_0x36c632[_0x2abe00(0x190)]-0x1]||_0x154d73;}function splitNameExt(_0x7c79ab){const _0x549f10=_0x5605d1,_0x543b7c=_0x7c79ab[_0x549f10(0x1d7)]('.');if(_0x543b7c<=0x0)return{'base':_0x7c79ab,'ext':''};return{'base':_0x7c79ab['slice'](0x0,_0x543b7c),'ext':_0x7c79ab[_0x549f10(0x139)](_0x543b7c+0x1)};}function escapeHtmlExcel(_0x79672f){const _0x3a07a1=_0x5605d1;return String(_0x79672f)['replace'](/[&<>"']/g,_0x5ac9c9=>({'&':_0x3a07a1(0x13f),'<':_0x3a07a1(0x1ad),'>':_0x3a07a1(0x1cb),'\x22':_0x3a07a1(0x197),'\x27':_0x3a07a1(0x184)}[_0x5ac9c9]));}function updateExcelResult(){const _0xffa826=_0x5605d1,_0x510268=excelPasteArea[_0xffa826(0x1ec)],_0x356e51=_0x510268[_0xffa826(0x1c7)](/\r/g,'')[_0xffa826(0x179)]('\x0a')[_0xffa826(0x23c)](_0x3b78c9=>_0x3b78c9[_0xffa826(0x175)]()[_0xffa826(0x190)]>0x0);if(_0x356e51[_0xffa826(0x190)]===0x0){excelHeaders=[],excelRows=[],renderExcelTable();return;}const _0x4b149a=_0x356e51[_0xffa826(0x150)](_0x240a0b=>_0x240a0b[_0xffa826(0x1b5)]('\x09'));if(_0x4b149a){const _0x416eb1=_0x356e51[_0xffa826(0x1fd)](_0x257b39=>_0x257b39[_0xffa826(0x179)]('\x09')),_0x5681c2=Math['max'](..._0x416eb1[_0xffa826(0x1fd)](_0x31d002=>_0x31d002[_0xffa826(0x190)]));excelHeaders=[_0xffa826(0x166),...Array[_0xffa826(0x145)]({'length':_0x5681c2},(_0x4ca6cf,_0x327e3c)=>'열'+(_0x327e3c+0x1))],excelRows=_0x416eb1[_0xffa826(0x1fd)]((_0x2b3baa,_0x56331d)=>[String(_0x56331d+0x1),..._0x2b3baa,...Array(_0x5681c2-_0x2b3baa[_0xffa826(0x190)])[_0xffa826(0x1de)]('')]);}else{const _0x1aba53=optExtractName[_0xffa826(0x220)],_0x5c5658=optSplitExt[_0xffa826(0x220)];if(_0x1aba53&&_0x5c5658)excelHeaders=[_0xffa826(0x166),_0xffa826(0x1e0),_0xffa826(0x1e3)],excelRows=_0x356e51[_0xffa826(0x1fd)]((_0x561bda,_0x60c4f0)=>{const _0x3aa548=extractFileNameFromPath(_0x561bda),{base:_0x8e199b,ext:_0x1064c3}=splitNameExt(_0x3aa548);return[String(_0x60c4f0+0x1),_0x8e199b,_0x1064c3];});else _0x1aba53&&!_0x5c5658?(excelHeaders=[_0xffa826(0x166),_0xffa826(0x1e0)],excelRows=_0x356e51[_0xffa826(0x1fd)]((_0x5aaa27,_0x2067dd)=>[String(_0x2067dd+0x1),extractFileNameFromPath(_0x5aaa27)])):(excelHeaders=[_0xffa826(0x166),_0xffa826(0x136)],excelRows=_0x356e51[_0xffa826(0x1fd)]((_0x3f3aca,_0x430cdd)=>[String(_0x430cdd+0x1),_0x3f3aca[_0xffa826(0x175)]()]));}renderExcelTable();}function renderExcelTable(){const _0x463af0=_0x5605d1;if(excelRows[_0x463af0(0x190)]===0x0){excelResultHead[_0x463af0(0x22c)]='',excelResultBody[_0x463af0(0x22c)]=_0x463af0(0x1e6);return;}excelResultHead[_0x463af0(0x22c)]=excelHeaders[_0x463af0(0x1fd)](_0x2cc028=>_0x463af0(0x1f8)+escapeHtmlExcel(_0x2cc028)+_0x463af0(0x17e))[_0x463af0(0x161)](''),excelResultBody[_0x463af0(0x22c)]=excelRows[_0x463af0(0x1fd)](_0x55c5d6=>_0x463af0(0x1e9)+_0x55c5d6[_0x463af0(0x1fd)](_0x2b117f=>_0x463af0(0x1a5)+escapeHtmlExcel(_0x2b117f)+_0x463af0(0x1d0))[_0x463af0(0x161)]('')+_0x463af0(0x19f))[_0x463af0(0x161)]('');}excelPasteArea[_0x5605d1(0x159)](_0x5605d1(0x235),()=>{updateExcelResult();}),excelPasteArea[_0x5605d1(0x159)](_0x5605d1(0x1d2),()=>{setTimeout(()=>{updateExcelResult();},0x0);}),optExtractName[_0x5605d1(0x159)](_0x5605d1(0x21c),updateExcelResult),optSplitExt[_0x5605d1(0x159)](_0x5605d1(0x21c),updateExcelResult),btnClearExcel[_0x5605d1(0x159)](_0x5605d1(0x227),()=>{const _0x251086=_0x5605d1;excelPasteArea[_0x251086(0x1ec)]='',updateExcelResult();});function getFileNamesOnly(){const _0xc8386f=_0x5605d1,_0x19c1c5=excelPasteArea[_0xc8386f(0x1ec)],_0x113be8=_0x19c1c5[_0xc8386f(0x1c7)](/\r/g,'')[_0xc8386f(0x179)]('\x0a')[_0xc8386f(0x23c)](_0x64d5ab=>_0x64d5ab[_0xc8386f(0x175)]()[_0xc8386f(0x190)]>0x0);return _0x113be8[_0xc8386f(0x1fd)](_0x24938c=>{const _0x1c8f2a=_0xc8386f,_0x448d2b=_0x24938c[_0x1c8f2a(0x179)]('\x09')[0x0],_0x1570d1=extractFileNameFromPath(_0x448d2b),{base:_0x1873fe}=splitNameExt(_0x1570d1);return _0x1873fe;});}btnCopyExcel[_0x5605d1(0x159)](_0x5605d1(0x227),async()=>{const _0x46afef=_0x5605d1,_0x4e8baa=getFileNamesOnly();if(_0x4e8baa[_0x46afef(0x190)]===0x0){alert(_0x46afef(0x18a));return;}const _0xe3d4aa=_0x4e8baa[_0x46afef(0x161)]('\x0a');try{await navigator[_0x46afef(0x208)]['writeText'](_0xe3d4aa),alert(_0x46afef(0x1ed)+_0x4e8baa['length']+_0x46afef(0x231));}catch(_0x1d3494){console[_0x46afef(0x165)](_0x1d3494),alert(_0x46afef(0x140));}}),btnDownloadExcel[_0x5605d1(0x159)](_0x5605d1(0x227),()=>{const _0x5f16d6=_0x5605d1;if(excelRows[_0x5f16d6(0x190)]===0x0){alert(_0x5f16d6(0x212));return;}if(!window[_0x5f16d6(0x169)]){alert(_0x5f16d6(0x23d));return;}const _0xd6ce1d=XLSX['utils'][_0x5f16d6(0x211)]([excelHeaders,...excelRows]),_0x49cc0f=XLSX[_0x5f16d6(0x18c)][_0x5f16d6(0x232)]();XLSX[_0x5f16d6(0x18c)][_0x5f16d6(0x1c8)](_0x49cc0f,_0xd6ce1d,_0x5f16d6(0x15f)),XLSX[_0x5f16d6(0x21a)](_0x49cc0f,_0x5f16d6(0x1f5));});</script>
 
-  // ---- 병합 로직 (필수 입력 열 필터링 포함, 기존 로직과 동일한 결과 포맷 유지) ----
-
-  function isEmptyOrMeaninglessRowLocal(row) {
-    if (!row || row.length === 0) return true;
-    if (row.every(c => String(c ?? '').trim() === '')) return true;
-    const rest = row.slice(1);
-    if (rest.length > 0 && rest.every(c => String(c ?? '').trim() === '')) return true;
-    return false;
-  }
-
-  function rowFailsRequiredColumn(row, colIndex) {
-    if (colIndex < 0) return false;
-    const v = row[colIndex];
-    return v === undefined || v === null || String(v).trim() === '';
-  }
-
-  function runCustomMerge() {
-    const mode = getCurrentMergeMode();
-    const useRequiredCol = isRequiredColEnabled();
-    const includeSourceFile = isIncludeSourceFileEnabled();
-    const lastColEnabled = isLastColEnabled();
-    const lastColInput = document.getElementById('last-col-input');
-    const lastColIndex = lastColEnabled ? colLetterToIndex(lastColInput ? lastColInput.value : '') : -1;
-    const wb_out = XLSX.utils.book_new();
-
-    if (mode === 'single') {
-      const reqColIndex = useRequiredCol ? colLetterToIndex(requiredColumnSettings['__single__']) : -1;
-      let allRows = [], isFirst = true, colCount = 0;
-
-      fileDataList.forEach(f => {
-        if (!f.workbook || !f.selectedSheet) return;
-        const sheet = f.workbook.Sheets[f.selectedSheet];
-        const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-        let firstRowOfFile = true;
-
-        rows.forEach(row => {
-          if (isEmptyOrMeaninglessRowLocal(row)) return;
-          let rowCopy = [...row];
-          if (lastColEnabled && lastColIndex >= 0) rowCopy = rowCopy.slice(0, lastColIndex + 1);
-          if (firstRowOfFile) {
-            firstRowOfFile = false;
-            if (isFirst) {
-              colCount = rowCopy.length;
-              if (includeSourceFile) rowCopy.push('출처파일');
-              allRows.push(rowCopy);
-              isFirst = false;
-            }
-            return;
-          }
-          if (useRequiredCol && reqColIndex >= 0 && rowFailsRequiredColumn(row, reqColIndex)) return;
-          while (rowCopy.length < colCount) rowCopy.push('');
-          if (includeSourceFile) rowCopy.push(f.file.name);
-          allRows.push(rowCopy);
-        });
-      });
-
-      if (allRows.length === 0) {
-        alert('병합할 유효한 데이터가 없습니다.');
-        return;
+<script>
+(function () {
+  function extractRangeText(text, matchStart, matchLen, dir, range) {
+    const WORD_COUNTS = { word: 1, word2: 2, word3: 3, word4: 4 };
+    // "N글자(직접입력)" 옵션: range 값이 "chars:숫자" 형태로 들어온다.
+    const charsMatch = typeof range === 'string' && range.match(/^chars:(\d+)$/);
+    const charsCount = charsMatch ? parseInt(charsMatch[1], 10) : null;
+    if (dir === 'self') {
+      const matched = text.substring(matchStart, matchStart + matchLen);
+      return matched ? cleanValue(matched) : '미확인';
+    } else if (dir === 'nextLine') {
+      const after = text.substring(matchStart + matchLen);
+      const lines = after.split(/[\r\n]+/).map(l => l.trim()).filter(l => l.length > 0);
+      return lines.length > 0 ? cleanValue(lines[0]) : '미확인';
+    } else if (dir === 'after') {
+      const after = text.substring(matchStart + matchLen).replace(/^[\s:]+/, '');
+      if (charsCount) {
+        return after.length > 0 ? cleanValue(after.substring(0, charsCount)) : '미확인';
+      } else if (WORD_COUNTS[range]) {
+        const n = WORD_COUNTS[range];
+        const re = new RegExp('^[^\\s]+(?:\\s+[^\\s]+){0,' + (n - 1) + '}');
+        const m = after.match(re);
+        return m ? cleanValue(m[0]) : '미확인';
+      } else {
+        const m = after.match(/^[^\r\n]+/);
+        return m ? cleanValue(m[0]) : '미확인';
       }
-      const ws = XLSX.utils.aoa_to_sheet(allRows);
-      XLSX.utils.book_append_sheet(wb_out, ws, '병합결과');
     } else {
-      const sheetsData = {}, isFirstMap = {}, colCountMap = {};
-
-      fileDataList.forEach(f => {
-        if (!f.workbook) return;
-        f.workbook.SheetNames.forEach(sheetName => {
-          if (!sheetsData[sheetName]) {
-            sheetsData[sheetName] = [];
-            isFirstMap[sheetName] = true;
-            colCountMap[sheetName] = 0;
-          }
-          const sheet = f.workbook.Sheets[sheetName];
-          const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
-          const reqColIndex = useRequiredCol ? colLetterToIndex(requiredColumnSettings[sheetName]) : -1;
-          let firstRowOfFile = true;
-
-          rows.forEach(row => {
-            if (isEmptyOrMeaninglessRowLocal(row)) return;
-            let rowCopy = [...row];
-            if (lastColEnabled && lastColIndex >= 0) rowCopy = rowCopy.slice(0, lastColIndex + 1);
-            if (firstRowOfFile) {
-              firstRowOfFile = false;
-              if (isFirstMap[sheetName]) {
-                colCountMap[sheetName] = rowCopy.length;
-                if (includeSourceFile) rowCopy.push('출처파일');
-                sheetsData[sheetName].push(rowCopy);
-                isFirstMap[sheetName] = false;
-              }
-              return;
-            }
-            if (useRequiredCol && reqColIndex >= 0 && rowFailsRequiredColumn(row, reqColIndex)) return;
-            while (rowCopy.length < colCountMap[sheetName]) rowCopy.push('');
-            if (includeSourceFile) rowCopy.push(f.file.name);
-            sheetsData[sheetName].push(rowCopy);
-          });
-        });
-      });
-
-      const sheetNames = Object.keys(sheetsData);
-      if (sheetNames.length === 0) {
-        alert('병합할 유효한 데이터가 없습니다.');
-        return;
+      const before = text.substring(0, matchStart);
+      if (charsCount) {
+        const trimmedBefore = before.replace(/[\r\n]+$/, '');
+        return trimmedBefore.length > 0 ? cleanValue(trimmedBefore.slice(-charsCount)) : '미확인';
+      } else if (WORD_COUNTS[range]) {
+        const n = WORD_COUNTS[range];
+        const words = before.trim().split(/\s+/).filter(w => w.length > 0);
+        return words.length > 0 ? cleanValue(words.slice(-n).join(' ')) : '미확인';
+      } else {
+        const lines = before.split(/[\r\n]+/);
+        return lines.length > 0 ? cleanValue(lines[lines.length - 1]) : '미확인';
       }
-      sheetNames.forEach(name => {
-        const rows = sheetsData[name];
-        if (rows.length > 0) {
-          const ws = XLSX.utils.aoa_to_sheet(rows);
-          XLSX.utils.book_append_sheet(wb_out, ws, name);
+    }
+  }
+
+  // 쉼표(,)로 여러 기준단어를 입력하면, 앞에서부터 순서대로 문서에서 실제로
+  // 발견되는 첫 번째 기준단어를 사용해 매칭한다. (예: "성명,이름,신청인")
+  function buildKeyPattern(keyword) {
+    return keyword.split('').map(ch => {
+      const esc = escapeRegExpChar(ch);
+      return /[a-zA-Z0-9가-힣]/.test(ch) ? esc + '\\s*' : esc;
+    }).join('').replace(/\s*$/, '');
+  }
+
+  function parseTextByRule(text, rule) {
+    if (!rule.key || !text) return '';
+    const keywords = rule.key.split(',').map(k => k.trim()).filter(k => k !== '');
+    if (keywords.length === 0) return '';
+
+    for (const keyword of keywords) {
+      const keyPattern = buildKeyPattern(keyword);
+      if (!keyPattern) continue;
+      let matches;
+      try {
+        matches = [...text.matchAll(new RegExp(keyPattern, 'gi'))];
+      } catch (e) {
+        continue;
+      }
+      if (matches.length === 0) continue;
+      const match = rule.idx === 'last' ? matches[matches.length - 1] : (matches[parseInt(rule.idx) - 1] || matches[0]);
+      return extractRangeText(text, match.index, match[0].length, rule.dir, rule.range);
+    }
+    return '미확인';
+  }
+  window.parseTextByRule = parseTextByRule;
+
+  const IMAGE_EXTS = ['.jpg', '.jpeg', '.png', '.webp', '.bmp'];
+
+  async function extractImageOCR(file) {
+    if (!window.Tesseract) return '';
+    const worker = await Tesseract.createWorker('kor+eng');
+    const { data } = await worker.recognize(file);
+    await worker.terminate();
+    return data.text;
+  }
+  window.extractImageOCR = extractImageOCR;
+
+  // 엑셀(.xlsx) 파일의 모든 시트/셀 내용을 하나의 텍스트로 합쳐서
+  // 기존 PDF/HWPX와 동일한 방식(기준단어 매칭)으로 추출할 수 있게 한다.
+  // 열기암호가 걸린 파일이면, 처리 도중 비밀번호를 물어보고 그 자리에서 해독한 뒤 계속 진행한다.
+  function xlsxWorkbookToText(workbook) {
+    let text = '';
+    workbook.SheetNames.forEach(sheetName => {
+      const sheet = workbook.Sheets[sheetName];
+      const rows = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' });
+      rows.forEach(row => {
+        text += row.map(cell => String(cell ?? '')).join(' ') + '\n';
+      });
+    });
+    return text;
+  }
+
+  async function extractXlsxText(file) {
+    if (!window.XLSX) return '';
+    const buffer = await file.arrayBuffer();
+
+    // 1) 우선 암호 없는 일반 xlsx로 시도
+    try {
+      const workbook = XLSX.read(buffer, { type: 'array' });
+      return xlsxWorkbookToText(workbook);
+    } catch (e) {
+      // 암호가 걸려있어 실패한 것으로 보고 아래에서 해독을 시도한다
+    }
+
+    if (!window.forge) {
+      alert(`"${file.name}" 파일은 열기암호가 걸려 있는데, 암호 해독 라이브러리를 불러오지 못했습니다.\n인터넷 연결을 확인 후 새로고침 해주세요.`);
+      return '';
+    }
+
+    // 2) 직전에 입력했던 비밀번호가 있으면 먼저 자동으로 시도 (여러 파일이 같은 암호를 쓰는 경우가 많음)
+    if (window.__xlsxLastPassword) {
+      try {
+        const decrypted = decryptAgileXlsx(buffer, window.__xlsxLastPassword);
+        const workbook = XLSX.read(decrypted, { type: 'array' });
+        return xlsxWorkbookToText(workbook);
+      } catch (e) {
+        // 이전 비밀번호로 안 풀리면 아래에서 새로 물어본다
+      }
+    }
+
+    // 3) 비밀번호를 직접 물어봄 (최대 3회 시도)
+    for (let attempt = 0; attempt < 3; attempt++) {
+      const pw = window.prompt(`"${file.name}" 파일은 열기암호가 걸려 있습니다.\n비밀번호를 입력해주세요.`);
+      if (pw === null) return ''; // 사용자가 취소함
+      if (!pw) continue;
+      try {
+        const decrypted = decryptAgileXlsx(buffer, pw);
+        window.__xlsxLastPassword = pw; // 다음 파일부터는 이 비밀번호를 먼저 시도
+        const workbook = XLSX.read(decrypted, { type: 'array' });
+        return xlsxWorkbookToText(workbook);
+      } catch (e2) {
+        if (e2 && e2.message === 'WRONG_PASSWORD') {
+          alert('비밀번호가 올바르지 않습니다. 다시 시도해주세요.');
+          continue;
+        } else {
+          alert(`"${file.name}" 파일은 지원하지 않는 암호화 방식이거나 처리할 수 없습니다.`);
+          return '';
         }
+      }
+    }
+    return '';
+  }
+  window.extractXlsxText = extractXlsxText;
+
+  // 이미지/엑셀 파일도 인식하도록 handleFiles를 재정의 (기존 PDF/HWPX 로직은 그대로 유지)
+  function handleFiles(files) {
+    for (let file of files) {
+      const lower = file.name.toLowerCase();
+      const isImage = IMAGE_EXTS.some(ext => lower.endsWith(ext));
+      const isXlsx = lower.endsWith('.xlsx');
+      if (!lower.includes('.pdf') && !lower.includes('.hwpx') && !isImage && !isXlsx) continue;
+      if (!fileQueue.some(f => f.file.name === file.name)) {
+        fileQueue.push({
+          id: 'f_' + Math.random().toString(36).slice(2, 9),
+          file: file,
+          status: 'ready',
+          newName: '',
+          extractedText: null,
+          selected: false
+        });
+      }
+    }
+    renderTable();
+    updateButtonStates();
+  }
+  window.handleFiles = handleFiles;
+
+  // 엑셀 텍스트 추출 분기를 추가한 runBatchProcess (그 외 PDF/HWPX/이미지 처리 로직은 기존과 동일)
+  async function runBatchProcess(mode = 'all') {
+    btnRun.disabled = true;
+    btnRe.disabled = true;
+    btnSelRe.disabled = true;
+    btnZip.disabled = true;
+
+    const commonWord = document.getElementById('commonWord').value.trim();
+    const commonPos = document.getElementById('commonPos').value;
+    const fnKey = document.getElementById('fnKey').value.trim();
+    const fnMode = document.getElementById('fnMode').value;
+    const rules = [1, 2, 3, 4].map(i => ({
+      key: document.getElementById('key' + i).value.trim(),
+      dir: document.getElementById('dir' + i).value,
+      idx: document.getElementById('idx' + i).value,
+      range: document.getElementById('range' + i).value
+    }));
+
+    for (let item of fileQueue) {
+      if (mode === 'all' && item.status === 'success') continue;
+      if (mode === 'selected' && !item.selected) continue;
+
+      item.status = 'working';
+      renderTable();
+
+      try {
+        if (!item.extractedText || mode === 'reAll' || mode === 'selected') {
+          const lower = item.file.name.toLowerCase();
+          if (lower.includes('.pdf')) {
+            item.extractedText = await extractPdfText(item.file);
+            if (item.extractedText.trim().length < 20 && window.Tesseract) {
+              item.status = 'ocr';
+              renderTable();
+              item.extractedText = await extractPdfOCR(item.file);
+            }
+          } else if (lower.includes('.hwpx')) {
+            item.extractedText = await extractHwpxText(item.file);
+          } else if (lower.endsWith('.xlsx')) {
+            item.extractedText = await extractXlsxText(item.file);
+          } else if (IMAGE_EXTS.some(ext => lower.endsWith(ext))) {
+            item.status = 'ocr';
+            renderTable();
+            item.extractedText = await extractImageOCR(item.file);
+          }
+        }
+
+        const vals = rules.map(rule => parseTextByRule(item.extractedText, rule));
+        item.vals = vals;
+
+        const dotIdx = item.file.name.lastIndexOf('.');
+        const ext = dotIdx >= 0 ? item.file.name.slice(dotIdx) : '';
+        const baseName = dotIdx >= 0 ? item.file.name.slice(0, dotIdx) : item.file.name;
+        const trimmed = trimFileName(baseName, fnKey, fnMode);
+
+        let parts = vals
+          .map(v => v ? v.trim().replace(/^[_]+|[_]+$/g, '') : '')
+          .filter(v => v !== '' && v !== '미확인');
+
+        if (commonWord !== '') {
+          const cw = commonWord.replace(/^[_]+|[_]+$/g, '');
+          commonPos === 'prefix' ? parts.unshift(cw) : parts.push(cw);
+        }
+
+        if (parts.length > 0) {
+          const joined = parts.join('_');
+          item.newName = trimmed ? '[' + joined + ']_' + trimmed + ext : '[' + joined + ']' + ext;
+        } else {
+          item.newName = trimmed ? trimmed + ext : item.file.name;
+        }
+        item.status = 'success';
+      } catch (e) {
+        console.error(e);
+        item.status = 'error';
+      }
+      renderTable();
+    }
+    updateButtonStates();
+  }
+  window.runBatchProcess = runBatchProcess;
+
+  /* =========================================================================
+   * 🔓 엑셀 열기암호(MS-OFFCRYPTO Agile Encryption) 일괄 해제
+   * -------------------------------------------------------------------------
+   * '엑셀병합기' 도구에서 쓰던 것과 동일한 방식입니다.
+   * SheetJS 무료버전은 진짜 "열기 암호"가 걸린 파일은 못 읽기 때문에,
+   * forge.js의 저수준 AES/해시 함수로 [MS-OFFCRYPTO] Agile Encryption 규격을
+   * 브라우저에서 직접 해독합니다. 파일은 서버로 전송되지 않습니다.
+   * ========================================================================= */
+  const AGILE_BLOCK_KEYS = {
+    key: Uint8Array.from([0x14, 0x6e, 0x0b, 0xe7, 0xab, 0xac, 0xd0, 0xd6]),
+    verifierInput: Uint8Array.from([0xfe, 0xa7, 0xd2, 0x76, 0x3b, 0x4b, 0x9e, 0x79]),
+    verifierValue: Uint8Array.from([0xd7, 0xaa, 0x0f, 0x6d, 0x30, 0x61, 0x34, 0x4e])
+  };
+
+  function u8ToBinStr(u8) {
+    let s = '';
+    for (let i = 0; i < u8.length; i++) s += String.fromCharCode(u8[i]);
+    return s;
+  }
+  function binStrToU8(s) {
+    const u8 = new Uint8Array(s.length);
+    for (let i = 0; i < s.length; i++) u8[i] = s.charCodeAt(i);
+    return u8;
+  }
+  function base64ToU8(b64) {
+    return binStrToU8(atob(b64));
+  }
+  function uint32LEBytes(n) {
+    return Uint8Array.from([n & 0xff, (n >>> 8) & 0xff, (n >>> 16) & 0xff, (n >>> 24) & 0xff]);
+  }
+  function passwordToUtf16LEBytes(password) {
+    const u8 = new Uint8Array(password.length * 2);
+    for (let i = 0; i < password.length; i++) {
+      const code = password.charCodeAt(i);
+      u8[i * 2] = code & 0xff;
+      u8[i * 2 + 1] = (code >> 8) & 0xff;
+    }
+    return u8;
+  }
+  function hashConcat(algorithm, buffers) {
+    const mdName = algorithm.toLowerCase();
+    if (!forge.md[mdName]) throw new Error('UNSUPPORTED_ENCRYPTION');
+    const md = forge.md[mdName].create();
+    buffers.forEach(b => md.update(u8ToBinStr(b)));
+    return binStrToU8(md.digest().getBytes());
+  }
+  function aesCbcDecryptNoPad(keyU8, ivU8, inputU8) {
+    const decipher = forge.cipher.createDecipher('AES-CBC', u8ToBinStr(keyU8));
+    decipher.start({ iv: u8ToBinStr(ivU8) });
+    decipher.update(forge.util.createBuffer(u8ToBinStr(inputU8)));
+    decipher.finish(() => true); // 패딩 제거 없이(raw) 그대로 사용
+    return binStrToU8(decipher.output.getBytes());
+  }
+  function convertPasswordToKey(password, hashAlgorithm, saltValue, spinCount, keyBits, blockKey) {
+    const pwBytes = passwordToUtf16LEBytes(password);
+    let key = hashConcat(hashAlgorithm, [saltValue, pwBytes]);
+    for (let i = 0; i < spinCount; i++) {
+      key = hashConcat(hashAlgorithm, [uint32LEBytes(i), key]);
+    }
+    key = hashConcat(hashAlgorithm, [key, blockKey]);
+    const keyBytes = keyBits / 8;
+    if (key.length < keyBytes) {
+      const tmp = new Uint8Array(keyBytes).fill(0x36);
+      tmp.set(key);
+      key = tmp;
+    } else if (key.length > keyBytes) {
+      key = key.slice(0, keyBytes);
+    }
+    return key;
+  }
+  function createAgileIV(hashAlgorithm, saltValue, blockSize, blockKeyOrIndex) {
+    const blockKey = (typeof blockKeyOrIndex === 'number') ? uint32LEBytes(blockKeyOrIndex) : blockKeyOrIndex;
+    let iv = hashConcat(hashAlgorithm, [saltValue, blockKey]);
+    if (iv.length < blockSize) {
+      const tmp = new Uint8Array(blockSize).fill(0x36);
+      tmp.set(iv);
+      iv = tmp;
+    } else if (iv.length > blockSize) {
+      iv = iv.slice(0, blockSize);
+    }
+    return iv;
+  }
+  function decryptAgilePackage(saltValue, blockSize, hashAlgorithm, packageKey, input) {
+    const CHUNK = 4096;
+    const OFFSET = 8; // 앞 8바이트는 해독 후 원본 길이(uint32le)를 담고 있음
+    const outputChunks = [];
+    let i = 0, start = 0, end = 0;
+    while (end < input.length) {
+      start = end;
+      end = start + CHUNK;
+      if (end > input.length) end = input.length;
+      let inputChunk = input.slice(start + OFFSET, end + OFFSET);
+      const remainder = inputChunk.length % blockSize;
+      if (remainder) {
+        const padded = new Uint8Array(inputChunk.length + (blockSize - remainder));
+        padded.set(inputChunk);
+        inputChunk = padded;
+      }
+      if (inputChunk.length > 0) {
+        const iv = createAgileIV(hashAlgorithm, saltValue, blockSize, i);
+        outputChunks.push(aesCbcDecryptNoPad(packageKey, iv, inputChunk));
+      }
+      i++;
+    }
+    let total = outputChunks.reduce((a, c) => a + c.length, 0);
+    let output = new Uint8Array(total);
+    let pos = 0;
+    for (const c of outputChunks) { output.set(c, pos); pos += c.length; }
+    const length = (input[0]) | (input[1] << 8) | (input[2] << 16) | (input[3] << 24);
+    return output.slice(0, length >>> 0);
+  }
+
+  // CFB(OLE 컴파운드 파일) 컨테이너에서 EncryptionInfo/EncryptedPackage 스트림을 꺼내
+  // 실제 암호를 해독하여 순수 xlsx(zip) 바이트를 반환한다.
+  function decryptAgileXlsx(fileArrayBuffer, password) {
+    const u8 = new Uint8Array(fileArrayBuffer);
+    let cfb;
+    try {
+      cfb = XLSX.CFB.read(u8, { type: 'array' });
+    } catch (e) {
+      throw new Error('NOT_ENCRYPTED');
+    }
+    const encInfoEntry = XLSX.CFB.find(cfb, 'EncryptionInfo');
+    const encPkgEntry = XLSX.CFB.find(cfb, 'EncryptedPackage');
+    if (!encInfoEntry || !encPkgEntry) throw new Error('NOT_ENCRYPTED');
+
+    let encInfo = encInfoEntry.content;
+    let encPkg = encPkgEntry.content;
+    if (!(encInfo instanceof Uint8Array)) encInfo = new Uint8Array(encInfo);
+    if (!(encPkg instanceof Uint8Array)) encPkg = new Uint8Array(encPkg);
+
+    const verMajor = encInfo[0] | (encInfo[1] << 8);
+    const verMinor = encInfo[2] | (encInfo[3] << 8);
+    if (!(verMajor === 4 && verMinor === 4)) {
+      throw new Error('UNSUPPORTED_ENCRYPTION');
+    }
+
+    const xmlStr = new TextDecoder('utf-8').decode(encInfo.slice(8));
+    const doc = new DOMParser().parseFromString(xmlStr, 'application/xml');
+    if (doc.getElementsByTagName('parsererror').length > 0) throw new Error('UNSUPPORTED_ENCRYPTION');
+
+    const keyDataEl = doc.getElementsByTagName('keyData')[0];
+    const encKeyEl = doc.getElementsByTagName('p:encryptedKey')[0] || doc.getElementsByTagName('encryptedKey')[0];
+    if (!keyDataEl || !encKeyEl) throw new Error('UNSUPPORTED_ENCRYPTION');
+
+    const pkg = {
+      saltValue: base64ToU8(keyDataEl.getAttribute('saltValue')),
+      hashAlgorithm: keyDataEl.getAttribute('hashAlgorithm'),
+      blockSize: parseInt(keyDataEl.getAttribute('blockSize'), 10)
+    };
+    const keyInfo = {
+      encryptedKeyValue: base64ToU8(encKeyEl.getAttribute('encryptedKeyValue')),
+      saltValue: base64ToU8(encKeyEl.getAttribute('saltValue')),
+      hashAlgorithm: encKeyEl.getAttribute('hashAlgorithm'),
+      spinCount: parseInt(encKeyEl.getAttribute('spinCount'), 10),
+      keyBits: parseInt(encKeyEl.getAttribute('keyBits'), 10),
+      encryptedVerifierHashInput: base64ToU8(encKeyEl.getAttribute('encryptedVerifierHashInput')),
+      encryptedVerifierHashValue: base64ToU8(encKeyEl.getAttribute('encryptedVerifierHashValue'))
+    };
+
+    const verifierInputKey = convertPasswordToKey(password, keyInfo.hashAlgorithm, keyInfo.saltValue, keyInfo.spinCount, keyInfo.keyBits, AGILE_BLOCK_KEYS.verifierInput);
+    const verifierHashInput = aesCbcDecryptNoPad(verifierInputKey, keyInfo.saltValue, keyInfo.encryptedVerifierHashInput);
+    const verifierValueKey = convertPasswordToKey(password, keyInfo.hashAlgorithm, keyInfo.saltValue, keyInfo.spinCount, keyInfo.keyBits, AGILE_BLOCK_KEYS.verifierValue);
+    const verifierHashValueDecrypted = aesCbcDecryptNoPad(verifierValueKey, keyInfo.saltValue, keyInfo.encryptedVerifierHashValue);
+    const computedHash = hashConcat(keyInfo.hashAlgorithm, [verifierHashInput]);
+    let match = computedHash.length > 0;
+    for (let k = 0; k < computedHash.length; k++) {
+      if (computedHash[k] !== verifierHashValueDecrypted[k]) { match = false; break; }
+    }
+    if (!match) throw new Error('WRONG_PASSWORD');
+
+    const key = convertPasswordToKey(password, keyInfo.hashAlgorithm, keyInfo.saltValue, keyInfo.spinCount, keyInfo.keyBits, AGILE_BLOCK_KEYS.key);
+    const packageKey = aesCbcDecryptNoPad(key, keyInfo.saltValue, keyInfo.encryptedKeyValue);
+
+    return decryptAgilePackage(pkg.saltValue, pkg.blockSize, pkg.hashAlgorithm, packageKey, encPkg);
+  }
+})();
+</script>
+
+<script>
+  // =========================================================================
+  // 🧹 결과값 일괄 삭제 + 📏 N글자(직접입력) 범위 옵션
+  // 기존 코드는 그대로 두고, 이미 선언된 전역 변수(fileQueue 등)와
+  // 전역 함수(renderTable, trimFileName, cleanValue)를 그대로 재사용한다.
+  // =========================================================================
+
+  // "범위" 드롭다운에서 "N글자(직접입력)"을 고르면 숫자 입력칸을 보여주고,
+  // 반대로 다른 항목을 고르면 다시 숨긴다.
+  function toggleCharsInput(n) {
+    const sel = document.getElementById('range' + n);
+    const numInput = document.getElementById('charsNum' + n);
+    if (!sel || !numInput) return;
+    if (sel.value.indexOf('chars') === 0) {
+      numInput.style.display = 'inline-block';
+      syncCharsRangeValue(n);
+    } else {
+      numInput.style.display = 'none';
+    }
+  }
+  window.toggleCharsInput = toggleCharsInput;
+
+  // 숫자 입력칸의 값이 바뀔 때마다, 실제로 실행 시 읽히는 select의 값을
+  // "chars:3" 같은 형태로 갱신해준다. (extractRangeText가 이 값을 해석함)
+  function syncCharsRangeValue(n) {
+    const sel = document.getElementById('range' + n);
+    const numInput = document.getElementById('charsNum' + n);
+    if (!sel || !numInput) return;
+    const count = Math.max(1, parseInt(numInput.value, 10) || 1);
+    const opt = sel.options[sel.selectedIndex];
+    if (opt && opt.value.indexOf('chars') === 0) {
+      opt.value = 'chars:' + count;
+    }
+  }
+  window.syncCharsRangeValue = syncCharsRangeValue;
+
+  // 이미 추출된 결과값(vals) 중에서 특정 단어/글자를 전부 지우고,
+  // "변경될 파일명"도 같은 규칙(공통단어, 파일명 다듬기)으로 다시 계산한다.
+  function applyBulkRemoveWord() {
+    const input = document.getElementById('bulkRemoveWord');
+    const word = input.value.trim();
+    if (!word) return;
+    if (typeof fileQueue === 'undefined') return;
+
+    fileQueue.forEach(item => {
+      if (!item.vals) return;
+      let changed = false;
+      item.vals = item.vals.map(v => {
+        if (!v || v === '미확인') return v;
+        if (v.indexOf(word) !== -1) {
+          changed = true;
+          return v.split(word).join('').trim();
+        }
+        return v;
+      });
+      if (changed) rebuildNewNameFromVals(item);
+    });
+
+    if (typeof renderTable === 'function') renderTable();
+  }
+  window.applyBulkRemoveWord = applyBulkRemoveWord;
+
+  // runBatchProcess 안의 "변경될 파일명 만들기" 로직과 동일한 규칙으로
+  // vals 배열을 이용해 newName을 다시 만든다.
+  function rebuildNewNameFromVals(item) {
+    const commonWordEl = document.getElementById('commonWord');
+    const commonPosEl = document.getElementById('commonPos');
+    const fnKeyEl = document.getElementById('fnKey');
+    const fnModeEl = document.getElementById('fnMode');
+    if (!commonWordEl || !commonPosEl || !fnKeyEl || !fnModeEl) return;
+
+    const commonWord = commonWordEl.value.trim();
+    const commonPos = commonPosEl.value;
+    const fnKey = fnKeyEl.value.trim();
+    const fnMode = fnModeEl.value;
+
+    const originalName = item.file.name;
+    const dotIdx = originalName.lastIndexOf('.');
+    const ext = dotIdx === -1 ? '' : originalName.substring(dotIdx);
+    const baseNoExt = dotIdx === -1 ? originalName : originalName.slice(0, dotIdx);
+    const trimmedBase = (typeof trimFileName === 'function')
+      ? trimFileName(baseNoExt, fnKey, fnMode)
+      : baseNoExt;
+
+    let valsClean = item.vals
+      .map(v => v ? v.trim().replace(/^[_]+|[_]+$/g, '') : '')
+      .filter(v => v !== '' && v !== '미확인');
+
+    if (commonWord !== '') {
+      const trimmedCommon = commonWord.replace(/^[_]+|[_]+$/g, '');
+      if (commonPos === 'prefix') valsClean.unshift(trimmedCommon);
+      else valsClean.push(trimmedCommon);
+    }
+
+    if (valsClean.length > 0) {
+      const joined = valsClean.join('_');
+      item.newName = trimmedBase ? '[' + joined + ']_' + trimmedBase + ext : '[' + joined + ']' + ext;
+    } else {
+      item.newName = trimmedBase ? trimmedBase + ext : originalName;
+    }
+  }
+  function statusLabelKo(status) {
+    if (status === 'ready') return '대기중';
+    if (status === 'processing') return '처리중';
+    if (status === 'ocr') return 'OCR 인식중';
+    if (status === 'error') return '실패';
+    if (status === 'success') return '완료';
+    return status || '-';
+  }
+
+  // "원본 파일명 / 추출값1~4 / 변경될 파일명 / 상태"를 그대로 엑셀(xlsx)로 내려받는다.
+  function downloadResultsExcel() {
+    if (typeof fileQueue === 'undefined' || fileQueue.length === 0) {
+      alert('먼저 파일을 업로드하고 실행해주세요.');
+      return;
+    }
+    if (!window.XLSX) {
+      alert('엑셀 라이브러리를 불러오지 못했습니다. 인터넷 연결을 확인 후 새로고침 해주세요.');
+      return;
+    }
+
+    const ruleCount = window.activeRuleCount || 3;
+    const header = ['번호', '원본 파일명'];
+    for (let n = 1; n <= ruleCount; n++) header.push('추출값' + n);
+    header.push('변경될 파일명', '상태');
+
+    const rows = fileQueue.map((item, idx) => {
+      const vals = item.vals || [];
+      const row = [idx + 1, item.file.name];
+      for (let n = 1; n <= ruleCount; n++) row.push(vals[n - 1] || '-');
+      row.push(item.newName || '-', statusLabelKo(item.status));
+      return row;
+    });
+
+    const ws = XLSX.utils.aoa_to_sheet([header, ...rows]);
+    ws['!cols'] = [{ wch: 6 }, { wch: 30 }]
+      .concat(Array(ruleCount).fill({ wch: 16 }))
+      .concat([{ wch: 40 }, { wch: 10 }]);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, '파일명변경결과');
+    XLSX.writeFile(wb, '파일명변경결과.xlsx');
+  }
+  window.downloadResultsExcel = downloadResultsExcel;
+
+  // =========================================================================
+  // ➕ 추출위치 추가 (최대 6개) — 기존에는 1~4번까지 고정이었던 것을
+  // 1~3번은 항상 보이고, 버튼을 누를 때마다 4→5→6번이 하나씩 나타나도록 확장
+  // =========================================================================
+  window.activeRuleCount = 3;
+
+  function addExtractionRule() {
+    if (window.activeRuleCount >= 6) return;
+    for (let n = 4; n <= 6; n++) {
+      const slot = document.getElementById('ruleSlot' + n);
+      const th = document.getElementById('thVal' + n);
+      if (slot) slot.style.display = '';
+      if (th) th.style.display = '';
+    }
+    window.activeRuleCount = 6;
+    const btn = document.getElementById('btnAddRule');
+    if (btn) { btn.disabled = true; btn.textContent = '➕ 추출위치 추가됨 (6개)'; }
+    if (typeof renderTable === 'function') renderTable();
+  }
+  window.addExtractionRule = addExtractionRule;
+
+  // 원래 4개 규칙 고정이던 runBatchProcess를, activeRuleCount(3~6)만큼
+  // 동적으로 처리하도록 새로 정의해서 기존 함수를 덮어쓴다.
+  async function runBatchProcess(mode = 'all') {
+    btnRun.disabled = true;
+    btnRe.disabled = true;
+    btnSelRe.disabled = true;
+    btnZip.disabled = true;
+
+    const commonWord = document.getElementById('commonWord').value.trim();
+    const commonPos = document.getElementById('commonPos').value;
+    const fnKey = document.getElementById('fnKey').value.trim();
+    const fnMode = document.getElementById('fnMode').value;
+
+    const ruleCount = window.activeRuleCount || 3;
+    const rules = [];
+    for (let n = 1; n <= ruleCount; n++) {
+      const keyEl = document.getElementById('key' + n);
+      const dirEl = document.getElementById('dir' + n);
+      const idxEl = document.getElementById('idx' + n);
+      const rangeEl = document.getElementById('range' + n);
+      if (!keyEl || !dirEl || !idxEl || !rangeEl) continue;
+      rules.push({
+        key: keyEl.value.trim(),
+        dir: dirEl.value,
+        idx: idxEl.value,
+        range: rangeEl.value
       });
     }
 
-    XLSX.writeFile(wb_out, '병합결과.xlsx');
+    for (const item of fileQueue) {
+      if (mode === 'all' && item.status === 'success') continue;
+      if (mode === 'selected' && !item.selected) continue;
+      item.status = 'processing';
+      renderTable();
+      try {
+        if (!item.extractedText || mode === 'reAll' || mode === 'selected') {
+          const lower = item.file.name.toLowerCase();
+          if (lower.endsWith('.pdf')) {
+            item.extractedText = await extractPdfText(item.file);
+            if (item.extractedText.trim().length < 20 && window.Tesseract) {
+              item.status = 'ocr';
+              renderTable();
+              item.extractedText = await extractPdfOCR(item.file);
+            }
+          } else if (lower.endsWith('.hwpx')) {
+            item.extractedText = await extractHwpxText(item.file);
+          } else if (lower.endsWith('.xlsx') || lower.endsWith('.xlsm') || lower.endsWith('.xls')) {
+            item.extractedText = await extractXlsxText(item.file);
+          } else if (['.jpg', '.jpeg', '.png', '.webp', '.bmp'].some(ext => lower.endsWith(ext))) {
+            item.extractedText = await extractImageOCR(item.file);
+          }
+        }
+
+        const vals = rules.map(rule => parseTextByRule(item.extractedText, rule));
+        item.vals = vals;
+
+        const dotIdx = item.file.name.lastIndexOf('.');
+        const ext = dotIdx === -1 ? '' : item.file.name.substring(dotIdx);
+        const baseNoExt = dotIdx === -1 ? item.file.name : item.file.name.slice(0, dotIdx);
+        const trimmedBase = trimFileName(baseNoExt, fnKey, fnMode);
+
+        let valsClean = vals
+          .map(v => v ? v.trim().replace(/^[_]+|[_]+$/g, '') : '')
+          .filter(v => v !== '' && v !== '미확인');
+
+        if (commonWord !== '') {
+          const trimmedCommon = commonWord.replace(/^[_]+|[_]+$/g, '');
+          if (commonPos === 'prefix') valsClean.unshift(trimmedCommon);
+          else valsClean.push(trimmedCommon);
+        }
+
+        if (valsClean.length > 0) {
+          const joined = valsClean.join('_');
+          item.newName = trimmedBase ? '[' + joined + ']_' + trimmedBase + ext : '[' + joined + ']' + ext;
+        } else {
+          item.newName = trimmedBase ? trimmedBase + ext : item.file.name;
+        }
+        item.status = 'success';
+      } catch (e) {
+        console.error(e);
+        item.status = 'error';
+      }
+      renderTable();
+    }
+    updateButtonStates();
   }
+  window.runBatchProcess = runBatchProcess;
 
-  // 병합 버튼 클릭을 캡처 단계에서 가로채, 기존(원본) 병합 로직 대신 위의 커스텀 병합을 실행한다.
-  // capture 단계에서 전파를 막으므로 원본 스크립트에 있던 병합 클릭 리스너는 실행되지 않는다.
-  document.addEventListener('click', function (e) {
-    const btn = e.target && e.target.closest && e.target.closest('#merge-btn');
-    if (!btn) return;
-    e.preventDefault();
-    e.stopPropagation();
-    if (e.stopImmediatePropagation) e.stopImmediatePropagation();
-    runCustomMerge();
-  }, true);
+  // 표도 4개 고정이 아니라 activeRuleCount(최대 6)만큼 "추출값" 칸을 그린다.
+  function renderTable() {
+    tableBody.innerHTML = '';
+    const ruleCount = window.activeRuleCount || 3;
+
+    fileQueue.forEach((item, idx) => {
+      const tr = document.createElement('tr');
+      tr.className = 'draggable-row';
+      tr.draggable = true;
+      tr.dataset.index = idx;
+
+      let valsHtml = '';
+      for (let n = 1; n <= 6; n++) {
+        const val = (item.vals && item.vals[n - 1]) ? item.vals[n - 1] : '-';
+        const hidden = n > ruleCount ? 'display:none;' : '';
+        valsHtml += '<td class="val-' + n + '" style="' + hidden + '">' + val + '</td>';
+      }
+
+      tr.innerHTML =
+        '<td style="text-align:center; cursor:grab;">↕</td>' +
+        '<td style="text-align:center;"><input type="checkbox" ' + (item.selected ? 'checked' : '') + ' onchange="toggleItemSelect(' + idx + ', this.checked)"></td>' +
+        '<td>' + item.file.name + '</td>' +
+        valsHtml +
+        '<td>' + (item.newName || '-') + '</td>' +
+        '<td>' + getStatusBadgeHtml(item) + '</td>';
+
+      tr.addEventListener('dragstart', () => {
+        draggedRowIndex = idx;
+        tr.classList.add('dragging');
+      });
+      tr.addEventListener('dragend', () => {
+        tr.classList.remove('dragging');
+        draggedRowIndex = null;
+      });
+      tr.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+      });
+      tr.addEventListener('drop', e => {
+        e.preventDefault();
+        if (draggedRowIndex !== null && draggedRowIndex !== idx) {
+          const moved = fileQueue.splice(draggedRowIndex, 1)[0];
+          fileQueue.splice(idx, 0, moved);
+          renderTable();
+        }
+      });
+
+      tableBody.appendChild(tr);
+    });
+
+    updateSelectAllCheckboxState();
+    updateButtonStates();
+  }
+  window.renderTable = renderTable;
 </script>
-
 </body>
 </html>
