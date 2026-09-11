@@ -1169,10 +1169,9 @@
   function applyBulkRemoveWord() {
     const input = document.getElementById('bulkRemoveWord');
     const word = input.value.trim();
-    if (!word) { alert('삭제할 단어를 입력해주세요.'); return; }
+    if (!word) return;
     if (typeof fileQueue === 'undefined') return;
 
-    let affected = 0;
     fileQueue.forEach(item => {
       if (!item.vals) return;
       let changed = false;
@@ -1184,16 +1183,10 @@
         }
         return v;
       });
-      if (changed) {
-        affected++;
-        rebuildNewNameFromVals(item);
-      }
+      if (changed) rebuildNewNameFromVals(item);
     });
 
     if (typeof renderTable === 'function') renderTable();
-
-    if (affected === 0) alert('"' + word + '"이(가) 포함된 결과값이 없습니다.');
-    else alert(affected + '개 파일의 결과값에서 "' + word + '"을(를) 삭제하고, 파일명을 다시 계산했습니다.');
   }
   window.applyBulkRemoveWord = applyBulkRemoveWord;
 
