@@ -398,6 +398,23 @@
     </div>
   </div>
 
+  <!-- 0. 설정 프리셋: 관리자 기본 설정 + 사용자(브라우저) 저장 설정 -->
+  <div class="card-box preset-card" style="margin-bottom:15px;">
+    <h4 style="margin-bottom:8px;">💾 설정 프리셋 <span style="font-size:11.5px; font-weight:normal; color:#64748b;">(추출위치·범위·결과값 삭제 단어 등 전체 설정을 저장/불러오기)</span></h4>
+    <div class="preset-controls">
+      <select id="presetSelect" style="min-width:220px;"></select>
+      <button class="btn-sm-outline" onclick="applySelectedPreset()">📥 불러오기</button>
+      <button class="btn-sm-outline" onclick="deleteSelectedPreset()">🗑️ 삭제</button>
+    </div>
+    <div class="preset-controls" style="margin-top:8px;">
+      <input type="text" id="newPresetName" placeholder="현재 설정을 저장할 이름 (예: 부여군 수료증)" style="min-width:220px;">
+      <button class="btn-sm-outline" onclick="saveCurrentAsPreset()">💾 현재 설정을 이 브라우저에 저장</button>
+    </div>
+    <div style="font-size:11.5px; color:#94a3b8; margin-top:6px;">
+      "⚙️ 관리자 기본 설정"은 코드에 미리 등록되어 모든 사용자에게 똑같이 보이는 공용 설정이고, "💾 내가 저장한 설정"은 지금 이 브라우저에만 저장되어 다른 사람에게는 보이지 않습니다.
+    </div>
+  </div>
+
   <!-- 1. 추출 위치 설정 (3개씩 배치) -->
   <div class="rule-cards-grid">
     <div class="card-box rule-card">
@@ -1567,6 +1584,203 @@
     updateButtonStates();
   }
   window.renderTable = renderTable;
+
+  // =========================================================================
+  // 💾 설정 프리셋: 관리자 기본 설정(코드에 등록) + 사용자 저장 설정(localStorage)
+  // =========================================================================
+
+  // 관리자가 여기에 항목을 추가/수정하면 모든 사용자에게 동일하게 보입니다.
+  // rules는 1~6번 순서대로, 안 쓰는 위치는 key:''로 비워두면 됩니다.
+  const ADMIN_PRESETS = {
+    '예시) 공무원 교육 수료증': {
+      commonWord: '', commonPos: 'prefix',
+      fnKey: '', fnMode: 'removeAll',
+      bulkRemoveWord: '',
+      activeRuleCount: 3,
+      rules: [
+        { key: '성명', dir: 'after', idx: '1', range: 'word' },
+        { key: '직급', dir: 'after', idx: '1', range: 'line' },
+        { key: '과정', dir: 'after', idx: '1', range: 'line' },
+        { key: '', dir: 'after', idx: '1', range: 'word' },
+        { key: '', dir: 'after', idx: '1', range: 'word' },
+        { key: '', dir: 'after', idx: '1', range: 'word' }
+      ]
+    }
+  };
+
+  const USER_PRESET_STORAGE_KEY = 'fnrenamer_user_presets_v1';
+
+  function getUserPresets() {
+    try { return JSON.parse(localStorage.getItem(USER_PRESET_STORAGE_KEY) || '{}'); }
+    catch (e) { return {}; }
+  }
+  function saveUserPresetsToStorage(obj) {
+    localStorage.setItem(USER_PRESET_STORAGE_KEY, JSON.stringify(obj));
+  }
+
+  // 지금 화면에 입력된 모든 설정을 하나의 객체로 모은다.
+  function collectCurrentSettings() {
+    const ruleCount = window.activeRuleCount || 3;
+    const rules = [];
+    for (let n = 1; n <= 6; n++) {
+      const keyEl = document.getElementById('key' + n);
+      const dirEl = document.getElementById('dir' + n);
+      const idxEl = document.getElementById('idx' + n);
+      const rangeEl = document.getElementById('range' + n);
+      rules.push({
+        key: keyEl ? keyEl.value : '',
+        dir: dirEl ? dirEl.value : 'after',
+        idx: idxEl ? idxEl.value : '1',
+        range: rangeEl ? rangeEl.value : 'word'
+      });
+    }
+    const bulkEl = document.getElementById('bulkRemoveWord');
+    return {
+      commonWord: document.getElementById('commonWord').value,
+      commonPos: document.getElementById('commonPos').value,
+      fnKey: document.getElementById('fnKey').value,
+      fnMode: document.getElementById('fnMode').value,
+      bulkRemoveWord: bulkEl ? bulkEl.value : '',
+      activeRuleCount: ruleCount,
+      rules: rules
+    };
+  }
+  window.collectCurrentSettings = collectCurrentSettings;
+
+  // 저장된 설정 객체를 화면(입력창들)에 그대로 반영한다.
+  function applySettingsObject(settings) {
+    if (!settings) return;
+    if (settings.commonWord !== undefined) document.getElementById('commonWord').value = settings.commonWord;
+    if (settings.commonPos !== undefined) document.getElementById('commonPos').value = settings.commonPos;
+    if (settings.fnKey !== undefined) document.getElementById('fnKey').value = settings.fnKey;
+    if (settings.fnMode !== undefined) document.getElementById('fnMode').value = settings.fnMode;
+    const bulkEl = document.getElementById('bulkRemoveWord');
+    if (bulkEl && settings.bulkRemoveWord !== undefined) bulkEl.value = settings.bulkRemoveWord;
+
+    const wantCount = Math.min(6, Math.max(3, settings.activeRuleCount || 3));
+    window.activeRuleCount = 3;
+    if (wantCount > 3) {
+      for (let n = 4; n <= wantCount; n++) {
+        const slot = document.getElementById('ruleSlot' + n);
+        const th = document.getElementById('thVal' + n);
+        if (slot) slot.style.display = '';
+        if (th) th.style.display = '';
+      }
+      window.activeRuleCount = wantCount;
+      if (wantCount >= 6) {
+        const btn = document.getElementById('btnAddRule');
+        if (btn) { btn.disabled = true; btn.textContent = '➕ 추출위치 추가됨 (6개)'; }
+      }
+    }
+
+    (settings.rules || []).forEach((rule, i) => {
+      const n = i + 1;
+      if (n > 6) return;
+      const keyEl = document.getElementById('key' + n);
+      const dirEl = document.getElementById('dir' + n);
+      const idxEl = document.getElementById('idx' + n);
+      const rangeEl = document.getElementById('range' + n);
+      if (keyEl) keyEl.value = rule.key || '';
+      if (dirEl) dirEl.value = rule.dir || 'after';
+      if (idxEl) idxEl.value = rule.idx || '1';
+      if (rangeEl) {
+        const isChars = rule.range && rule.range.indexOf('chars') === 0;
+        if (isChars) {
+          const opt = rangeEl.querySelector('option[value^="chars"]');
+          if (opt) opt.value = rule.range;
+        }
+        rangeEl.value = rule.range || 'word';
+        if (typeof toggleCharsInput === 'function') toggleCharsInput(n);
+        if (isChars) {
+          const m = rule.range.match(/^chars:(\d+)$/);
+          const numEl = document.getElementById('charsNum' + n);
+          if (numEl && m) numEl.value = m[1];
+        }
+      }
+    });
+
+    if (typeof renderTable === 'function') renderTable();
+  }
+  window.applySettingsObject = applySettingsObject;
+
+  // 드롭다운을 "관리자 기본 설정" / "내가 저장한 설정" 두 그룹으로 채운다.
+  function refreshPresetSelect(selectValue) {
+    const sel = document.getElementById('presetSelect');
+    if (!sel) return;
+    sel.innerHTML = '';
+
+    const adminNames = Object.keys(ADMIN_PRESETS);
+    if (adminNames.length > 0) {
+      const adminGroup = document.createElement('optgroup');
+      adminGroup.label = '⚙️ 관리자 기본 설정';
+      adminNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = 'admin:' + name;
+        opt.textContent = name;
+        if (selectValue === opt.value) opt.selected = true;
+        adminGroup.appendChild(opt);
+      });
+      sel.appendChild(adminGroup);
+    }
+
+    const userPresets = getUserPresets();
+    const userNames = Object.keys(userPresets);
+    if (userNames.length > 0) {
+      const userGroup = document.createElement('optgroup');
+      userGroup.label = '💾 내가 저장한 설정 (이 브라우저)';
+      userNames.forEach(name => {
+        const opt = document.createElement('option');
+        opt.value = 'user:' + name;
+        opt.textContent = name;
+        if (selectValue === opt.value) opt.selected = true;
+        userGroup.appendChild(opt);
+      });
+      sel.appendChild(userGroup);
+    }
+  }
+  window.refreshPresetSelect = refreshPresetSelect;
+
+  function saveCurrentAsPreset() {
+    const input = document.getElementById('newPresetName');
+    const name = input.value.trim();
+    if (!name) return;
+    const userPresets = getUserPresets();
+    userPresets[name] = collectCurrentSettings();
+    saveUserPresetsToStorage(userPresets);
+    refreshPresetSelect('user:' + name);
+    input.value = '';
+  }
+  window.saveCurrentAsPreset = saveCurrentAsPreset;
+
+  function applySelectedPreset() {
+    const sel = document.getElementById('presetSelect');
+    if (!sel || !sel.value) return;
+    const sepIdx = sel.value.indexOf(':');
+    const type = sel.value.slice(0, sepIdx);
+    const name = sel.value.slice(sepIdx + 1);
+    if (type === 'admin') {
+      applySettingsObject(ADMIN_PRESETS[name]);
+    } else if (type === 'user') {
+      applySettingsObject(getUserPresets()[name]);
+    }
+  }
+  window.applySelectedPreset = applySelectedPreset;
+
+  function deleteSelectedPreset() {
+    const sel = document.getElementById('presetSelect');
+    if (!sel || !sel.value) return;
+    const sepIdx = sel.value.indexOf(':');
+    const type = sel.value.slice(0, sepIdx);
+    const name = sel.value.slice(sepIdx + 1);
+    if (type !== 'user') return; // 관리자 기본 설정은 코드에서만 수정/삭제 가능
+    const userPresets = getUserPresets();
+    delete userPresets[name];
+    saveUserPresetsToStorage(userPresets);
+    refreshPresetSelect();
+  }
+  window.deleteSelectedPreset = deleteSelectedPreset;
+
+  refreshPresetSelect();
 </script>
 </body>
 </html>
