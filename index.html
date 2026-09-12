@@ -426,12 +426,21 @@
         </div>
         <div class="inline-item inline-item-dir">
           <label>탐색방식:</label>
-          <select id="dir1">
+          <select id="dir1" onchange="toggleBetweenInput(1)">
             <option value="self">기준단어 검색값</option>
             <option value="after" selected>기준 단어 뒤</option>
             <option value="before">기준 단어 앞</option>
             <option value="nextLine">다음 줄 전체</option>
+            <option value="between">기준단어 사이값</option>
           </select>
+        </div>
+      </div>
+      <div class="rule-card-row" id="betweenRow1" style="display:none;">
+        <div class="rule-card-title-spacer"></div>
+        <div class="inline-item-grow" style="visibility:hidden;"></div>
+        <div class="inline-item inline-item-dir">
+          <label>끝 기준단어:</label>
+          <input type="text" id="keyEnd1" value="" placeholder="예: 부서">
         </div>
       </div>
       <div class="rule-card-row">
@@ -470,12 +479,21 @@
         </div>
         <div class="inline-item inline-item-dir">
           <label>탐색방식:</label>
-          <select id="dir2">
+          <select id="dir2" onchange="toggleBetweenInput(2)">
             <option value="self">기준단어 검색값</option>
             <option value="after" selected>기준 단어 뒤</option>
             <option value="before">기준 단어 앞</option>
             <option value="nextLine">다음 줄 전체</option>
+            <option value="between">기준단어 사이값</option>
           </select>
+        </div>
+      </div>
+      <div class="rule-card-row" id="betweenRow2" style="display:none;">
+        <div class="rule-card-title-spacer"></div>
+        <div class="inline-item-grow" style="visibility:hidden;"></div>
+        <div class="inline-item inline-item-dir">
+          <label>끝 기준단어:</label>
+          <input type="text" id="keyEnd2" value="" placeholder="예: 부서">
         </div>
       </div>
       <div class="rule-card-row">
@@ -514,12 +532,21 @@
         </div>
         <div class="inline-item inline-item-dir">
           <label>탐색방식:</label>
-          <select id="dir3">
+          <select id="dir3" onchange="toggleBetweenInput(3)">
             <option value="self">기준단어 검색값</option>
             <option value="after" selected>기준 단어 뒤</option>
             <option value="before">기준 단어 앞</option>
             <option value="nextLine">다음 줄 전체</option>
+            <option value="between">기준단어 사이값</option>
           </select>
+        </div>
+      </div>
+      <div class="rule-card-row" id="betweenRow3" style="display:none;">
+        <div class="rule-card-title-spacer"></div>
+        <div class="inline-item-grow" style="visibility:hidden;"></div>
+        <div class="inline-item inline-item-dir">
+          <label>끝 기준단어:</label>
+          <input type="text" id="keyEnd3" value="" placeholder="예: 부서">
         </div>
       </div>
       <div class="rule-card-row">
@@ -559,12 +586,21 @@
         </div>
         <div class="inline-item inline-item-dir">
           <label>탐색방식:</label>
-          <select id="dir4">
+          <select id="dir4" onchange="toggleBetweenInput(4)">
             <option value="self">기준단어 검색값</option>
             <option value="after" selected>기준 단어 뒤</option>
             <option value="before">기준 단어 앞</option>
             <option value="nextLine">다음 줄 전체</option>
+            <option value="between">기준단어 사이값</option>
           </select>
+        </div>
+      </div>
+      <div class="rule-card-row" id="betweenRow4" style="display:none;">
+        <div class="rule-card-title-spacer"></div>
+        <div class="inline-item-grow" style="visibility:hidden;"></div>
+        <div class="inline-item inline-item-dir">
+          <label>끝 기준단어:</label>
+          <input type="text" id="keyEnd4" value="" placeholder="예: 부서">
         </div>
       </div>
       <div class="rule-card-row">
@@ -603,12 +639,21 @@
         </div>
         <div class="inline-item inline-item-dir">
           <label>탐색방식:</label>
-          <select id="dir5">
+          <select id="dir5" onchange="toggleBetweenInput(5)">
             <option value="self">기준단어 검색값</option>
             <option value="after" selected>기준 단어 뒤</option>
             <option value="before">기준 단어 앞</option>
             <option value="nextLine">다음 줄 전체</option>
+            <option value="between">기준단어 사이값</option>
           </select>
+        </div>
+      </div>
+      <div class="rule-card-row" id="betweenRow5" style="display:none;">
+        <div class="rule-card-title-spacer"></div>
+        <div class="inline-item-grow" style="visibility:hidden;"></div>
+        <div class="inline-item inline-item-dir">
+          <label>끝 기준단어:</label>
+          <input type="text" id="keyEnd5" value="" placeholder="예: 부서">
         </div>
       </div>
       <div class="rule-card-row">
@@ -647,12 +692,21 @@
         </div>
         <div class="inline-item inline-item-dir">
           <label>탐색방식:</label>
-          <select id="dir6">
+          <select id="dir6" onchange="toggleBetweenInput(6)">
             <option value="self">기준단어 검색값</option>
             <option value="after" selected>기준 단어 뒤</option>
             <option value="before">기준 단어 앞</option>
             <option value="nextLine">다음 줄 전체</option>
+            <option value="between">기준단어 사이값</option>
           </select>
+        </div>
+      </div>
+      <div class="rule-card-row" id="betweenRow6" style="display:none;">
+        <div class="rule-card-title-spacer"></div>
+        <div class="inline-item-grow" style="visibility:hidden;"></div>
+        <div class="inline-item inline-item-dir">
+          <label>끝 기준단어:</label>
+          <input type="text" id="keyEnd6" value="" placeholder="예: 부서">
         </div>
       </div>
       <div class="rule-card-row">
@@ -1299,6 +1353,15 @@
   }
   window.toggleCharsInput = toggleCharsInput;
 
+  // "기준단어 사이값"을 고르면 끝 기준단어 입력창을 보여주고, 아니면 숨긴다.
+  function toggleBetweenInput(n) {
+    const dirEl = document.getElementById('dir' + n);
+    const row = document.getElementById('betweenRow' + n);
+    if (!dirEl || !row) return;
+    row.style.display = dirEl.value === 'between' ? '' : 'none';
+  }
+  window.toggleBetweenInput = toggleBetweenInput;
+
   // 숫자 입력칸의 값이 바뀔 때마다, 실제로 실행 시 읽히는 select의 값을
   // "chars:3" 같은 형태로 갱신해준다. (extractRangeText가 이 값을 해석함)
   function syncCharsRangeValue(n) {
@@ -1378,6 +1441,111 @@
       item.newName = trimmedBase ? trimmedBase + ext : originalName;
     }
   }
+
+  // =========================================================================
+  // 🎯 탐색방식 "기준단어 사이값" 지원
+  // 기존 parseTextByRule은 시작 키워드만 알았는데, "between"은 끝 키워드까지 필요해서
+  // 여기서 필요한 헬퍼(escape/clean/키패턴/범위추출)를 다시 만들고 parseTextByRule을 덮어쓴다.
+  // =========================================================================
+
+  function escapeRegExpCharV2(s) { return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'); }
+
+  function cleanValueV2(s) {
+    if (!s) return '';
+    return s.replace(/[\r\n\t]+/g, ' ')
+      .replace(/[:;,"'`_]+/g, '')
+      .replace(/[\\/*?"<>|]+/g, '')
+      .trim();
+  }
+
+  function buildKeyPatternV2(keyword) {
+    return keyword.split('').map(ch => {
+      const esc = escapeRegExpCharV2(ch);
+      return /[a-zA-Z0-9가-힣]/.test(ch) ? esc + '\\s*' : esc;
+    }).join('');
+  }
+
+  function extractRangeTextV2(text, matchStart, matchLen, dir, range) {
+    const WORD_COUNTS = { word: 1, word2: 2, word3: 3, word4: 4 };
+    const charsMatch = typeof range === 'string' && range.match(/^chars:(\d+)$/);
+    const charsCount = charsMatch ? parseInt(charsMatch[1], 10) : null;
+    if (dir === 'self') {
+      const matched = text.substring(matchStart, matchStart + matchLen);
+      return matched ? cleanValueV2(matched) : '미확인';
+    } else if (dir === 'nextLine') {
+      const after = text.substring(matchStart + matchLen);
+      const lines = after.split(/[\r\n]+/).map(l => l.trim()).filter(l => l.length > 0);
+      return lines.length > 0 ? cleanValueV2(lines[0]) : '미확인';
+    } else if (dir === 'after') {
+      const after = text.substring(matchStart + matchLen).replace(/^[\s:]+/, '');
+      if (charsCount) {
+        return after.length > 0 ? cleanValueV2(after.substring(0, charsCount)) : '미확인';
+      } else if (WORD_COUNTS[range]) {
+        const n = WORD_COUNTS[range];
+        const re = new RegExp('^[^\\s]+(?:\\s+[^\\s]+){0,' + (n - 1) + '}');
+        const m = after.match(re);
+        return m ? cleanValueV2(m[0]) : '미확인';
+      } else {
+        const m = after.match(/^[^\r\n]+/);
+        return m ? cleanValueV2(m[0]) : '미확인';
+      }
+    } else {
+      const before = text.substring(0, matchStart);
+      if (charsCount) {
+        const trimmedBefore = before.replace(/[\r\n]+$/, '');
+        return trimmedBefore.length > 0 ? cleanValueV2(trimmedBefore.slice(-charsCount)) : '미확인';
+      } else if (WORD_COUNTS[range]) {
+        const n = WORD_COUNTS[range];
+        const words = before.trim().split(/\s+/).filter(w => w.length > 0);
+        return words.length > 0 ? cleanValueV2(words.slice(-n).join(' ')) : '미확인';
+      } else {
+        const lines = before.split(/[\r\n]+/);
+        return lines.length > 0 ? cleanValueV2(lines[lines.length - 1]) : '미확인';
+      }
+    }
+  }
+
+  function findNthMatchV2(text, keyword, idx) {
+    const pattern = buildKeyPatternV2(keyword);
+    if (!pattern) return null;
+    let matches;
+    try { matches = [...text.matchAll(new RegExp(pattern, 'gi'))]; }
+    catch (e) { return null; }
+    if (matches.length === 0) return null;
+    return idx === 'last' ? matches[matches.length - 1] : (matches[parseInt(idx, 10) - 1] || matches[0]);
+  }
+
+  function parseTextByRule(text, rule) {
+    if (!rule.key || !text) return '';
+    const keywords = rule.key.split(',').map(k => k.trim()).filter(k => k !== '');
+    if (keywords.length === 0) return '';
+
+    for (const keyword of keywords) {
+      if (rule.dir === 'between') {
+        const endKeyword = (rule.keyEnd || '').trim();
+        if (!endKeyword) continue;
+        const startMatch = findNthMatchV2(text, keyword, rule.idx);
+        if (!startMatch) continue;
+        const startPos = startMatch.index + startMatch[0].length;
+        const rest = text.substring(startPos);
+        const endPattern = buildKeyPatternV2(endKeyword);
+        if (!endPattern) continue;
+        let endMatch;
+        try { endMatch = rest.match(new RegExp(endPattern, 'i')); }
+        catch (e) { continue; }
+        if (!endMatch) continue;
+        const between = rest.substring(0, endMatch.index).replace(/^[\s:]+|[\s:]+$/g, '');
+        return between ? cleanValueV2(between) : '미확인';
+      }
+
+      const match = findNthMatchV2(text, keyword, rule.idx);
+      if (!match) continue;
+      return extractRangeTextV2(text, match.index, match[0].length, rule.dir, rule.range);
+    }
+    return '미확인';
+  }
+  window.parseTextByRule = parseTextByRule;
+
   function statusLabelKo(status) {
     if (status === 'ready') return '대기중';
     if (status === 'processing') return '처리중';
@@ -1477,12 +1645,14 @@
       const dirEl = document.getElementById('dir' + n);
       const idxEl = document.getElementById('idx' + n);
       const rangeEl = document.getElementById('range' + n);
+      const keyEndEl = document.getElementById('keyEnd' + n);
       if (!keyEl || !dirEl || !idxEl || !rangeEl) continue;
       rules.push({
         key: keyEl.value.trim(),
         dir: dirEl.value,
         idx: idxEl.value,
-        range: rangeEl.value
+        range: rangeEl.value,
+        keyEnd: keyEndEl ? keyEndEl.value.trim() : ''
       });
     }
 
@@ -1656,11 +1826,13 @@
       const dirEl = document.getElementById('dir' + n);
       const idxEl = document.getElementById('idx' + n);
       const rangeEl = document.getElementById('range' + n);
+      const keyEndEl = document.getElementById('keyEnd' + n);
       rules.push({
         key: keyEl ? keyEl.value : '',
         dir: dirEl ? dirEl.value : 'after',
         idx: idxEl ? idxEl.value : '1',
-        range: rangeEl ? rangeEl.value : 'word'
+        range: rangeEl ? rangeEl.value : 'word',
+        keyEnd: keyEndEl ? keyEndEl.value : ''
       });
     }
     const bulkEl = document.getElementById('bulkRemoveWord');
@@ -1708,9 +1880,12 @@
       const dirEl = document.getElementById('dir' + n);
       const idxEl = document.getElementById('idx' + n);
       const rangeEl = document.getElementById('range' + n);
+      const keyEndEl = document.getElementById('keyEnd' + n);
       if (keyEl) keyEl.value = rule.key || '';
       if (dirEl) dirEl.value = rule.dir || 'after';
       if (idxEl) idxEl.value = rule.idx || '1';
+      if (keyEndEl) keyEndEl.value = rule.keyEnd || '';
+      if (typeof toggleBetweenInput === 'function') toggleBetweenInput(n);
       if (rangeEl) {
         const isChars = rule.range && rule.range.indexOf('chars') === 0;
         if (isChars) {
