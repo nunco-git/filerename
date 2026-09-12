@@ -448,11 +448,15 @@
         <div class="rule-sub-fields">
           <div class="inline-item">
             <label>순번:</label>
-            <select id="idx1">
+            <select id="idx1" onchange="toggleIdxNumInput(1)">
               <option value="1" selected>첫 번째</option>
               <option value="2">두 번째</option>
+              <option value="3">세 번째</option>
+              <option value="4">네 번째</option>
+              <option value="n">N 번째(직접입력)</option>
               <option value="last">마지막</option>
             </select>
+            <input type="number" id="idxNum1" min="1" value="5" style="width:52px; display:none;" oninput="syncIdxNumValue(1)">
           </div>
           <div class="inline-item">
             <label>범위:</label>
@@ -501,11 +505,15 @@
         <div class="rule-sub-fields">
           <div class="inline-item">
             <label>순번:</label>
-            <select id="idx2">
+            <select id="idx2" onchange="toggleIdxNumInput(2)">
               <option value="1" selected>첫 번째</option>
               <option value="2">두 번째</option>
+              <option value="3">세 번째</option>
+              <option value="4">네 번째</option>
+              <option value="n">N 번째(직접입력)</option>
               <option value="last">마지막</option>
             </select>
+            <input type="number" id="idxNum2" min="1" value="5" style="width:52px; display:none;" oninput="syncIdxNumValue(2)">
           </div>
           <div class="inline-item">
             <label>범위:</label>
@@ -554,11 +562,15 @@
         <div class="rule-sub-fields">
           <div class="inline-item">
             <label>순번:</label>
-            <select id="idx3">
+            <select id="idx3" onchange="toggleIdxNumInput(3)">
               <option value="1" selected>첫 번째</option>
               <option value="2">두 번째</option>
+              <option value="3">세 번째</option>
+              <option value="4">네 번째</option>
+              <option value="n">N 번째(직접입력)</option>
               <option value="last">마지막</option>
             </select>
+            <input type="number" id="idxNum3" min="1" value="5" style="width:52px; display:none;" oninput="syncIdxNumValue(3)">
           </div>
           <div class="inline-item">
             <label>범위:</label>
@@ -608,11 +620,15 @@
         <div class="rule-sub-fields">
           <div class="inline-item">
             <label>순번:</label>
-            <select id="idx4">
+            <select id="idx4" onchange="toggleIdxNumInput(4)">
               <option value="1" selected>첫 번째</option>
               <option value="2">두 번째</option>
+              <option value="3">세 번째</option>
+              <option value="4">네 번째</option>
+              <option value="n">N 번째(직접입력)</option>
               <option value="last">마지막</option>
             </select>
+            <input type="number" id="idxNum4" min="1" value="5" style="width:52px; display:none;" oninput="syncIdxNumValue(4)">
           </div>
           <div class="inline-item">
             <label>범위:</label>
@@ -661,11 +677,15 @@
         <div class="rule-sub-fields">
           <div class="inline-item">
             <label>순번:</label>
-            <select id="idx5">
+            <select id="idx5" onchange="toggleIdxNumInput(5)">
               <option value="1" selected>첫 번째</option>
               <option value="2">두 번째</option>
+              <option value="3">세 번째</option>
+              <option value="4">네 번째</option>
+              <option value="n">N 번째(직접입력)</option>
               <option value="last">마지막</option>
             </select>
+            <input type="number" id="idxNum5" min="1" value="5" style="width:52px; display:none;" oninput="syncIdxNumValue(5)">
           </div>
           <div class="inline-item">
             <label>범위:</label>
@@ -714,11 +734,15 @@
         <div class="rule-sub-fields">
           <div class="inline-item">
             <label>순번:</label>
-            <select id="idx6">
+            <select id="idx6" onchange="toggleIdxNumInput(6)">
               <option value="1" selected>첫 번째</option>
               <option value="2">두 번째</option>
+              <option value="3">세 번째</option>
+              <option value="4">네 번째</option>
+              <option value="n">N 번째(직접입력)</option>
               <option value="last">마지막</option>
             </select>
+            <input type="number" id="idxNum6" min="1" value="5" style="width:52px; display:none;" oninput="syncIdxNumValue(6)">
           </div>
           <div class="inline-item">
             <label>범위:</label>
@@ -1362,6 +1386,33 @@
   }
   window.toggleBetweenInput = toggleBetweenInput;
 
+  // "N 번째(직접입력)"을 고르면 숫자 입력칸을 보여주고, 값이 바뀔 때마다
+  // 실제 select 값을 "n:5" 같은 형태로 갱신한다. (parseTextByRule이 이 값을 해석함)
+  function toggleIdxNumInput(n) {
+    const sel = document.getElementById('idx' + n);
+    const numInput = document.getElementById('idxNum' + n);
+    if (!sel || !numInput) return;
+    if (sel.value.indexOf('n') === 0) {
+      numInput.style.display = 'inline-block';
+      syncIdxNumValue(n);
+    } else {
+      numInput.style.display = 'none';
+    }
+  }
+  window.toggleIdxNumInput = toggleIdxNumInput;
+
+  function syncIdxNumValue(n) {
+    const sel = document.getElementById('idx' + n);
+    const numInput = document.getElementById('idxNum' + n);
+    if (!sel || !numInput) return;
+    const count = Math.max(1, parseInt(numInput.value, 10) || 1);
+    const opt = sel.options[sel.selectedIndex];
+    if (opt && opt.value.indexOf('n') === 0) {
+      opt.value = 'n:' + count;
+    }
+  }
+  window.syncIdxNumValue = syncIdxNumValue;
+
   // 숫자 입력칸의 값이 바뀔 때마다, 실제로 실행 시 읽히는 select의 값을
   // "chars:3" 같은 형태로 갱신해준다. (extractRangeText가 이 값을 해석함)
   function syncCharsRangeValue(n) {
@@ -1505,6 +1556,13 @@
     }
   }
 
+  function resolveIdxV2(idx) {
+    if (idx === 'last') return 'last';
+    const m = typeof idx === 'string' && idx.match(/^n:(\d+)$/);
+    if (m) return parseInt(m[1], 10);
+    return parseInt(idx, 10);
+  }
+
   function findNthMatchV2(text, keyword, idx) {
     const pattern = buildKeyPatternV2(keyword);
     if (!pattern) return null;
@@ -1512,7 +1570,8 @@
     try { matches = [...text.matchAll(new RegExp(pattern, 'gi'))]; }
     catch (e) { return null; }
     if (matches.length === 0) return null;
-    return idx === 'last' ? matches[matches.length - 1] : (matches[parseInt(idx, 10) - 1] || matches[0]);
+    const resolved = resolveIdxV2(idx);
+    return resolved === 'last' ? matches[matches.length - 1] : (matches[resolved - 1] || matches[0]);
   }
 
   function parseTextByRule(text, rule) {
@@ -1883,7 +1942,20 @@
       const keyEndEl = document.getElementById('keyEnd' + n);
       if (keyEl) keyEl.value = rule.key || '';
       if (dirEl) dirEl.value = rule.dir || 'after';
-      if (idxEl) idxEl.value = rule.idx || '1';
+      if (idxEl) {
+        const isCustomIdx = rule.idx && typeof rule.idx === 'string' && rule.idx.indexOf('n:') === 0;
+        if (isCustomIdx) {
+          const opt = idxEl.querySelector('option[value^="n"]');
+          if (opt) opt.value = rule.idx;
+        }
+        idxEl.value = rule.idx || '1';
+        if (typeof toggleIdxNumInput === 'function') toggleIdxNumInput(n);
+        if (isCustomIdx) {
+          const m = rule.idx.match(/^n:(\d+)$/);
+          const numEl = document.getElementById('idxNum' + n);
+          if (numEl && m) numEl.value = m[1];
+        }
+      }
       if (keyEndEl) keyEndEl.value = rule.keyEnd || '';
       if (typeof toggleBetweenInput === 'function') toggleBetweenInput(n);
       if (rangeEl) {
