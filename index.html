@@ -1428,16 +1428,31 @@
   window.activeRuleCount = 3;
 
   function addExtractionRule() {
-    if (window.activeRuleCount >= 6) return;
-    for (let n = 4; n <= 6; n++) {
-      const slot = document.getElementById('ruleSlot' + n);
-      const th = document.getElementById('thVal' + n);
-      if (slot) slot.style.display = '';
-      if (th) th.style.display = '';
-    }
-    window.activeRuleCount = 6;
     const btn = document.getElementById('btnAddRule');
-    if (btn) { btn.disabled = true; btn.textContent = '➕ 추출위치 추가됨 (6개)'; }
+    const isExpanded = window.activeRuleCount >= 6;
+
+    if (isExpanded) {
+      // 숨기기: 4~6번 카드와 표 열을 감추고 3개로 되돌림 (입력값은 그대로 유지됨)
+      for (let n = 4; n <= 6; n++) {
+        const slot = document.getElementById('ruleSlot' + n);
+        const th = document.getElementById('thVal' + n);
+        if (slot) slot.style.display = 'none';
+        if (th) th.style.display = 'none';
+      }
+      window.activeRuleCount = 3;
+      if (btn) { btn.disabled = false; btn.textContent = '➕ 추출위치 추가'; }
+    } else {
+      // 펼치기: 4~6번을 한꺼번에 보여줌
+      for (let n = 4; n <= 6; n++) {
+        const slot = document.getElementById('ruleSlot' + n);
+        const th = document.getElementById('thVal' + n);
+        if (slot) slot.style.display = '';
+        if (th) th.style.display = '';
+      }
+      window.activeRuleCount = 6;
+      if (btn) { btn.disabled = false; btn.textContent = '➖ 추출위치 숨기기'; }
+    }
+
     if (typeof renderTable === 'function') renderTable();
   }
   window.addExtractionRule = addExtractionRule;
@@ -1605,6 +1620,20 @@
         { key: '', dir: 'after', idx: '1', range: 'word' },
         { key: '', dir: 'after', idx: '1', range: 'word' }
       ]
+    },
+    '나라배움터 등 nhi.go.kr 계열 교육 수료증': {
+      commonWord: '', commonPos: 'prefix',
+      fnKey: '', fnMode: 'removeAll',
+      bulkRemoveWord: '에서',
+      activeRuleCount: 6,
+      rules: [
+        { key: '소속', dir: 'after', idx: '1', range: 'line' },
+        { key: '직급', dir: 'after', idx: '1', range: 'word' },
+        { key: '성명', dir: 'after', idx: '1', range: 'word' },
+        { key: '과정', dir: 'after', idx: '1', range: 'line' },
+        { key: '수여합니다.', dir: 'nextLine', idx: '1', range: 'line' },
+        { key: '사람은', dir: 'after', idx: '1', range: 'line' }
+      ]
     }
   };
 
@@ -1658,19 +1687,18 @@
     if (bulkEl && settings.bulkRemoveWord !== undefined) bulkEl.value = settings.bulkRemoveWord;
 
     const wantCount = Math.min(6, Math.max(3, settings.activeRuleCount || 3));
-    window.activeRuleCount = 3;
-    if (wantCount > 3) {
-      for (let n = 4; n <= wantCount; n++) {
-        const slot = document.getElementById('ruleSlot' + n);
-        const th = document.getElementById('thVal' + n);
-        if (slot) slot.style.display = '';
-        if (th) th.style.display = '';
-      }
-      window.activeRuleCount = wantCount;
-      if (wantCount >= 6) {
-        const btn = document.getElementById('btnAddRule');
-        if (btn) { btn.disabled = true; btn.textContent = '➕ 추출위치 추가됨 (6개)'; }
-      }
+    const btn = document.getElementById('btnAddRule');
+    for (let n = 4; n <= 6; n++) {
+      const slot = document.getElementById('ruleSlot' + n);
+      const th = document.getElementById('thVal' + n);
+      const show = n <= wantCount;
+      if (slot) slot.style.display = show ? '' : 'none';
+      if (th) th.style.display = show ? '' : 'none';
+    }
+    window.activeRuleCount = wantCount;
+    if (btn) {
+      btn.disabled = false;
+      btn.textContent = wantCount >= 6 ? '➖ 추출위치 숨기기' : '➕ 추출위치 추가';
     }
 
     (settings.rules || []).forEach((rule, i) => {
