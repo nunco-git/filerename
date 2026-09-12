@@ -4,16 +4,16 @@
   <meta charset="UTF-8">
   <title>스마트 파일명 관리자</title>
   <!-- 제목/본문에 쓰이는 Pretendard 폰트를 실제로 불러온다 -->
-  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.css" integrity="sha384-2nNKoOPayicGa+aRguOQuiZP+RqQ4G3jalfDeOgftkKD7zBM2gJXTwcFqCZltdv0">
   <!-- 제목 전용 폰트: Jua (둥글고 귀여운 스타일) -->
   <link href="https://fonts.googleapis.com/css2?family=Jua&display=swap" rel="stylesheet">
   <!-- CDN 스크립트 로드 -->
-  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js"></script>
-  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/build/pdf.min.js" integrity="sha384-/1qUCSGwTur9vjf/z9lmu/eCUYbpOTgSjmpbMQZ1/CtX2v/WcAIKqRv+U1DUCG6e" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5.1.1/dist/tesseract.min.js" integrity="sha384-GJqSu7vueQ9qN0E9yLPb3Wtpd7OrgK8KmYzC8T1IysG1bcvxvIO4qtYR/D3A991F" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js" integrity="sha384-+mbV2IY1Zk/X1p/nWllGySJSUN8uMs+gUAN10Or95UBH0fpj6GfKgPmgC5EXieXG" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
   <!-- 엑셀 열기암호(AES) 해독용 저수준 암호화 라이브러리 (엑셀병합기와 동일 방식) -->
-  <script src="https://cdn.jsdelivr.net/npm/node-forge@1.3.1/dist/forge.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/node-forge@1.3.1/dist/forge.min.js" integrity="sha384-xE6n3RBMZWgwAhyzoIMfY7HN3oDBa/+HBwFFNyxsdY8kseup7C4Blx1yDzprEESV" crossorigin="anonymous"></script>
 
   <style>
     * { box-sizing: border-box; }
@@ -1774,6 +1774,18 @@
   }
   window.runBatchProcess = runBatchProcess;
 
+  // XSS 방지: 파일 이름이나, PDF/HWPX/엑셀에서 추출한 값, 최종 파일명은
+  // 전부 외부(업로드한 문서) 내용에서 온 것이라 그대로 innerHTML에 넣으면
+  // 안 된다. 화면에 넣기 직전에 이 함수로 이스케이프한다.
+  function escapeHtmlSafe(s) {
+    return String(s)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
   // 표도 4개 고정이 아니라 activeRuleCount(최대 6)만큼 "추출값" 칸을 그린다.
   function renderTable() {
     tableBody.innerHTML = '';
@@ -1789,15 +1801,15 @@
       for (let n = 1; n <= 6; n++) {
         const val = (item.vals && item.vals[n - 1]) ? item.vals[n - 1] : '-';
         const hidden = n > ruleCount ? 'display:none;' : '';
-        valsHtml += '<td class="val-' + n + '" style="' + hidden + '">' + val + '</td>';
+        valsHtml += '<td class="val-' + n + '" style="' + hidden + '">' + escapeHtmlSafe(val) + '</td>';
       }
 
       tr.innerHTML =
         '<td style="text-align:center; cursor:grab;">↕</td>' +
         '<td style="text-align:center;"><input type="checkbox" ' + (item.selected ? 'checked' : '') + ' onchange="toggleItemSelect(' + idx + ', this.checked)"></td>' +
-        '<td>' + item.file.name + '</td>' +
+        '<td>' + escapeHtmlSafe(item.file.name) + '</td>' +
         valsHtml +
-        '<td>' + (item.newName || '-') + '</td>' +
+        '<td>' + escapeHtmlSafe(item.newName || '-') + '</td>' +
         '<td>' + getStatusBadgeHtml(item) + '</td>';
 
       tr.addEventListener('dragstart', () => {
