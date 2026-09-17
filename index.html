@@ -159,15 +159,19 @@
     .preset-btn-group-top { display: flex; gap: 8px; }
     .preset-btn-group-bottom { display: flex; gap: 8px; }
 
-    /* 설정 프리셋: 관리자 기본 설정 / 저장하기 / 내가 저장한 설정 - 한 줄 3등분 레이아웃 */
+    /* 설정 프리셋: 관리자 기본 설정 / 저장하기 / 내가 저장한 설정 / 파일로 저장·불러오기 - 한 줄 4등분 레이아웃 */
     .preset-desc-top { font-size: 11.5px; color: #94a3b8; line-height: 1.4; margin-bottom: 10px; }
-    .preset-columns-3 { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; align-items: start; }
+    .preset-columns-3 { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr; gap: 14px; align-items: start; }
     .preset-col { background: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; padding: 10px 12px; display: flex; flex-direction: column; }
     .preset-col-admin { border-left: 3px solid #818cf8; }
     .preset-col-save { border-left: 3px solid #f59e0b; }
     .preset-col-user { border-left: 3px solid #34d399; }
+    .preset-col-file { border-left: 3px solid #f472b6; }
     .preset-col-title { font-size: 12.5px; font-weight: 700; color: #334155; margin-bottom: 6px; white-space: nowrap; }
-    @media (max-width: 900px) {
+    @media (max-width: 1100px) {
+      .preset-columns-3 { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 600px) {
       .preset-columns-3 { grid-template-columns: 1fr; }
     }
 
@@ -449,6 +453,14 @@
           <select id="userPresetSelect"></select>
           <button class="btn-sm-outline" onclick="applyUserPreset()">📥 불러오기</button>
           <button class="btn-sm-outline" onclick="deleteSelectedUserPreset()">🗑️ 삭제</button>
+        </div>
+      </div>
+      <div class="preset-col preset-col-file">
+        <div class="preset-col-title">📁 다른 컴퓨터로 옮기기</div>
+        <div class="preset-controls">
+          <button class="btn-sm-outline" onclick="exportSettingsToFile()">⬇️ 파일로 저장</button>
+          <button class="btn-sm-outline" onclick="document.getElementById('settingsFileInput').click()">⬆️ 파일 불러오기</button>
+          <input type="file" id="settingsFileInput" accept=".json" style="display:none;" onchange="importSettingsFromFile(this.files[0])">
         </div>
       </div>
     </div>
@@ -2028,6 +2040,57 @@
     if (typeof renderTable === 'function') renderTable();
   }
   window.applySettingsObject = applySettingsObject;
+
+  // =========================================================================
+  // 📁 다른 컴퓨터로 옮기기: 지금 화면의 설정을 파일(.json)로 내려받고,
+  // 다른 컴퓨터/브라우저에서 그 파일을 다시 불러와 그대로 적용한다.
+  // (localStorage는 브라우저 안에만 남기 때문에, 파일로 옮기는 방식이 필요함)
+  // =========================================================================
+  function exportSettingsToFile() {
+    const settings = collectCurrentSettings();
+    const payload = {
+      type: 'fnrenamer-settings',
+      version: 1,
+      exportedAt: new Date().toISOString(),
+      settings: settings
+    };
+    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = '파일이름관리자_설정_' + stamp + '.json';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }
+  window.exportSettingsToFile = exportSettingsToFile;
+
+  function importSettingsFromFile(file) {
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      let parsed;
+      try {
+        parsed = JSON.parse(reader.result);
+      } catch (e) {
+        alert('설정 파일을 읽을 수 없습니다. 올바른 파일인지 확인해주세요.');
+        return;
+      }
+      const settings = (parsed && parsed.type === 'fnrenamer-settings' && parsed.settings) ? parsed.settings : parsed;
+      if (!settings || typeof settings !== 'object') {
+        alert('설정 파일 형식이 올바르지 않습니다.');
+        return;
+      }
+      applySettingsObject(settings);
+      const fileInputEl = document.getElementById('settingsFileInput');
+      if (fileInputEl) fileInputEl.value = '';
+    };
+    reader.onerror = () => alert('파일을 읽는 중 오류가 발생했습니다.');
+    reader.readAsText(file);
+  }
+  window.importSettingsFromFile = importSettingsFromFile;
 
   // 좌측 "관리자 기본 설정" 드롭다운과 우측 "내가 저장한 설정" 드롭다운을 각각 채운다.
   function refreshPresetSelect(adminValue, userValue) {
