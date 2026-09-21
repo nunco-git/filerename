@@ -1926,6 +1926,20 @@
         { key: '수여합니다.', dir: 'nextLine', idx: '1', range: 'line' },
         { key: '사람은', dir: 'after', idx: '1', range: 'line' }
       ]
+    },
+    '장기요양기관입소이용의뢰서': {
+      commonWord: '입소이용의뢰서', commonPos: 'prefix',
+      fnKey: '', fnMode: 'removeAll',
+      bulkRemoveWord: '',
+      activeRuleCount: 6,
+      rules: [
+        { key: '성명', dir: 'after', idx: '1', range: 'word', keyEnd: '' },
+        { key: '명칭', dir: 'between', idx: '1', range: 'line', keyEnd: '○' },
+        { key: 'FAX', dir: 'between', idx: '1', range: 'word', keyEnd: ')' },
+        { key: '의뢰합니다.', dir: 'nextLine', idx: '1', range: 'word', keyEnd: '' },
+        { key: '', dir: 'after', idx: '1', range: 'word', keyEnd: '' },
+        { key: '', dir: 'after', idx: '1', range: 'word', keyEnd: '' }
+      ]
     }
   };
 
