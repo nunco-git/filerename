@@ -639,7 +639,7 @@
       </div>
     </div>
 
-    <!-- 추출 위치 4~6: 기본은 숨김, "➕ 추출위치 추가" 버튼을 누르면 하나씩 나타남 -->
+    <!-- 추출 위치 4~9: 기본은 숨김, "➕ 추출위치 추가" 버튼을 누를 때마다 한 줄(3개)씩 나타남 (3→6→9) -->
     <div class="card-box rule-card" id="ruleSlot4" style="display:none;">
       <div class="rule-card-row">
         <h4 class="rule-card-title">📍 추출 위치 4</h4>
@@ -810,6 +810,177 @@
         </div>
       </div>
     </div>
+
+    <div class="card-box rule-card" id="ruleSlot7" style="display:none;">
+      <div class="rule-card-row">
+        <h4 class="rule-card-title">📍 추출 위치 7</h4>
+        <div class="inline-item inline-item-grow">
+          <label>기준단어:</label>
+          <input type="text" id="key7" value="" placeholder="예: 기준이 되는 단어">
+        </div>
+        <div class="inline-item inline-item-dir">
+          <label>탐색방식:</label>
+          <select id="dir7" onchange="toggleBetweenInput(7)">
+            <option value="self">기준단어 검색값</option>
+            <option value="after" selected>기준 단어 뒤</option>
+            <option value="before">기준 단어 앞</option>
+            <option value="nextLine">다음 줄 전체</option>
+            <option value="between">기준단어 사이값</option>
+          </select>
+        </div>
+      </div>
+      <div class="rule-card-row" id="betweenRow7" style="display:none;">
+        <div class="rule-card-title-spacer"></div>
+        <div class="inline-item-grow" style="visibility:hidden;"></div>
+        <div class="inline-item inline-item-dir">
+          <label>끝 기준단어:</label>
+          <input type="text" id="keyEnd7" value="" placeholder="예: 부서">
+        </div>
+      </div>
+      <div class="rule-card-row">
+        <div class="rule-card-title-spacer"></div>
+        <div class="rule-sub-fields">
+          <div class="inline-item">
+            <label>순번:</label>
+            <select id="idx7" onchange="toggleIdxNumInput(7)">
+              <option value="1" selected>첫 번째</option>
+              <option value="2">두 번째</option>
+              <option value="3">세 번째</option>
+              <option value="4">네 번째</option>
+              <option value="n">N 번째(직접입력)</option>
+              <option value="last">마지막</option>
+            </select>
+            <input type="number" id="idxNum7" min="1" value="5" style="width:52px; display:none;" oninput="syncIdxNumValue(7)">
+          </div>
+          <div class="inline-item">
+            <label>범위:</label>
+            <select id="range7" onchange="toggleCharsInput(7)">
+              <option value="word" selected>1단어(공백전까지)</option>
+              <option value="word2">2단어(공백전까지)</option>
+              <option value="word3">3단어(공백전까지)</option>
+              <option value="word4">4단어(공백전까지)</option>
+              <option value="line">해당 줄 끝까지</option>
+              <option value="chars">N글자(직접입력)</option>
+            </select>
+            <input type="number" id="charsNum7" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(7)">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-box rule-card" id="ruleSlot8" style="display:none;">
+      <div class="rule-card-row">
+        <h4 class="rule-card-title">📍 추출 위치 8</h4>
+        <div class="inline-item inline-item-grow">
+          <label>기준단어:</label>
+          <input type="text" id="key8" value="" placeholder="예: 기준이 되는 단어">
+        </div>
+        <div class="inline-item inline-item-dir">
+          <label>탐색방식:</label>
+          <select id="dir8" onchange="toggleBetweenInput(8)">
+            <option value="self">기준단어 검색값</option>
+            <option value="after" selected>기준 단어 뒤</option>
+            <option value="before">기준 단어 앞</option>
+            <option value="nextLine">다음 줄 전체</option>
+            <option value="between">기준단어 사이값</option>
+          </select>
+        </div>
+      </div>
+      <div class="rule-card-row" id="betweenRow8" style="display:none;">
+        <div class="rule-card-title-spacer"></div>
+        <div class="inline-item-grow" style="visibility:hidden;"></div>
+        <div class="inline-item inline-item-dir">
+          <label>끝 기준단어:</label>
+          <input type="text" id="keyEnd8" value="" placeholder="예: 부서">
+        </div>
+      </div>
+      <div class="rule-card-row">
+        <div class="rule-card-title-spacer"></div>
+        <div class="rule-sub-fields">
+          <div class="inline-item">
+            <label>순번:</label>
+            <select id="idx8" onchange="toggleIdxNumInput(8)">
+              <option value="1" selected>첫 번째</option>
+              <option value="2">두 번째</option>
+              <option value="3">세 번째</option>
+              <option value="4">네 번째</option>
+              <option value="n">N 번째(직접입력)</option>
+              <option value="last">마지막</option>
+            </select>
+            <input type="number" id="idxNum8" min="1" value="5" style="width:52px; display:none;" oninput="syncIdxNumValue(8)">
+          </div>
+          <div class="inline-item">
+            <label>범위:</label>
+            <select id="range8" onchange="toggleCharsInput(8)">
+              <option value="word" selected>1단어(공백전까지)</option>
+              <option value="word2">2단어(공백전까지)</option>
+              <option value="word3">3단어(공백전까지)</option>
+              <option value="word4">4단어(공백전까지)</option>
+              <option value="line">해당 줄 끝까지</option>
+              <option value="chars">N글자(직접입력)</option>
+            </select>
+            <input type="number" id="charsNum8" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(8)">
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card-box rule-card" id="ruleSlot9" style="display:none;">
+      <div class="rule-card-row">
+        <h4 class="rule-card-title">📍 추출 위치 9</h4>
+        <div class="inline-item inline-item-grow">
+          <label>기준단어:</label>
+          <input type="text" id="key9" value="" placeholder="예: 기준이 되는 단어">
+        </div>
+        <div class="inline-item inline-item-dir">
+          <label>탐색방식:</label>
+          <select id="dir9" onchange="toggleBetweenInput(9)">
+            <option value="self">기준단어 검색값</option>
+            <option value="after" selected>기준 단어 뒤</option>
+            <option value="before">기준 단어 앞</option>
+            <option value="nextLine">다음 줄 전체</option>
+            <option value="between">기준단어 사이값</option>
+          </select>
+        </div>
+      </div>
+      <div class="rule-card-row" id="betweenRow9" style="display:none;">
+        <div class="rule-card-title-spacer"></div>
+        <div class="inline-item-grow" style="visibility:hidden;"></div>
+        <div class="inline-item inline-item-dir">
+          <label>끝 기준단어:</label>
+          <input type="text" id="keyEnd9" value="" placeholder="예: 부서">
+        </div>
+      </div>
+      <div class="rule-card-row">
+        <div class="rule-card-title-spacer"></div>
+        <div class="rule-sub-fields">
+          <div class="inline-item">
+            <label>순번:</label>
+            <select id="idx9" onchange="toggleIdxNumInput(9)">
+              <option value="1" selected>첫 번째</option>
+              <option value="2">두 번째</option>
+              <option value="3">세 번째</option>
+              <option value="4">네 번째</option>
+              <option value="n">N 번째(직접입력)</option>
+              <option value="last">마지막</option>
+            </select>
+            <input type="number" id="idxNum9" min="1" value="5" style="width:52px; display:none;" oninput="syncIdxNumValue(9)">
+          </div>
+          <div class="inline-item">
+            <label>범위:</label>
+            <select id="range9" onchange="toggleCharsInput(9)">
+              <option value="word" selected>1단어(공백전까지)</option>
+              <option value="word2">2단어(공백전까지)</option>
+              <option value="word3">3단어(공백전까지)</option>
+              <option value="word4">4단어(공백전까지)</option>
+              <option value="line">해당 줄 끝까지</option>
+              <option value="chars">N글자(직접입력)</option>
+            </select>
+            <input type="number" id="charsNum9" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(9)">
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <!-- 2. 파일 이름 수정 (좌) / 실행 버튼 (우) -->
@@ -817,7 +988,8 @@
     <div class="card-box fn-card">
       <h4>
         <span style="display:flex; align-items:center; gap:10px;">
-          <button class="btn-sm-outline" id="btnAddRule" onclick="addExtractionRule()">➕ 추출위치 추가</button>
+          <button class="btn-sm-outline" id="btnAddRule" onclick="addExtractionRule()">➕ 추출위치 추가 (3/9)</button>
+          <button class="btn-sm-outline" id="btnHideRule" onclick="hideExtractionRule()" disabled>➖ 한 줄 숨기기</button>
           <span>✂️ 파일 이름 수정</span>
         </span>
         <span style="font-size: 12px; font-weight: 600; color: #b91c1c;">⚠️ 기존 파일명은 전체 삭제됩니다. 원하는 파일명을 입력하세요.</span>
@@ -876,6 +1048,9 @@
           <th style="width: 9%; display:none;" id="thVal4">추출값 4</th>
           <th style="width: 9%; display:none;" id="thVal5">추출값 5</th>
           <th style="width: 9%; display:none;" id="thVal6">추출값 6</th>
+          <th style="width: 9%; display:none;" id="thVal7">추출값 7</th>
+          <th style="width: 9%; display:none;" id="thVal8">추출값 8</th>
+          <th style="width: 9%; display:none;" id="thVal9">추출값 9</th>
           <th style="width: 22%;">변경될 파일명</th>
           <th style="width: 20%;">상태 / 개별 다운로드</th>
         </tr>
@@ -1700,42 +1875,39 @@
   window.downloadResultsExcel = downloadResultsExcel;
 
   // =========================================================================
-  // ➕ 추출위치 추가 (최대 6개) — 기존에는 1~4번까지 고정이었던 것을
-  // 1~3번은 항상 보이고, 버튼을 누를 때마다 4→5→6번이 하나씩 나타나도록 확장
+  // ➕ 추출위치 추가 (최대 9개) — 평소에는 1~3번만 보이고,
+  // 버튼을 누를 때마다 한 줄(3개)씩 4~6번 → 7~9번이 나타나며, "➖ 한 줄 숨기기"로 되돌릴 수 있다.
+  // (숨겨도 입력해 둔 값은 그대로 유지되지만, 숨겨진 위치는 실행에 사용되지 않는다)
   // =========================================================================
   window.activeRuleCount = 3;
 
-  function addExtractionRule() {
-    const btn = document.getElementById('btnAddRule');
-    const isExpanded = window.activeRuleCount >= 6;
-
-    if (isExpanded) {
-      // 숨기기: 4~6번 카드와 표 열을 감추고 3개로 되돌림 (입력값은 그대로 유지됨)
-      for (let n = 4; n <= 6; n++) {
-        const slot = document.getElementById('ruleSlot' + n);
-        const th = document.getElementById('thVal' + n);
-        if (slot) slot.style.display = 'none';
-        if (th) th.style.display = 'none';
-      }
-      window.activeRuleCount = 3;
-      if (btn) { btn.disabled = false; btn.textContent = '➕ 추출위치 추가'; }
-    } else {
-      // 펼치기: 4~6번을 한꺼번에 보여줌
-      for (let n = 4; n <= 6; n++) {
-        const slot = document.getElementById('ruleSlot' + n);
-        const th = document.getElementById('thVal' + n);
-        if (slot) slot.style.display = '';
-        if (th) th.style.display = '';
-      }
-      window.activeRuleCount = 6;
-      if (btn) { btn.disabled = false; btn.textContent = '➖ 추출위치 숨기기'; }
+  function setRuleCount(count) {
+    count = Math.min(9, Math.max(3, Math.ceil((count || 3) / 3) * 3));
+    for (let n = 4; n <= 9; n++) {
+      const show = n <= count;
+      const slot = document.getElementById('ruleSlot' + n);
+      const th = document.getElementById('thVal' + n);
+      if (slot) slot.style.display = show ? '' : 'none';
+      if (th) th.style.display = show ? '' : 'none';
     }
-
+    window.activeRuleCount = count;
+    const addBtn = document.getElementById('btnAddRule');
+    const hideBtn = document.getElementById('btnHideRule');
+    if (addBtn) {
+      addBtn.disabled = count >= 9;
+      addBtn.textContent = count >= 9 ? '➕ 추출위치 추가 (최대 9개)' : '➕ 추출위치 추가 (' + count + '/9)';
+    }
+    if (hideBtn) hideBtn.disabled = count <= 3;
     if (typeof renderTable === 'function') renderTable();
   }
-  window.addExtractionRule = addExtractionRule;
+  window.setRuleCount = setRuleCount;
 
-  // 원래 4개 규칙 고정이던 runBatchProcess를, activeRuleCount(3~6)만큼
+  function addExtractionRule() { setRuleCount((window.activeRuleCount || 3) + 3); }
+  function hideExtractionRule() { setRuleCount((window.activeRuleCount || 3) - 3); }
+  window.addExtractionRule = addExtractionRule;
+  window.hideExtractionRule = hideExtractionRule;
+
+  // 원래 4개 규칙 고정이던 runBatchProcess를, activeRuleCount(3~9)만큼
   // 동적으로 처리하도록 새로 정의해서 기존 함수를 덮어쓴다.
   async function runBatchProcess(mode = 'all') {
     btnRun.disabled = true;
@@ -1837,7 +2009,7 @@
       .replace(/'/g, '&#39;');
   }
 
-  // 표도 4개 고정이 아니라 activeRuleCount(최대 6)만큼 "추출값" 칸을 그린다.
+  // 표도 4개 고정이 아니라 activeRuleCount(최대 9)만큼 "추출값" 칸을 그린다.
   function renderTable() {
     tableBody.innerHTML = '';
     const ruleCount = window.activeRuleCount || 3;
@@ -1849,7 +2021,7 @@
       tr.dataset.index = idx;
 
       let valsHtml = '';
-      for (let n = 1; n <= 6; n++) {
+      for (let n = 1; n <= 9; n++) {
         const val = (item.vals && item.vals[n - 1]) ? item.vals[n - 1] : '-';
         const hidden = n > ruleCount ? 'display:none;' : '';
         valsHtml += '<td class="val-' + n + '" style="' + hidden + '">' + escapeHtmlSafe(val) + '</td>';
@@ -1957,7 +2129,7 @@
   function collectCurrentSettings() {
     const ruleCount = window.activeRuleCount || 3;
     const rules = [];
-    for (let n = 1; n <= 6; n++) {
+    for (let n = 1; n <= 9; n++) {
       const keyEl = document.getElementById('key' + n);
       const dirEl = document.getElementById('dir' + n);
       const idxEl = document.getElementById('idx' + n);
@@ -1994,24 +2166,11 @@
     const bulkEl = document.getElementById('bulkRemoveWord');
     if (bulkEl && settings.bulkRemoveWord !== undefined) bulkEl.value = settings.bulkRemoveWord;
 
-    const wantCount = Math.min(6, Math.max(3, settings.activeRuleCount || 3));
-    const btn = document.getElementById('btnAddRule');
-    for (let n = 4; n <= 6; n++) {
-      const slot = document.getElementById('ruleSlot' + n);
-      const th = document.getElementById('thVal' + n);
-      const show = n <= wantCount;
-      if (slot) slot.style.display = show ? '' : 'none';
-      if (th) th.style.display = show ? '' : 'none';
-    }
-    window.activeRuleCount = wantCount;
-    if (btn) {
-      btn.disabled = false;
-      btn.textContent = wantCount >= 6 ? '➖ 추출위치 숨기기' : '➕ 추출위치 추가';
-    }
+    setRuleCount(Math.min(9, Math.max(3, settings.activeRuleCount || 3)));
 
     (settings.rules || []).forEach((rule, i) => {
       const n = i + 1;
-      if (n > 6) return;
+      if (n > 9) return;
       const keyEl = document.getElementById('key' + n);
       const dirEl = document.getElementById('dir' + n);
       const idxEl = document.getElementById('idx' + n);
@@ -2187,6 +2346,225 @@
   window.deleteSelectedUserPreset = deleteSelectedUserPreset;
 
   refreshPresetSelect();
+  setRuleCount(3);
+</script>
+
+<script>
+  // =========================================================================
+  // 🔍 OCR 인식률 최대화 (PDF·이미지 공통)
+  //  1) 고해상도(긴 변 약 3500px ≈ 300dpi)로 렌더링, 투명 배경은 흰색으로 채움
+  //  2) 회색조+대비보정(워터마크 흐리게) / 이진화(Otsu) 두 가지 전처리
+  //  3) 3가지 조합(회색조·kor+eng·문단분석4, 회색조·kor·4, 이진화·kor·6)으로 인식 후
+  //     신뢰도가 가장 높은 결과를 기본 텍스트로 사용, 나머지는 보조 텍스트로 보관
+  //  4) 기준단어를 기본 텍스트에서 못 찾으면(미확인) 보조 텍스트에서 다시 찾음
+  //  5) 전각 콜론(：) 통일, 잡음 문자(_ ㆍ 등) 제거, 기준단어 매칭 시 잡음 허용
+  //  ※ 인식 시간이 기존보다 길어집니다(파일당 수 초~수십 초). 브라우저 내에서만 처리됩니다.
+  // =========================================================================
+  (function () {
+    const OCR = {
+      targetLongSide: 3500,   // 렌더링 긴 변 픽셀 (A4 기준 약 300dpi)
+      maxLongSide: 5000,      // 이미지가 이보다 크면 축소
+      maxPages: 3,            // PDF는 앞쪽 몇 쪽까지 인식할지
+      passes: [
+        { variant: 'gray', lang: 'kor+eng', psm: 4 },
+        { variant: 'gray', lang: 'kor',     psm: 4 },
+        { variant: 'bin',  lang: 'kor',     psm: 6 }
+      ]
+    };
+
+    // 언어별 워커는 한 번 만들어 재사용(매 파일마다 새로 로딩하지 않음)
+    const workerCache = {};
+    function getWorker(lang) {
+      if (!workerCache[lang]) {
+        workerCache[lang] = Tesseract.createWorker(lang, 1, {}).catch(e => { delete workerCache[lang]; throw e; });
+      }
+      return workerCache[lang];
+    }
+
+    async function recognizeCanvas(canvas, lang, psm) {
+      const worker = await getWorker(lang);
+      await worker.setParameters({
+        tessedit_pageseg_mode: String(psm),
+        preserve_interword_spaces: '1',
+        user_defined_dpi: '300'
+      });
+      const { data } = await worker.recognize(canvas);
+      return { text: data.text || '', conf: typeof data.confidence === 'number' ? data.confidence : 0 };
+    }
+
+    function newWhiteCanvas(w, h) {
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(w));
+      c.height = Math.max(1, Math.round(h));
+      const ctx = c.getContext('2d');
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(0, 0, c.width, c.height);
+      return c;
+    }
+
+    function otsuThreshold(hist, total) {
+      let sum = 0;
+      for (let i = 0; i < 256; i++) sum += i * hist[i];
+      let sumB = 0, wB = 0, best = -1, thr = 128;
+      for (let i = 0; i < 256; i++) {
+        wB += hist[i];
+        if (!wB) continue;
+        const wF = total - wB;
+        if (!wF) break;
+        sumB += i * hist[i];
+        const mB = sumB / wB, mF = (sum - sumB) / wF;
+        const v = wB * wF * (mB - mF) * (mB - mF);
+        if (v > best) { best = v; thr = i; }
+      }
+      return thr;
+    }
+
+    // 원본 캔버스 -> { gray: 회색조+대비보정, bin: 이진화 } 캔버스
+    function makeVariants(src) {
+      const w = src.width, h = src.height;
+      const img = src.getContext('2d').getImageData(0, 0, w, h);
+      const d = img.data;
+      const gray = new Uint8ClampedArray(w * h);
+      const hist = new Array(256).fill(0);
+      for (let i = 0, j = 0; j < gray.length; i += 4, j++) {
+        const v = (0.299 * d[i] + 0.587 * d[i + 1] + 0.114 * d[i + 2]) | 0;
+        gray[j] = v;
+        hist[v]++;
+      }
+      // 밝은 배경·연한 워터마크를 흰색쪽으로 밀어내는 대비보정 (0~235 -> 0~255)
+      const stretched = new Uint8ClampedArray(gray.length);
+      for (let j = 0; j < gray.length; j++) stretched[j] = Math.min(255, (gray[j] * 255 / 235) | 0);
+      let thr = otsuThreshold(hist, gray.length);
+      thr = Math.max(120, Math.min(200, thr));
+
+      function toCanvas(fn) {
+        const c = document.createElement('canvas');
+        c.width = w; c.height = h;
+        const ctx = c.getContext('2d');
+        const out = ctx.createImageData(w, h);
+        const o = out.data;
+        for (let j = 0, i = 0; j < gray.length; j++, i += 4) {
+          const v = fn(j);
+          o[i] = o[i + 1] = o[i + 2] = v;
+          o[i + 3] = 255;
+        }
+        ctx.putImageData(out, 0, 0);
+        return c;
+      }
+      return {
+        gray: toCanvas(j => stretched[j]),
+        bin: toCanvas(j => (gray[j] > thr ? 255 : 0))
+      };
+    }
+
+    // OCR 결과 정리: 전각 콜론 통일, 잡음 제거
+    function normalizeOcrText(t) {
+      return String(t || '')
+        .replace(/[：﹕∶꞉]/g, ':')
+        .replace(/:{2,}/g, ':')
+        .replace(/:\s*[ㆍ·•]+\s*/g, ': ')
+        .replace(/[ \t]*_+[ \t]*/g, ' ')
+        .replace(/[ \t]{2,}/g, '  ');
+    }
+
+    // 캔버스 한 장(=한 쪽)을 전처리 후 모든 조합으로 인식
+    async function ocrCanvases(canvases) {
+      const results = OCR.passes.map(() => ({ texts: [], confs: [] }));
+      for (const src of canvases) {
+        const variants = makeVariants(src);
+        for (let k = 0; k < OCR.passes.length; k++) {
+          const p = OCR.passes[k];
+          try {
+            const r = await recognizeCanvas(variants[p.variant], p.lang, p.psm);
+            results[k].texts.push(r.text);
+            results[k].confs.push(r.conf);
+          } catch (e) {
+            console.error('OCR 실패', p, e);
+          }
+        }
+      }
+      const cands = results
+        .filter(r => r.texts.length > 0)
+        .map(r => ({
+          text: normalizeOcrText(r.texts.join('\n')),
+          conf: r.confs.reduce((a, b) => a + b, 0) / r.confs.length
+        }))
+        .filter(c => c.text.trim().length > 0)
+        .sort((a, b) => b.conf - a.conf);
+      if (cands.length === 0) return '';
+      const primary = cands[0].text;
+      const alts = cands.slice(1).map(c => c.text).filter(t => t !== primary);
+      if (alts.length) altTextMap.set(primary, alts);
+      return primary;
+    }
+
+    async function renderPdfPages(file) {
+      const buf = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: buf }).promise;
+      const n = Math.min(pdf.numPages, OCR.maxPages);
+      const canvases = [];
+      for (let p = 1; p <= n; p++) {
+        const page = await pdf.getPage(p);
+        const v1 = page.getViewport({ scale: 1 });
+        const scale = Math.min(8, OCR.targetLongSide / Math.max(v1.width, v1.height));
+        const vp = page.getViewport({ scale: scale });
+        const canvas = newWhiteCanvas(vp.width, vp.height);
+        await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+        canvases.push(canvas);
+      }
+      return canvases;
+    }
+
+    async function imageFileToCanvas(file) {
+      const bmp = await createImageBitmap(file);
+      const long = Math.max(bmp.width, bmp.height);
+      let s = 1;
+      if (long < OCR.targetLongSide) s = Math.min(3, OCR.targetLongSide / long);
+      else if (long > OCR.maxLongSide) s = OCR.maxLongSide / long;
+      const canvas = newWhiteCanvas(bmp.width * s, bmp.height * s);
+      canvas.getContext('2d').drawImage(bmp, 0, 0, canvas.width, canvas.height);
+      if (bmp.close) bmp.close();
+      return canvas;
+    }
+
+    // ---- 기존 함수 덮어쓰기 ----
+    window.extractPdfOCR = async function (file) {
+      if (!window.pdfjsLib || !window.Tesseract) return '';
+      const canvases = await renderPdfPages(file);
+      return await ocrCanvases(canvases);
+    };
+    window.extractImageOCR = async function (file) {
+      if (!window.Tesseract) return '';
+      const canvas = await imageFileToCanvas(file);
+      return await ocrCanvases([canvas]);
+    };
+
+    // ---- 기준단어 못 찾으면 보조 OCR 텍스트에서 재시도 ----
+    const altTextMap = new Map();
+    const baseParse = window.parseTextByRule;
+    window.parseTextByRule = function (text, rule) {
+      let r = baseParse(text, rule);
+      if ((r === '미확인' || r === '') && rule && rule.key && text) {
+        const alts = altTextMap.get(text);
+        if (alts) {
+          for (const alt of alts) {
+            const r2 = baseParse(alt, rule);
+            if (r2 && r2 !== '미확인') return r2;
+          }
+        }
+      }
+      return r;
+    };
+
+    // ---- 기준단어 매칭: 글자 사이의 공백뿐 아니라 OCR 잡음(_ . ㆍ · |)도 허용 ----
+    window.buildKeyPatternV2 = function (keyword) {
+      const SEP = '[\\s_.ㆍ·|]*';
+      return keyword.split('').map(ch => {
+        const esc = escapeRegExpCharV2(ch);
+        return /[a-zA-Z0-9가-힣]/.test(ch) ? esc + SEP : esc;
+      }).join('');
+    };
+  })();
 </script>
 </body>
 </html>
