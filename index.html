@@ -518,8 +518,10 @@
               <option value="word4">4단어(공백전까지)</option>
               <option value="line">해당 줄 끝까지</option>
               <option value="chars">N글자(직접입력)</option>
+              <option value="incl">기준단어 포함 N단어(직접입력)</option>
             </select>
             <input type="number" id="charsNum1" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(1)">
+            <input type="number" id="inclNum1" min="1" value="2" style="width:56px; display:none;" oninput="syncInclRangeValue(1)">
           </div>
         </div>
       </div>
@@ -575,8 +577,10 @@
               <option value="word4">4단어(공백전까지)</option>
               <option value="line" selected>해당 줄 끝까지</option>
               <option value="chars">N글자(직접입력)</option>
+              <option value="incl">기준단어 포함 N단어(직접입력)</option>
             </select>
             <input type="number" id="charsNum2" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(2)">
+            <input type="number" id="inclNum2" min="1" value="2" style="width:56px; display:none;" oninput="syncInclRangeValue(2)">
           </div>
         </div>
       </div>
@@ -632,8 +636,10 @@
               <option value="word4">4단어(공백전까지)</option>
               <option value="line">해당 줄 끝까지</option>
               <option value="chars">N글자(직접입력)</option>
+              <option value="incl">기준단어 포함 N단어(직접입력)</option>
             </select>
             <input type="number" id="charsNum3" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(3)">
+            <input type="number" id="inclNum3" min="1" value="2" style="width:56px; display:none;" oninput="syncInclRangeValue(3)">
           </div>
         </div>
       </div>
@@ -690,8 +696,10 @@
               <option value="word4">4단어(공백전까지)</option>
               <option value="line">해당 줄 끝까지</option>
               <option value="chars">N글자(직접입력)</option>
+              <option value="incl">기준단어 포함 N단어(직접입력)</option>
             </select>
             <input type="number" id="charsNum4" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(4)">
+            <input type="number" id="inclNum4" min="1" value="2" style="width:56px; display:none;" oninput="syncInclRangeValue(4)">
           </div>
         </div>
       </div>
@@ -747,8 +755,10 @@
               <option value="word4">4단어(공백전까지)</option>
               <option value="line">해당 줄 끝까지</option>
               <option value="chars">N글자(직접입력)</option>
+              <option value="incl">기준단어 포함 N단어(직접입력)</option>
             </select>
             <input type="number" id="charsNum5" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(5)">
+            <input type="number" id="inclNum5" min="1" value="2" style="width:56px; display:none;" oninput="syncInclRangeValue(5)">
           </div>
         </div>
       </div>
@@ -804,8 +814,10 @@
               <option value="word4">4단어(공백전까지)</option>
               <option value="line">해당 줄 끝까지</option>
               <option value="chars">N글자(직접입력)</option>
+              <option value="incl">기준단어 포함 N단어(직접입력)</option>
             </select>
             <input type="number" id="charsNum6" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(6)">
+            <input type="number" id="inclNum6" min="1" value="2" style="width:56px; display:none;" oninput="syncInclRangeValue(6)">
           </div>
         </div>
       </div>
@@ -861,8 +873,10 @@
               <option value="word4">4단어(공백전까지)</option>
               <option value="line">해당 줄 끝까지</option>
               <option value="chars">N글자(직접입력)</option>
+              <option value="incl">기준단어 포함 N단어(직접입력)</option>
             </select>
             <input type="number" id="charsNum7" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(7)">
+            <input type="number" id="inclNum7" min="1" value="2" style="width:56px; display:none;" oninput="syncInclRangeValue(7)">
           </div>
         </div>
       </div>
@@ -918,8 +932,10 @@
               <option value="word4">4단어(공백전까지)</option>
               <option value="line">해당 줄 끝까지</option>
               <option value="chars">N글자(직접입력)</option>
+              <option value="incl">기준단어 포함 N단어(직접입력)</option>
             </select>
             <input type="number" id="charsNum8" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(8)">
+            <input type="number" id="inclNum8" min="1" value="2" style="width:56px; display:none;" oninput="syncInclRangeValue(8)">
           </div>
         </div>
       </div>
@@ -975,8 +991,10 @@
               <option value="word4">4단어(공백전까지)</option>
               <option value="line">해당 줄 끝까지</option>
               <option value="chars">N글자(직접입력)</option>
+              <option value="incl">기준단어 포함 N단어(직접입력)</option>
             </select>
             <input type="number" id="charsNum9" min="1" value="2" style="width:56px; display:none;" oninput="syncCharsRangeValue(9)">
+            <input type="number" id="inclNum9" min="1" value="2" style="width:56px; display:none;" oninput="syncInclRangeValue(9)">
           </div>
         </div>
       </div>
@@ -1593,12 +1611,22 @@
   function toggleCharsInput(n) {
     const sel = document.getElementById('range' + n);
     const numInput = document.getElementById('charsNum' + n);
+    const inclInput = document.getElementById('inclNum' + n);
     if (!sel || !numInput) return;
     if (sel.value.indexOf('chars') === 0) {
       numInput.style.display = 'inline-block';
       syncCharsRangeValue(n);
     } else {
       numInput.style.display = 'none';
+    }
+    // "기준단어 포함 N단어(직접입력)" 옵션의 숫자 입력칸
+    if (inclInput) {
+      if (sel.value.indexOf('incl') === 0) {
+        inclInput.style.display = 'inline-block';
+        syncInclRangeValue(n);
+      } else {
+        inclInput.style.display = 'none';
+      }
     }
   }
   window.toggleCharsInput = toggleCharsInput;
@@ -1652,6 +1680,19 @@
     }
   }
   window.syncCharsRangeValue = syncCharsRangeValue;
+
+  // "기준단어 포함 N단어" 숫자 입력칸의 값을 select 옵션 값("incl:3")에 반영한다.
+  function syncInclRangeValue(n) {
+    const sel = document.getElementById('range' + n);
+    const numInput = document.getElementById('inclNum' + n);
+    if (!sel || !numInput) return;
+    const count = Math.max(1, parseInt(numInput.value, 10) || 1);
+    const opt = sel.options[sel.selectedIndex];
+    if (opt && opt.value.indexOf('incl') === 0) {
+      opt.value = 'incl:' + count;
+    }
+  }
+  window.syncInclRangeValue = syncInclRangeValue;
 
   // 이미 추출된 결과값(vals) 중에서 특정 단어/글자를 전부 지우고,
   // "변경될 파일명"도 같은 규칙(공통단어, 파일명 다듬기)으로 다시 계산한다.
@@ -1742,10 +1783,27 @@
     }).join('');
   }
 
-  function extractRangeTextV2(text, matchStart, matchLen, dir, range) {
+  function extractRangeTextV2(text, matchStart, matchLen, dir, range, keyword) {
     const WORD_COUNTS = { word: 1, word2: 2, word3: 3, word4: 4 };
     const charsMatch = typeof range === 'string' && range.match(/^chars:(\d+)$/);
     const charsCount = charsMatch ? parseInt(charsMatch[1], 10) : null;
+    // "기준단어 포함 N단어(직접입력)": 기준단어를 1단어로 세고, 뒤(또는 앞)의 단어를 합쳐 총 N단어로 만든다.
+    // 예) 기준단어 "성명", N=2, "기준 단어 뒤" -> "성명 김관석"
+    const inclMatch = typeof range === 'string' && range.match(/^incl:(\d+)$/);
+    if (inclMatch && (dir === 'after' || dir === 'before')) {
+      const N = Math.max(1, parseInt(inclMatch[1], 10));
+      const keyLabel = String(keyword || text.substring(matchStart, matchStart + matchLen)).replace(/\s+/g, '');
+      if (N === 1) return cleanValueV2(keyLabel) || '미확인';
+      if (dir === 'after') {
+        const afterTxt = text.substring(matchStart + matchLen).replace(/^[\s:]+/, '');
+        const re = new RegExp('^[^\\s]+(?:\\s+[^\\s]+){0,' + (N - 2) + '}');
+        const m = afterTxt.match(re);
+        return m ? cleanValueV2(keyLabel + ' ' + m[0]) : '미확인';
+      } else {
+        const words = text.substring(0, matchStart).trim().split(/\s+/).filter(w => w.length > 0);
+        return words.length > 0 ? cleanValueV2(words.slice(-(N - 1)).join(' ') + ' ' + keyLabel) : '미확인';
+      }
+    }
     if (dir === 'self') {
       const matched = text.substring(matchStart, matchStart + matchLen);
       return matched ? cleanValueV2(matched) : '미확인';
@@ -1825,7 +1883,7 @@
 
       const match = findNthMatchV2(text, keyword, rule.idx);
       if (!match) continue;
-      return extractRangeTextV2(text, match.index, match[0].length, rule.dir, rule.range);
+      return extractRangeTextV2(text, match.index, match[0].length, rule.dir, rule.range, keyword);
     }
     return '미확인';
   }
@@ -2184,29 +2242,29 @@
           const opt = idxEl.querySelector('option[value^="n"]');
           if (opt) opt.value = rule.idx;
         }
-        idxEl.value = rule.idx || '1';
-        if (typeof toggleIdxNumInput === 'function') toggleIdxNumInput(n);
         if (isCustomIdx) {
           const m = rule.idx.match(/^n:(\d+)$/);
           const numEl = document.getElementById('idxNum' + n);
           if (numEl && m) numEl.value = m[1];
         }
+        idxEl.value = rule.idx || '1';
+        if (typeof toggleIdxNumInput === 'function') toggleIdxNumInput(n);
       }
       if (keyEndEl) keyEndEl.value = rule.keyEnd || '';
       if (typeof toggleBetweenInput === 'function') toggleBetweenInput(n);
       if (rangeEl) {
-        const isChars = rule.range && rule.range.indexOf('chars') === 0;
-        if (isChars) {
-          const opt = rangeEl.querySelector('option[value^="chars"]');
-          if (opt) opt.value = rule.range;
-        }
-        rangeEl.value = rule.range || 'word';
+        const rv = rule.range || 'word';
+        ['chars', 'incl'].forEach(prefix => {
+          if (rv.indexOf(prefix) === 0) {
+            const opt = rangeEl.querySelector('option[value^="' + prefix + '"]');
+            if (opt) opt.value = rv;
+            const m = rv.match(/^(?:chars|incl):(\d+)$/);
+            const numEl = document.getElementById((prefix === 'chars' ? 'charsNum' : 'inclNum') + n);
+            if (numEl && m) numEl.value = m[1];
+          }
+        });
+        rangeEl.value = rv;
         if (typeof toggleCharsInput === 'function') toggleCharsInput(n);
-        if (isChars) {
-          const m = rule.range.match(/^chars:(\d+)$/);
-          const numEl = document.getElementById('charsNum' + n);
-          if (numEl && m) numEl.value = m[1];
-        }
       }
     });
 
