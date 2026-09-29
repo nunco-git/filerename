@@ -1788,7 +1788,7 @@
     const charsMatch = typeof range === 'string' && range.match(/^chars:(\d+)$/);
     const charsCount = charsMatch ? parseInt(charsMatch[1], 10) : null;
     // "기준단어 포함 N단어(직접입력)": 기준단어를 1단어로 세고, 뒤(또는 앞)의 단어를 합쳐 총 N단어로 만든다.
-    // 예) 기준단어 "성명", N=2, "기준 단어 뒤" -> "성명 김관석"
+    // 예) 기준단어 "성명", N=2, "기준 단어 뒤" -> "성명김관석" (띄어쓰기 없이 붙여서 반환)
     const inclMatch = typeof range === 'string' && range.match(/^incl:(\d+)$/);
     if (inclMatch && (dir === 'after' || dir === 'before')) {
       const N = Math.max(1, parseInt(inclMatch[1], 10));
@@ -1798,10 +1798,10 @@
         const afterTxt = text.substring(matchStart + matchLen).replace(/^[\s:]+/, '');
         const re = new RegExp('^[^\\s]+(?:\\s+[^\\s]+){0,' + (N - 2) + '}');
         const m = afterTxt.match(re);
-        return m ? cleanValueV2(keyLabel + ' ' + m[0]) : '미확인';
+        return m ? cleanValueV2(keyLabel + m[0].replace(/\s+/g, '')) : '미확인';
       } else {
         const words = text.substring(0, matchStart).trim().split(/\s+/).filter(w => w.length > 0);
-        return words.length > 0 ? cleanValueV2(words.slice(-(N - 1)).join(' ') + ' ' + keyLabel) : '미확인';
+        return words.length > 0 ? cleanValueV2(words.slice(-(N - 1)).join('') + keyLabel) : '미확인';
       }
     }
     if (dir === 'self') {
