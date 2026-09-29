@@ -1043,7 +1043,7 @@
   </div>
 
   <h3 style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px; flex-wrap: wrap; gap: 10px;">
-    <span>업로드 파일 목록 및 실행 결과</span>
+    <span style="display:flex; align-items:center; gap:14px; flex-wrap:wrap;"><span>업로드 파일 목록 및 실행 결과</span><span style="display:inline-flex; align-items:center; gap:6px; font-size:13px; font-weight:600; color:#475569;" title="선택한 추출위치는 숫자·영문이 섞인 부분을 영어 전용으로 다시 읽어 정확도를 높입니다 (스캔/이미지 PDF·이미지 파일 대상, 처리 시간이 늘어납니다). 변경 후에는 파일을 선택하고 '선택한 파일만 재실행'을 눌러야 적용됩니다."><label for="digitRuleSelect">🔤 영어·숫자 위주 인식 위치:</label><select id="digitRuleSelect" onchange="setDigitRulePos(this.value)" style="width:auto; padding:4px 8px;"><option value="0">사용 안 함</option><option value="1">1번</option><option value="2">2번</option><option value="3">3번</option><option value="4">4번</option><option value="5">5번</option><option value="6">6번</option><option value="7">7번</option><option value="8">8번</option><option value="9">9번</option></select></span></span>
     <span class="result-tools" style="display:flex; align-items:center; gap:8px; font-weight:normal;">
       <label for="bulkRemoveWord" style="color:#334155;">🧹 결과값에서 삭제할 단어:</label>
       <input type="text" id="bulkRemoveWord" placeholder="예: 이상하게 낀 글자·공백">
@@ -1988,6 +1988,7 @@
       const keyEndEl = document.getElementById('keyEnd' + n);
       if (!keyEl || !dirEl || !idxEl || !rangeEl) continue;
       rules.push({
+        pos: n,
         key: keyEl.value.trim(),
         dir: dirEl.value,
         idx: idxEl.value,
@@ -2209,6 +2210,7 @@
       fnMode: document.getElementById('fnMode').value,
       bulkRemoveWord: bulkEl ? bulkEl.value : '',
       activeRuleCount: ruleCount,
+      digitRulePos: window.digitRulePos || 0,
       rules: rules
     };
   }
@@ -2225,6 +2227,7 @@
     if (bulkEl && settings.bulkRemoveWord !== undefined) bulkEl.value = settings.bulkRemoveWord;
 
     setRuleCount(Math.min(9, Math.max(3, settings.activeRuleCount || 3)));
+    if (typeof window.setDigitRulePos === 'function') window.setDigitRulePos(settings.digitRulePos || 0);
 
     (settings.rules || []).forEach((rule, i) => {
       const n = i + 1;
@@ -2447,7 +2450,12 @@
         user_defined_dpi: '300'
       });
       const { data } = await worker.recognize(canvas);
-      return { text: data.text || '', conf: typeof data.confidence === 'number' ? data.confidence : 0 };
+      // 순환 참조가 없는 가벼운 형태로 단어/글자 위치만 보관 (영어·숫자 재인식에 사용)
+      const words = (data.words || []).map(w => ({
+        text: (w.text || '').trim(),
+        symbols: (w.symbols || []).map(s => ({ text: s.text || '', bbox: s.bbox }))
+      }));
+      return { text: data.text || '', conf: typeof data.confidence === 'number' ? data.confidence : 0, words: words };
     }
 
     function newWhiteCanvas(w, h) {
@@ -2525,27 +2533,146 @@
         .replace(/[ \t]{2,}/g, '  ');
     }
 
-    // 캔버스 한 장(=한 쪽)을 전처리 후 모든 조합으로 인식
+    // ------------------------------------------------------------------
+    // 🔤 영어·숫자 위주 재인식
+    // 한글 OCR이 읽은 단어 중 숫자/영문이 들어 있는 부분만 글자 위치를 이용해 잘라내
+    // 영어 전용 OCR로 다시 읽고, 원래 읽은 값과 비교해 신뢰할 수 있을 때만 바꿔 넣는다.
+    // ------------------------------------------------------------------
+    const DIGIT_WHITELIST = '0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz.,-~:/+';
+    const HANGUL_SYL = /[가-힣]/;
+
+    // a=한글 OCR 값, b=영어 OCR 값. 양 끝에 "혼자 더 붙은" 글자(이웃 한글의 잔상)는 버리고 나머지를 반환.
+    // 두 값이 너무 다르면 null(=원래 값 유지).
+    function reconcileDigitToken(a, b) {
+      if (!a || !b) return null;
+      const n = a.length, m = b.length;
+      const dp = [];
+      for (let i = 0; i <= n; i++) { dp.push(new Array(m + 1).fill(0)); dp[i][0] = i; }
+      for (let j = 0; j <= m; j++) dp[0][j] = j;
+      for (let i = 1; i <= n; i++) {
+        for (let j = 1; j <= m; j++) {
+          const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+          dp[i][j] = Math.min(dp[i - 1][j - 1] + cost, dp[i - 1][j] + 1, dp[i][j - 1] + 1);
+        }
+      }
+      const ops = [];
+      let i = n, j = m;
+      while (i > 0 || j > 0) {
+        // 동점이면 '영어 쪽에만 있는 글자(I)'를 우선해서, 끝에 붙은 잔상 글자가 잘려 나가게 한다.
+        if (j > 0 && dp[i][j] === dp[i][j - 1] + 1) {
+          ops.push('I'); j--;
+        } else if (i > 0 && j > 0 && dp[i][j] === dp[i - 1][j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1)) {
+          ops.push(a[i - 1] === b[j - 1] ? 'M' : 'S'); i--; j--;
+        } else {
+          ops.push('D'); i--;
+        }
+      }
+      ops.reverse();
+      let first = 0, last = ops.length - 1;
+      while (first < ops.length && ops[first] === 'I') first++;
+      while (last >= 0 && ops[last] === 'I') last--;
+      let out = '', bi = 0, matches = 0;
+      for (let k = 0; k < ops.length; k++) {
+        const op = ops[k];
+        if (op === 'D') continue;
+        const ch = b[bi++];
+        if (op === 'I' && (k < first || k > last)) continue;
+        if (op === 'M') matches++;
+        out += ch;
+      }
+      if (!out) return null;
+      if (matches / Math.max(a.length, out.length) < 0.4) return null;
+      return out;
+    }
+
+    async function refineWordWithEnglish(word, grayCanvas) {
+      const syms = word.symbols || [];
+      const text = word.text;
+      if (!text || syms.length === 0 || !/[0-9A-Za-z]/.test(text)) return null;
+      const idxs = [];
+      syms.forEach((s, k) => { if (!HANGUL_SYL.test(s.text) && s.bbox) idxs.push(k); });
+      if (idxs.length === 0) return null;
+      const lo = idxs[0], hi = idxs[idxs.length - 1];
+      for (let k = lo; k <= hi; k++) if (HANGUL_SYL.test(syms[k].text)) return null; // 숫자 사이에 한글이 낀 단어는 건너뜀
+      const core = syms.slice(lo, hi + 1);
+      const korCore = core.map(s => s.text).join('');
+      if (!/[0-9A-Za-z]/.test(korCore)) return null;
+      const x0 = Math.min(...core.map(s => s.bbox.x0)), x1 = Math.max(...core.map(s => s.bbox.x1));
+      const y0 = Math.min(...core.map(s => s.bbox.y0)), y1 = Math.max(...core.map(s => s.bbox.y1));
+      // 이웃한 한글의 잔상이 딸려 들어오지 않도록 오른쪽은 마지막 글자 너비의 15%만큼 안쪽으로 자르고,
+      // 앞쪽에 한글이 붙어 있는 단어는 왼쪽도 살짝 안쪽으로 자른다. (실측으로 정한 값)
+      const wFirst = core[0].bbox.x1 - core[0].bbox.x0;
+      const wLast = core[core.length - 1].bbox.x1 - core[core.length - 1].bbox.x0;
+      const cx0 = Math.max(0, lo > 0 ? x0 + 0.1 * wFirst : x0 - 4), cy0 = Math.max(0, y0 - 8);
+      const cx1 = Math.min(grayCanvas.width, x1 - 0.15 * wLast), cy1 = Math.min(grayCanvas.height, y1 + 8);
+      const cw = cx1 - cx0, ch = cy1 - cy0;
+      if (cw < 4 || ch < 4) return null;
+      const crop = newWhiteCanvas(cw + 60, ch + 60);
+      crop.getContext('2d').drawImage(grayCanvas, cx0, cy0, cw, ch, 30, 30, cw, ch);
+      const worker = await getWorker('eng');
+      await worker.setParameters({
+        tessedit_pageseg_mode: '7',
+        tessedit_char_whitelist: DIGIT_WHITELIST,
+        user_defined_dpi: '300'
+      });
+      const { data } = await worker.recognize(crop);
+      const eng = (data.text || '').replace(/\s+/g, '');
+      const fixed = reconcileDigitToken(korCore, eng);
+      if (!fixed || fixed === korCore) return null;
+      const prefix = syms.slice(0, lo).map(s => s.text).join('');
+      const suffix = syms.slice(hi + 1).map(s => s.text).join('');
+      return prefix + fixed + suffix;
+    }
+
+    // 한 쪽의 OCR 원문에서, 숫자/영문이 든 단어만 영어 재인식 결과로 바꾼 텍스트를 만든다.
+    async function buildDigitRefinedPage(rawText, words, grayCanvas) {
+      const MAX_WORDS = 80;
+      let out = '', last = 0, cursor = 0, done = 0;
+      for (const w of words) {
+        if (done >= MAX_WORDS) break;
+        if (!w.text || !/[0-9A-Za-z]/.test(w.text)) continue;
+        const idx = rawText.indexOf(w.text, cursor);
+        if (idx < 0) continue;
+        let replaced = null;
+        try { replaced = await refineWordWithEnglish(w, grayCanvas); }
+        catch (e) { console.error('영어 재인식 실패', e); }
+        done++;
+        if (replaced) {
+          out += rawText.slice(last, idx) + replaced;
+          last = idx + w.text.length;
+        }
+        cursor = idx + w.text.length;
+      }
+      return out + rawText.slice(last);
+    }
+
+    // 캔버스(=쪽)들을 전처리 후 모든 조합으로 인식
     async function ocrCanvases(canvases) {
-      const results = OCR.passes.map(() => ({ texts: [], confs: [] }));
+      const passData = OCR.passes.map(() => ({ texts: [], words: [], confs: [] }));
+      const pageVariants = [];
       for (const src of canvases) {
         const variants = makeVariants(src);
+        pageVariants.push(variants);
         for (let k = 0; k < OCR.passes.length; k++) {
           const p = OCR.passes[k];
           try {
             const r = await recognizeCanvas(variants[p.variant], p.lang, p.psm);
-            results[k].texts.push(r.text);
-            results[k].confs.push(r.conf);
+            passData[k].texts.push(r.text);
+            passData[k].words.push(r.words);
+            passData[k].confs.push(r.conf);
           } catch (e) {
             console.error('OCR 실패', p, e);
           }
         }
       }
-      const cands = results
-        .filter(r => r.texts.length > 0)
-        .map(r => ({
-          text: normalizeOcrText(r.texts.join('\n')),
-          conf: r.confs.reduce((a, b) => a + b, 0) / r.confs.length
+      const cands = passData
+        .map((r, k) => ({ k: k, r: r }))
+        .filter(c => c.r.texts.length > 0)
+        .map(c => ({
+          k: c.k,
+          raw: c.r.texts,
+          text: normalizeOcrText(c.r.texts.join('\n')),
+          conf: c.r.confs.reduce((a, b) => a + b, 0) / c.r.confs.length
         }))
         .filter(c => c.text.trim().length > 0)
         .sort((a, b) => b.conf - a.conf);
@@ -2553,6 +2680,21 @@
       const primary = cands[0].text;
       const alts = cands.slice(1).map(c => c.text).filter(t => t !== primary);
       if (alts.length) altTextMap.set(primary, alts);
+
+      // 영어·숫자 위주 인식 위치가 선택되어 있을 때만 재인식(시간이 더 걸림)
+      if ((window.digitRulePos || 0) > 0) {
+        try {
+          const best = cands[0];
+          const pages = [];
+          for (let pi = 0; pi < best.raw.length; pi++) {
+            pages.push(await buildDigitRefinedPage(best.raw[pi], passData[best.k].words[pi] || [], pageVariants[pi].gray));
+          }
+          const refined = normalizeOcrText(pages.join('\n'));
+          if (refined !== primary) digitTextMap.set(primary, refined);
+        } catch (e) {
+          console.error('영어·숫자 재인식 실패', e);
+        }
+      }
       return primary;
     }
 
@@ -2599,8 +2741,23 @@
 
     // ---- 기준단어 못 찾으면 보조 OCR 텍스트에서 재시도 ----
     const altTextMap = new Map();
+    const digitTextMap = new Map();
+    window.digitRulePos = 0;
+    window.setDigitRulePos = function (v) {
+      window.digitRulePos = parseInt(v, 10) || 0;
+      const sel = document.getElementById('digitRuleSelect');
+      if (sel && String(sel.value) !== String(window.digitRulePos)) sel.value = String(window.digitRulePos);
+    };
     const baseParse = window.parseTextByRule;
     window.parseTextByRule = function (text, rule) {
+      // 영어·숫자 위주로 지정한 추출위치는, 재인식으로 보정된 텍스트에서 먼저 찾는다.
+      if (rule && rule.pos && rule.pos === window.digitRulePos) {
+        const rt = digitTextMap.get(text);
+        if (rt) {
+          const r0 = baseParse(rt, rule);
+          if (r0 && r0 !== '미확인') return r0;
+        }
+      }
       let r = baseParse(text, rule);
       if ((r === '미확인' || r === '') && rule && rule.key && text) {
         const alts = altTextMap.get(text);
