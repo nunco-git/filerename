@@ -2022,6 +2022,19 @@
         }
 
         const vals = rules.map(rule => parseTextByRule(item.extractedText, rule));
+
+        // "결과값에서 삭제할 단어"에 값이 있으면, 실행할 때마다 자동으로 삭제한 뒤 파일명을 만든다.
+        // (프리셋에 저장된 삭제 단어도 별도로 '적용'을 누르지 않고 바로 반영됨)
+        const removeWordEl = document.getElementById('bulkRemoveWord');
+        const removeWord = removeWordEl ? removeWordEl.value.trim() : '';
+        if (removeWord) {
+          for (let vi = 0; vi < vals.length; vi++) {
+            const v = vals[vi];
+            if (v && v !== '미확인' && v.indexOf(removeWord) !== -1) {
+              vals[vi] = v.split(removeWord).join('').trim();
+            }
+          }
+        }
         item.vals = vals;
 
         const dotIdx = item.file.name.lastIndexOf('.');
@@ -2135,7 +2148,7 @@
       commonWord: '', commonPos: 'prefix',
       fnKey: '', fnMode: 'removeAll',
       bulkRemoveWord: '에서',
-      activeRuleCount: 6,
+      activeRuleCount: 9,
       digitRulePos: 0,
       rules: [
         { key: '소속', dir: 'after', idx: '1', range: 'line', keyEnd: '' },
@@ -2143,7 +2156,10 @@
         { key: '성명', dir: 'after', idx: '1', range: 'word', keyEnd: '' },
         { key: '과정', dir: 'after', idx: '1', range: 'line', keyEnd: '' },
         { key: '수여합니다.', dir: 'nextLine', idx: '1', range: 'line', keyEnd: '' },
-        { key: '사람은', dir: 'after', idx: '1', range: 'line', keyEnd: '' }
+        { key: '사람은', dir: 'after', idx: '1', range: 'line', keyEnd: '' },
+        { key: '제', dir: 'between', idx: '1', range: 'word', keyEnd: '호' },
+        { key: '', dir: 'after', idx: '1', range: 'word', keyEnd: '' },
+        { key: '', dir: 'after', idx: '1', range: 'word', keyEnd: '' }
       ]
     },
     '한국보건복지인재원 교육 수료증': {
