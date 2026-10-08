@@ -423,7 +423,8 @@
       <div class="drop-zone" id="dropZone">
         <div class="drop-icon">📂</div>
         <strong>파일을 마우스로 끌어다 놓거나<br>클릭하여 선택하세요</strong>
-        <div class="drop-sub">PDF, HWPX, 이미지(JPG·PNG 등), 엑셀(XLSX) 파일 지원</div>
+        <div class="drop-sub">PDF, HWPX, 이미지(JPG·PNG 등), 엑셀(XLSX) 파일 지원 · 폴더째 끌어다 놓아도 됩니다</div>
+        <button type="button" class="btn-sm-outline" id="btnPickFolder" onclick="event.stopPropagation(); pickSourceFolder();" style="margin-top:8px; color:#1d4ed8; border-color:#93c5fd;">📂 폴더 선택</button>
         <input type="file" id="fileInput" multiple accept=".pdf,.hwpx,.jpg,.jpeg,.png,.webp,.bmp,.xlsx" style="display:none;">
       </div>
     </div>
@@ -1038,6 +1039,7 @@
         <button class="btn btn-outline-indigo" id="btnRe" onclick="runBatchProcess('reAll')" disabled style="display:none;">🔄 전체 재실행</button>
         <button class="btn btn-outline-indigo" id="btnDeleteSelected" onclick="deleteSelectedFiles()" disabled style="flex:1 1 0; min-width:120px;">🗑️ 선택 파일 삭제</button>
         <button class="btn btn-outline-indigo" id="btnZip" onclick="downloadAllZip()" disabled style="flex:1 1 0; min-width:120px;">📥 전체 파일 다운로드</button>
+        <button class="btn btn-outline-indigo" id="btnSaveToFolder" onclick="saveToOriginalFolder()" disabled style="flex:1 1 0; min-width:120px;" title="완료된 파일을 원래 있던 폴더에 새 이름으로 저장합니다. (크롬·엣지)">💾 원래 폴더에 저장</button>
       </div>
     </div>
   </div>
@@ -2838,6 +2840,179 @@
         return /[a-zA-Z0-9가-힣]/.test(ch) ? esc + SEP : esc;
       }).join('');
     };
+  })();
+</script>
+<script>
+  // =========================================================================
+  // 📏 추출위치 기본 3개: 프리셋을 불러와도 실제로 기준단어가 들어 있는 위치까지만
+  //    (3 → 6 → 9 단위로) 보여준다. 4~9번은 "➕ 추출위치 추가"로 언제든 열 수 있다.
+  // =========================================================================
+  (function () {
+    const baseApply = window.applySettingsObject;
+    window.applySettingsObject = function (settings) {
+      baseApply(settings);
+      if (!settings) return;
+      let lastUsed = 0;
+      (settings.rules || []).forEach((r, i) => { if (r && String(r.key || '').trim()) lastUsed = i + 1; });
+      // 영어·숫자 위주 인식 위치가 숨겨진 칸이면 그 칸까지는 보여준다
+      lastUsed = Math.max(lastUsed, settings.digitRulePos || 0);
+      setRuleCount(Math.max(3, lastUsed));
+    };
+  })();
+
+  // =========================================================================
+  // 💾 원래 폴더에 저장 (크롬·엣지 전용: File System Access API)
+  //  - 브라우저는 보안상 "드래그한 파일이 어느 폴더에 있었는지" 알 수 없다.
+  //  - "📂 폴더째 불러오기"로 폴더를 열면 그 폴더 정보를 기억해, 저장 시 같은 폴더에 바로 쓴다.
+  //  - 드래그/클릭으로 올린 파일은 저장할 때 폴더를 한 번 골라 주면 된다(다음부터는 기억).
+  // =========================================================================
+  (function () {
+    const SUPPORTED = typeof window.showDirectoryPicker === 'function';
+    const EXT_OK = ['.pdf', '.hwpx', '.jpg', '.jpeg', '.png', '.webp', '.bmp', '.xlsx'];
+    let lastDirHandle = null; // 드래그로 올린 파일용으로 마지막에 고른 폴더
+
+    function notSupported() {
+      alert('이 기능은 크롬(Chrome) 또는 엣지(Edge) 브라우저에서만 사용할 수 있습니다.\n다른 브라우저에서는 "📥 전체 파일 다운로드"를 이용해주세요.');
+    }
+
+    async function ensurePermission(handle) {
+      const opts = { mode: 'readwrite' };
+      if ((await handle.queryPermission(opts)) === 'granted') return true;
+      return (await handle.requestPermission(opts)) === 'granted';
+    }
+
+    window.pickSourceFolder = async function () {
+      if (!SUPPORTED) return notSupported();
+      let dir;
+      try { dir = await window.showDirectoryPicker({ mode: 'readwrite' }); }
+      catch (e) { return; } // 사용자가 취소
+      const added = await loadFolder(dir);
+      renderTable();
+      if (added === 0) alert('"' + dir.name + '" 폴더에서 불러올 수 있는 파일(PDF·HWPX·이미지·XLSX)이 없거나 이미 목록에 있습니다.');
+    };
+
+    // 폴더 안(하위 폴더 제외)의 지원 파일을 목록에 추가하고, 그 폴더를 저장 위치로 기억한다.
+    async function loadFolder(dir) {
+      let added = 0;
+      for await (const [name, handle] of dir.entries()) {
+        if (handle.kind !== 'file') continue;
+        const lower = name.toLowerCase();
+        if (!EXT_OK.some(ext => lower.endsWith(ext))) continue;
+        if (fileQueue.some(f => f.file.name === name)) continue;
+        const file = await handle.getFile();
+        fileQueue.push({
+          id: 'f_' + Math.random().toString(36).slice(2, 9),
+          file: file, status: 'ready', newName: '', extractedText: null, selected: false,
+          dirHandle: dir, fileHandle: handle
+        });
+        added++;
+      }
+      lastDirHandle = dir;
+      return added;
+    }
+
+    // 드롭존에 "폴더"를 끌어다 놓으면 폴더째 불러오기로 처리한다.
+    // (파일만 끌어다 놓은 경우는 기존 방식 그대로 동작)
+    const dz = document.getElementById('dropZone');
+    dz.addEventListener('drop', e => {
+      const items = Array.from((e.dataTransfer && e.dataTransfer.items) || []).filter(it => it.kind === 'file');
+      const hasDir = items.some(it => { const en = it.webkitGetAsEntry && it.webkitGetAsEntry(); return en && en.isDirectory; });
+      if (!hasDir) return;
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      dz.classList.remove('dragover');
+      if (!SUPPORTED || !items[0].getAsFileSystemHandle) return notSupported();
+      // 핸들은 이벤트 안에서 바로 요청해야 한다
+      const looseFiles = [];
+      const handlePromises = items.map(it => {
+        const en = it.webkitGetAsEntry && it.webkitGetAsEntry();
+        if (en && en.isFile) { const f = it.getAsFile(); if (f) looseFiles.push(f); return null; }
+        return it.getAsFileSystemHandle();
+      }).filter(Boolean);
+      (async () => {
+        let added = 0, folders = [];
+        for (const p of handlePromises) {
+          try {
+            const h = await p;
+            if (h && h.kind === 'directory') { added += await loadFolder(h); folders.push(h.name); }
+          } catch (err) { console.error('폴더 불러오기 실패', err); }
+        }
+        if (looseFiles.length) window.handleFiles(looseFiles);
+        renderTable();
+        if (added === 0 && !looseFiles.length) alert('"' + folders.join('", "') + '" 폴더에서 불러올 수 있는 파일(PDF·HWPX·이미지·XLSX)이 없거나 이미 목록에 있습니다.');
+      })();
+    }, true);
+
+    async function fileExists(dir, name) {
+      try { await dir.getFileHandle(name); return true; } catch (e) { return false; }
+    }
+    async function uniqueName(dir, name) {
+      if (!(await fileExists(dir, name))) return name;
+      const dot = name.lastIndexOf('.');
+      const base = dot > 0 ? name.slice(0, dot) : name;
+      const ext = dot > 0 ? name.slice(dot) : '';
+      for (let i = 2; i < 1000; i++) {
+        const cand = base + ' (' + i + ')' + ext;
+        if (!(await fileExists(dir, cand))) return cand;
+      }
+      return base + '_' + Date.now() + ext;
+    }
+
+    window.saveToOriginalFolder = async function () {
+      if (!SUPPORTED) return notSupported();
+      const targets = fileQueue.filter(it => it.status === 'success' && it.newName);
+      if (targets.length === 0) { alert('먼저 "전체 분석 및 실행"으로 새 파일명을 만들어주세요.'); return; }
+
+      // 폴더 정보가 없는 파일(드래그로 올린 파일)은 저장할 폴더를 한 번 고르게 한다
+      if (targets.some(it => !it.dirHandle) && !lastDirHandle) {
+        alert('드래그로 올린 파일은 브라우저가 원래 폴더를 알 수 없습니다.\n다음 창에서 저장할 폴더(원래 폴더)를 선택해주세요.');
+        try { lastDirHandle = await window.showDirectoryPicker({ mode: 'readwrite' }); }
+        catch (e) { return; }
+      }
+
+      let saved = 0, failed = 0, renamedDup = 0;
+      for (const it of targets) {
+        const dir = it.dirHandle || lastDirHandle;
+        try {
+          if (!(await ensurePermission(dir))) { failed++; continue; }
+          const sameName = it.newName === it.file.name;
+          if (sameName) continue; // 이름이 그대로면 저장할 필요 없음
+          const name = await uniqueName(dir, it.newName);
+          if (name !== it.newName) renamedDup++;
+          const fh = await dir.getFileHandle(name, { create: true });
+          const w = await fh.createWritable();
+          await w.write(it.file);
+          await w.close();
+          saved++;
+        } catch (e) {
+          console.error('폴더 저장 실패', it.file.name, e);
+          failed++;
+        }
+      }
+      let msg = '✅ ' + saved + '개 파일을 폴더에 저장했습니다.';
+      if (renamedDup) msg += '\n⚠️ 같은 이름의 파일이 있어 ' + renamedDup + '개는 뒤에 (2), (3)… 을 붙였습니다.';
+      if (failed) msg += '\n❌ ' + failed + '개는 저장하지 못했습니다(권한 거부 또는 오류).';
+      alert(msg);
+    };
+
+    // 저장 버튼 활성/비활성: 기존 updateButtonStates 뒤에 덧붙인다
+    const baseUpdate = window.updateButtonStates;
+    window.updateButtonStates = function () {
+      baseUpdate();
+      const b = document.getElementById('btnSaveToFolder');
+      if (b) b.disabled = !fileQueue.some(it => it.status === 'success');
+    };
+    // 전체 초기화 시 기억해 둔 폴더도 잊는다
+    const baseClear = window.clearAllFiles;
+    window.clearAllFiles = function () { baseClear(); lastDirHandle = null; window.updateButtonStates(); };
+
+    if (!SUPPORTED) {
+      ['btnPickFolder', 'btnSaveToFolder'].forEach(id => {
+        const el = document.getElementById(id);
+        if (el) el.title = '크롬·엣지 브라우저에서만 사용할 수 있습니다.';
+      });
+    }
+    window.updateButtonStates();
   })();
 </script>
 </body>
